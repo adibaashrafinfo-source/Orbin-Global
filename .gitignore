@@ -1,0 +1,40 @@
+# dependencies
+node_modules/
+backend/vendor/
+# env and secrets
+.env
+.env.*
+!.env.example
+# build output
+frontend/dist/
+backend/public/spa/
+backend/public/index.html
+backend/public/build/
+release/
+*.zip
+# laravel runtime
+backend/storage/*.key
+backend/storage/app/private/*
+!backend/storage/app/private/.gitkeep
+backend/storage/app/public/*
+backend/storage/framework/cache/data/*
+backend/storage/framework/sessions/*
+backend/storage/framework/views/*
+backend/storage/framework/testing/*
+backend/storage/logs/*
+!backend/storage/**/.gitignore
+backend/bootstrap/cache/*.php
+backend/public/uploads/*
+!backend/public/uploads/.htaccess
+!backend/public/uploads/.gitkeep
+backend/.phpunit.result.cache
+backend/.phpunit.cache/
+# tooling
+tests/e2e/node_modules/
+tests/e2e/test-results/
+tests/e2e/playwright-report/
+frontend/coverage/
+.idea/
+.vscode/
+.DS_Store
+*.tsbuildinfo

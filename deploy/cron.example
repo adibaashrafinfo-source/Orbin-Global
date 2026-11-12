@@ -1,0 +1,4 @@
+# Orbin POS — ONE cron entry, every minute (DEPLOY_CPANEL.md §9).
+# Use the PHP binary shown by your host for the PHP 8.2+ selected for the subdomain, for example
+#   /opt/cpanel/ea-php82/root/usr/bin/php   or   /usr/local/bin/php
+* * * * * /usr/local/bin/php /home/<cpanel_user>/orbin-pos/artisan schedule:run >> /dev/null 2>&1
