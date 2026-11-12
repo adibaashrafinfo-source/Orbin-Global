@@ -1,0 +1,179 @@
+{
+  "app": { "name": "Orbin POS", "company": "Orbin Global", "tagline": "Trust. Growth. Excellence." },
+  "common": {
+    "save": "Save", "saving": "Saving…", "saved": "Saved", "cancel": "Cancel", "close": "Close", "confirm": "Confirm",
+    "delete": "Delete", "edit": "Edit", "add": "Add", "create": "Create", "search": "Search", "filter": "Filter",
+    "actions": "Actions", "yes": "Yes", "no": "No", "active": "Active", "inactive": "Inactive", "status": "Status",
+    "name": "Name", "code": "Code", "email": "Email", "phone": "Phone", "role": "Role", "branch": "Branch",
+    "loading": "Loading…", "retry": "Retry", "back": "Back", "next": "Next", "previous": "Previous",
+    "page": "Page {{page}} of {{pages}}", "rowsPerPage": "Rows per page", "noResults": "No results",
+    "required": "Required", "optional": "Optional", "unsavedChanges": "You have unsaved changes. Leave anyway?",
+    "copy": "Copy", "copied": "Copied", "download": "Download", "upload": "Upload", "remove": "Remove",
+    "typeToConfirm": "Type {{word}} to confirm", "showing": "Showing {{from}}–{{to}} of {{total}}",
+    "all": "All", "none": "None", "today": "Today", "language": "Language", "english": "English", "bangla": "বাংলা",
+    "comingSoon": "Available in a later phase", "version": "Version"
+  },
+  "errors": {
+    "unknown": "Something went wrong. Please try again.",
+    "network": "Cannot reach the server. Check your connection and retry.",
+    "forbidden": "You do not have permission to do this.",
+    "notFound": "Not found.",
+    "validation": "Please correct the highlighted fields.",
+    "requestId": "Error ID",
+    "boundaryTitle": "This screen hit a problem",
+    "boundaryBody": "Reload the page. If it keeps happening, copy the error ID and send it to your administrator.",
+    "reload": "Reload",
+    "AUTH_INVALID_CREDENTIALS": "Email or password is incorrect.",
+    "AUTH_INACTIVE": "This account is disabled. Contact your administrator.",
+    "AUTH_THROTTLED": "Too many attempts. Try again in a minute.",
+    "PIN_INVALID": "PIN is incorrect.",
+    "PIN_LOCKED": "PIN locked after too many attempts. Ask an administrator to reset it.",
+    "PIN_NOT_SET": "No PIN is set for this account.",
+    "VALIDATION": "Please correct the highlighted fields.",
+    "FORBIDDEN": "You do not have permission to do this.",
+    "NOT_FOUND": "Not found.",
+    "UPLOAD_INVALID": "The file is not a valid image (JPG, PNG or WebP up to 8 MB).",
+    "SYSTEM_ROW_PROTECTED": "System records cannot be deleted.",
+    "LAST_SUPER_ADMIN": "At least one active super admin is required.",
+    "SELF_DEACTIVATE": "You cannot deactivate your own account.",
+    "CONFLICT": "This record already exists."
+  },
+  "auth": {
+    "signIn": "Sign in", "signingIn": "Signing in…", "email": "Email address", "password": "Password",
+    "showPassword": "Show password", "hidePassword": "Hide password", "rememberMe": "Remember me",
+    "forgotPassword": "Forgot password?", "resetPassword": "Reset password", "sendResetLink": "Send reset link",
+    "resetLinkSent": "If that email exists, a reset link has been sent.", "newPassword": "New password",
+    "confirmPassword": "Confirm password", "passwordReset": "Password updated. Sign in with your new password.",
+    "backToLogin": "Back to sign in", "signOut": "Sign out", "welcomeBack": "Welcome back",
+    "loginSubtitle": "Sign in to your Orbin POS workspace.", "copyright": "© {{year}} Orbin Global",
+    "locked": "Screen locked", "lockedBody": "Enter your PIN to continue.", "unlock": "Unlock", "pin": "PIN",
+    "mustChangePassword": "Please set a new password before continuing.", "currentPassword": "Current password",
+    "changePassword": "Change password", "profile": "My profile", "profileSaved": "Profile updated."
+  },
+  "nav": {
+    "dashboard": "Dashboard", "pos": "POS Terminal", "sales": "Sales", "products": "Products", "inventory": "Inventory",
+    "purchases": "Purchases", "customers": "Customers", "ledger": "Ledger", "reports": "Reports", "settings": "Settings",
+    "admin": "Admin", "groups": { "sell": "Sell", "stock": "Stock", "money": "Money", "system": "System" },
+    "collapse": "Collapse sidebar", "expand": "Expand sidebar", "gallery": "Component gallery",
+    "globalSearch": "Search… ( / )", "notifications": "Notifications", "shiftClosed": "No open shift",
+    "shiftOpen": "Shift open", "userMenu": "Account menu", "skipToContent": "Skip to content"
+  },
+  "dashboard": {
+    "title": "Dashboard", "greeting": "Hello, {{name}}",
+    "subtitle": "Sales, stock and finance widgets arrive in Phase 5. Phase 0 provides the foundation.",
+    "kpi": { "todaySales": "Today's sales", "orders": "Orders", "grossProfit": "Gross profit", "collections": "Collections", "dues": "Dues" }
+  },
+  "settings": {
+    "title": "Settings",
+    "company": "Company profile", "branches": "Branches & warehouses", "users": "Users", "roles": "Roles & permissions",
+    "numbering": "Numbering", "pos": "POS & sales rules", "auditLog": "Audit log", "notifications": "Notifications",
+    "masterData": "Master data", "paymentAccounts": "Payment accounts", "invoice": "Invoice & print", "importExport": "Import / export",
+    "system": "System info"
+  },
+  "company": {
+    "title": "Company profile", "subtitle": "These details print on every invoice. Required: legal name, address line 1 and at least one phone.",
+    "legalName": "Legal name", "tradeName": "Trade name", "tagline": "Tagline", "logo": "Logo", "uploadLogo": "Upload logo",
+    "logoHelp": "Original file only. JPG, PNG or WebP, up to 8 MB. Never recolored or cropped.",
+    "signature": "Authorized signature image", "uploadSignature": "Upload signature",
+    "addressLine1": "Address line 1", "addressLine2": "Address line 2", "city": "City", "district": "District", "postcode": "Postcode",
+    "country": "Country", "phones": "Phone numbers", "phonesHelp": "One per line. Bangladesh format 01XXXXXXXXX.",
+    "whatsapp": "WhatsApp", "email": "Email", "website": "Website", "binNo": "BIN / VAT reg. no.", "tinNo": "TIN",
+    "tradeLicenseNo": "Trade license no.", "bank": "Bank details for invoices", "bankName": "Bank name", "bankBranch": "Bank branch",
+    "bankAccountName": "Account name", "bankAccountNo": "Account number", "invoiceTerms": "Default invoice terms",
+    "returnPolicyText": "Return policy text", "warrantyPolicyText": "Warranty policy text", "footerNote": "Footer note",
+    "sections": { "identity": "Identity", "address": "Address & contact", "registration": "Registration numbers", "bank": "Bank", "texts": "Invoice texts" },
+    "preview": "Invoice preview", "previewHelp": "Live preview of the invoice header and footer built from this form. The full PDF arrives in Phase 3.",
+    "previewBlocked": "Invoice generation is blocked until legal name, address line 1 and a phone number are filled in.",
+    "previewReady": "Invoice generation is enabled.", "saved": "Company profile saved.", "logoSaved": "Logo updated.",
+    "signatureSaved": "Signature updated.", "placeholderName": "Company legal name", "placeholderAddress": "Address line 1",
+    "placeholderPhone": "Phone", "invoiceWord": "INVOICE", "billTo": "Bill to", "customerPlaceholder": "Customer name", "sampleItem": "Side Mirror – sample line",
+    "grandTotal": "Grand total", "authorizedSignature": "Authorized signature", "customerSignature": "Customer's signature"
+  },
+  "branches": {
+    "title": "Branches & warehouses", "subtitle": "One branch at launch; the schema is multi-branch ready.",
+    "branches": "Branches", "warehouses": "Warehouses", "locations": "Storage locations", "addBranch": "Add branch", "editBranch": "Edit branch",
+    "addWarehouse": "Add warehouse", "editWarehouse": "Edit warehouse", "addLocation": "Add location", "editLocation": "Edit location",
+    "isDefault": "Default", "address": "Address", "kind": "Kind", "sellable": "POS may sell from it", "showroom": "Showroom", "godown": "Godown",
+    "rack": "Rack", "shelf": "Shelf", "bin": "Bin", "parent": "Parent location", "warehouse": "Warehouse", "saved": "Saved.",
+    "emptyLocations": "No storage locations yet. Add racks, shelves and bins so stock can be placed precisely."
+  },
+  "users": {
+    "title": "Users", "subtitle": "Each staff member has their own login and role.", "addUser": "Add user", "editUser": "Edit user",
+    "fullName": "Full name", "defaultBranch": "Default branch", "branches": "Allowed branches", "language": "Language",
+    "password": "Password", "passwordHelp": "Minimum 8 characters. The user is asked to change it on first login.",
+    "mustChangePassword": "Require password change at next login", "resetPassword": "Reset password", "setPin": "Set override PIN",
+    "pin": "Override PIN (4–6 digits)", "pinHelp": "Used to approve discounts and price overrides at the POS.", "pinSet": "PIN set",
+    "pinNotSet": "No PIN", "deactivate": "Deactivate", "activate": "Activate", "deactivateConfirm": "Deactivate {{name}}? They will be signed out and cannot log in.",
+    "lastLogin": "Last login", "never": "Never", "saved": "User saved.", "passwordResetDone": "Password reset.", "pinSaved": "PIN saved.",
+    "roles": { "super_admin": "Super admin", "manager": "Manager", "cashier": "Cashier", "storekeeper": "Storekeeper", "accountant": "Accountant" },
+    "empty": "No users match this filter."
+  },
+  "roles": {
+    "title": "Roles & permissions", "subtitle": "Tick what each role may do. Super admin always has every permission.",
+    "permission": "Permission", "saved": "Permissions saved for {{role}}.", "resetDefaults": "Reset to defaults",
+    "modules": { "settings": "Settings", "users": "Users", "roles": "Roles", "audit": "Audit", "periods": "Periods", "masterdata": "Master data",
+      "products": "Products", "pricing": "Pricing", "pos": "POS", "sales": "Sales", "quotations": "Quotations", "shifts": "Shifts",
+      "customers": "Customers", "suppliers": "Suppliers", "purchases": "Purchases", "inventory": "Inventory", "ledger": "Ledger",
+      "payments": "Payments", "expenses": "Expenses", "accounts": "Accounts", "fund_transfers": "Fund transfers", "reports": "Reports" }
+  },
+  "numbering": {
+    "title": "Numbering", "subtitle": "Document number formats. Numbers are gap-free and generated inside the document's transaction.",
+    "key": "Document", "prefix": "Prefix", "dateToken": "Date token", "padding": "Padding", "resetPolicy": "Reset", "nextValue": "Next value",
+    "example": "Example", "never": "Never", "yearly": "Yearly", "monthly": "Monthly", "saved": "Numbering saved.",
+    "keys": { "invoice": "Invoice", "quotation": "Quotation", "purchase_order": "Purchase order", "goods_receipt": "Goods receipt", "adjustment": "Stock adjustment",
+      "transfer": "Stock transfer", "count": "Stock count", "sale_return": "Sales return", "purchase_return": "Purchase return", "party_payment": "Party payment",
+      "expense": "Expense", "fund_transfer": "Fund transfer", "shift": "Shift", "warranty_claim": "Warranty claim", "customer": "Customer", "supplier": "Supplier" }
+  },
+  "appSettings": {
+    "title": "POS & sales rules", "subtitle": "Business rules used by the server. Changing them is audited.",
+    "saved": "Settings saved.",
+    "groups": { "sales": "Sales & discounts", "stock": "Stock", "session": "Session & security", "invoice": "Invoice & print", "alerts": "Alerts" },
+    "keys": {
+      "vat_mode": "VAT mode", "default_tax_rate_code": "Default tax rate code", "rounding_mode": "Invoice rounding",
+      "cashier_max_discount_percent": "Cashier max discount %", "allow_negative_stock": "Allow negative stock",
+      "require_customer_for_due": "Require named customer for due sales", "credit_limit_mode": "Credit limit mode",
+      "require_open_shift": "Require open shift to sell", "reserve_on_hold": "Reserve stock on held bills",
+      "default_return_window_days": "Default return window (days)", "driver_side": "Driver side", "week_start": "Week starts on",
+      "session_timeout_minutes": "Session timeout (minutes)", "idle_lock_minutes": "Idle lock after (minutes)",
+      "adjustment_approval_threshold_qty": "Adjustment approval threshold (qty)", "adjustment_approval_threshold_value": "Adjustment approval threshold (৳)",
+      "pin_attempt_limit": "PIN attempt limit", "period_lock_date": "Period lock date", "invoice_default_language": "Invoice language",
+      "show_bangla_labels": "Show Bangla labels on invoice", "invoice_paper": "Invoice paper", "receipt_width_mm": "Receipt width (mm)",
+      "numeral_system": "Numerals", "pos_auto_download_invoice": "Auto-download invoice after sale", "pos_auto_reset_seconds": "Auto-reset POS after (seconds)",
+      "require_verification_for_mfs": "MFS payments need verification", "duplicate_trx_days": "Duplicate TrxID window (days)",
+      "dead_stock_days": "Dead stock after (days)", "low_stock_notify": "Low stock notifications", "void_same_day_manager_only": "Managers may void same day only"
+    },
+    "options": { "exclusive": "Exclusive", "inclusive": "Inclusive", "none": "None", "nearest_1": "Nearest ৳1", "warn": "Warn", "block": "Block",
+      "left": "Left", "right": "Right", "saturday": "Saturday", "sunday": "Sunday", "monday": "Monday", "en": "English", "bn": "Bangla",
+      "a4": "A4", "latn": "Latin (0-9)", "beng": "Bangla (০-৯)" }
+  },
+  "audit": {
+    "title": "Audit log", "subtitle": "Who changed what, and when. Rows are append-only.", "occurredAt": "When", "actor": "Who", "action": "Action",
+    "entity": "Record", "before": "Before", "after": "After", "reason": "Reason", "ip": "IP", "export": "Export CSV", "details": "Details",
+    "empty": "No audit entries for this filter.", "system": "System", "dateFrom": "From", "dateTo": "To", "allActions": "All actions"
+  },
+  "notifications": {
+    "title": "Notifications", "empty": "You're all caught up.", "markAllRead": "Mark all as read", "markRead": "Mark as read", "unread": "{{count}} unread"
+  },
+  "health": {
+    "title": "Hosting health", "subtitle": "Checks of the cPanel environment. Everything should be green before go-live.",
+    "refresh": "Refresh", "ok": "OK", "warn": "Warning", "fail": "Failed", "lastCron": "Last cron run", "cronNever": "Never ran",
+    "cronStale": "Scheduler has not run in the last 2 minutes. Check the cron entry.", "appVersion": "App version", "php": "PHP",
+    "extensions": "PHP extensions", "limits": "PHP limits", "database": "Database", "writable": "Writable folders", "envSafety": ".env protection",
+    "https": "HTTPS", "queue": "Queue", "disk": "Disk free", "backup": "Last backup", "maintenance": "Maintenance mode",
+    "actions": "Actions", "clearCaches": "Clear & rebuild caches", "clearCachesConfirm": "Clear and rebuild configuration, route and view caches?",
+    "maintenanceOn": "Turn maintenance on", "maintenanceOff": "Turn maintenance off", "maintenanceOnConfirm": "Put the application in maintenance mode? Staff will see a maintenance page until you turn it off.",
+    "maintenanceOffConfirm": "Bring the application back online?", "runMigrations": "Run pending migrations", "runMigrationsConfirm": "Run pending database migrations now? Take a backup first.",
+    "pendingMigrations": "Pending migrations", "none": "None", "done": "Done.", "checks": "Checks"
+  },
+  "gallery": {
+    "title": "Component gallery", "subtitle": "Every base component in every state, built only from design tokens.",
+    "buttons": "Buttons", "inputs": "Inputs", "badges": "Badges & status chips", "cards": "Cards", "tables": "Tables", "overlays": "Drawers, modals, toasts",
+    "skeletons": "Skeletons & states", "default": "Default", "hover": "Hover", "focus": "Focus", "pressed": "Pressed", "loading": "Loading", "disabled": "Disabled",
+    "openDrawer": "Open drawer", "openModal": "Open modal", "showToast": "Show toast", "drawerTitle": "Right drawer", "modalTitle": "Modal dialog",
+    "toastTitle": "Saved", "toastBody": "Your changes were saved.", "inStock": "In stock", "lowStock": "Low", "outOfStock": "Out",
+    "emptyTitle": "Nothing here yet", "emptyBody": "This is a designed empty state with an action.", "errorTitle": "Could not load",
+    "errorBody": "This is a designed error state with a retry.", "kpi": "KPI card"
+  },
+  "empty": { "title": "Nothing here yet", "body": "When records exist they will appear here." },
+  "a11y": { "closeDialog": "Close dialog", "loading": "Loading content", "requiredField": "required", "sortBy": "Sort by {{column}}" }
+}

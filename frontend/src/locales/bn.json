@@ -1,0 +1,179 @@
+{
+  "app": { "name": "অরবিন পিওএস", "company": "অরবিন গ্লোবাল", "tagline": "Trust. Growth. Excellence." },
+  "common": {
+    "save": "সংরক্ষণ", "saving": "সংরক্ষণ হচ্ছে…", "saved": "সংরক্ষিত", "cancel": "বাতিল", "close": "বন্ধ", "confirm": "নিশ্চিত করুন",
+    "delete": "মুছুন", "edit": "সম্পাদনা", "add": "যোগ করুন", "create": "তৈরি করুন", "search": "খুঁজুন", "filter": "ফিল্টার",
+    "actions": "কার্যক্রম", "yes": "হ্যাঁ", "no": "না", "active": "সক্রিয়", "inactive": "নিষ্ক্রিয়", "status": "অবস্থা",
+    "name": "নাম", "code": "কোড", "email": "ইমেইল", "phone": "ফোন", "role": "ভূমিকা", "branch": "শাখা",
+    "loading": "লোড হচ্ছে…", "retry": "আবার চেষ্টা", "back": "পেছনে", "next": "পরবর্তী", "previous": "পূর্ববর্তী",
+    "page": "পৃষ্ঠা {{page}} / {{pages}}", "rowsPerPage": "প্রতি পৃষ্ঠায় সারি", "noResults": "কোনো ফলাফল নেই",
+    "required": "আবশ্যক", "optional": "ঐচ্ছিক", "unsavedChanges": "অসংরক্ষিত পরিবর্তন আছে। তবুও চলে যাবেন?",
+    "copy": "কপি", "copied": "কপি হয়েছে", "download": "ডাউনলোড", "upload": "আপলোড", "remove": "সরান",
+    "typeToConfirm": "নিশ্চিত করতে {{word}} লিখুন", "showing": "{{total}} এর মধ্যে {{from}}–{{to}} দেখানো হচ্ছে",
+    "all": "সব", "none": "কিছু না", "today": "আজ", "language": "ভাষা", "english": "English", "bangla": "বাংলা",
+    "comingSoon": "পরবর্তী ধাপে আসবে", "version": "সংস্করণ"
+  },
+  "errors": {
+    "unknown": "কিছু একটা ভুল হয়েছে। আবার চেষ্টা করুন।",
+    "network": "সার্ভারে পৌঁছানো যাচ্ছে না। সংযোগ পরীক্ষা করে আবার চেষ্টা করুন।",
+    "forbidden": "এই কাজের অনুমতি আপনার নেই।",
+    "notFound": "পাওয়া যায়নি।",
+    "validation": "চিহ্নিত ঘরগুলো ঠিক করুন।",
+    "requestId": "ত্রুটি আইডি",
+    "boundaryTitle": "এই স্ক্রিনে সমস্যা হয়েছে",
+    "boundaryBody": "পৃষ্ঠাটি রিলোড করুন। বারবার হলে ত্রুটি আইডি কপি করে অ্যাডমিনকে পাঠান।",
+    "reload": "রিলোড",
+    "AUTH_INVALID_CREDENTIALS": "ইমেইল বা পাসওয়ার্ড ভুল।",
+    "AUTH_INACTIVE": "এই অ্যাকাউন্ট নিষ্ক্রিয়। অ্যাডমিনের সাথে যোগাযোগ করুন।",
+    "AUTH_THROTTLED": "অনেকবার চেষ্টা হয়েছে। এক মিনিট পরে আবার চেষ্টা করুন।",
+    "PIN_INVALID": "পিন ভুল।",
+    "PIN_LOCKED": "বেশি ভুল চেষ্টার কারণে পিন লক হয়েছে। অ্যাডমিনকে রিসেট করতে বলুন।",
+    "PIN_NOT_SET": "এই অ্যাকাউন্টে কোনো পিন সেট নেই।",
+    "VALIDATION": "চিহ্নিত ঘরগুলো ঠিক করুন।",
+    "FORBIDDEN": "এই কাজের অনুমতি আপনার নেই।",
+    "NOT_FOUND": "পাওয়া যায়নি।",
+    "UPLOAD_INVALID": "ফাইলটি বৈধ ছবি নয় (JPG, PNG বা WebP, সর্বোচ্চ ৮ MB)।",
+    "SYSTEM_ROW_PROTECTED": "সিস্টেম রেকর্ড মুছা যায় না।",
+    "LAST_SUPER_ADMIN": "অন্তত একজন সক্রিয় সুপার অ্যাডমিন থাকতে হবে।",
+    "SELF_DEACTIVATE": "নিজের অ্যাকাউন্ট নিষ্ক্রিয় করা যায় না।",
+    "CONFLICT": "এই রেকর্ড আগে থেকেই আছে।"
+  },
+  "auth": {
+    "signIn": "সাইন ইন", "signingIn": "সাইন ইন হচ্ছে…", "email": "ইমেইল ঠিকানা", "password": "পাসওয়ার্ড",
+    "showPassword": "পাসওয়ার্ড দেখান", "hidePassword": "পাসওয়ার্ড লুকান", "rememberMe": "মনে রাখুন",
+    "forgotPassword": "পাসওয়ার্ড ভুলে গেছেন?", "resetPassword": "পাসওয়ার্ড রিসেট", "sendResetLink": "রিসেট লিংক পাঠান",
+    "resetLinkSent": "ইমেইলটি থাকলে একটি রিসেট লিংক পাঠানো হয়েছে।", "newPassword": "নতুন পাসওয়ার্ড",
+    "confirmPassword": "পাসওয়ার্ড নিশ্চিত করুন", "passwordReset": "পাসওয়ার্ড পরিবর্তন হয়েছে। নতুন পাসওয়ার্ড দিয়ে সাইন ইন করুন।",
+    "backToLogin": "সাইন ইনে ফিরুন", "signOut": "সাইন আউট", "welcomeBack": "স্বাগতম",
+    "loginSubtitle": "আপনার অরবিন পিওএস ওয়ার্কস্পেসে সাইন ইন করুন।", "copyright": "© {{year}} অরবিন গ্লোবাল",
+    "locked": "স্ক্রিন লক", "lockedBody": "চালিয়ে যেতে পিন দিন।", "unlock": "আনলক", "pin": "পিন",
+    "mustChangePassword": "চালিয়ে যাওয়ার আগে নতুন পাসওয়ার্ড সেট করুন।", "currentPassword": "বর্তমান পাসওয়ার্ড",
+    "changePassword": "পাসওয়ার্ড পরিবর্তন", "profile": "আমার প্রোফাইল", "profileSaved": "প্রোফাইল হালনাগাদ হয়েছে।"
+  },
+  "nav": {
+    "dashboard": "ড্যাশবোর্ড", "pos": "পিওএস টার্মিনাল", "sales": "বিক্রয়", "products": "পণ্য", "inventory": "ইনভেন্টরি",
+    "purchases": "ক্রয়", "customers": "গ্রাহক", "ledger": "লেজার", "reports": "রিপোর্ট", "settings": "সেটিংস",
+    "admin": "অ্যাডমিন", "groups": { "sell": "বিক্রি", "stock": "স্টক", "money": "অর্থ", "system": "সিস্টেম" },
+    "collapse": "সাইডবার ছোট করুন", "expand": "সাইডবার বড় করুন", "gallery": "কম্পোনেন্ট গ্যালারি",
+    "globalSearch": "খুঁজুন… ( / )", "notifications": "বিজ্ঞপ্তি", "shiftClosed": "কোনো শিফট খোলা নেই",
+    "shiftOpen": "শিফট খোলা", "userMenu": "অ্যাকাউন্ট মেনু", "skipToContent": "মূল বিষয়বস্তুতে যান"
+  },
+  "dashboard": {
+    "title": "ড্যাশবোর্ড", "greeting": "হ্যালো, {{name}}",
+    "subtitle": "বিক্রয়, স্টক ও অর্থের উইজেট ধাপ ৫-এ আসবে। ধাপ ০ ভিত্তি তৈরি করে।",
+    "kpi": { "todaySales": "আজকের বিক্রয়", "orders": "অর্ডার", "grossProfit": "মোট মুনাফা", "collections": "আদায়", "dues": "বকেয়া" }
+  },
+  "settings": {
+    "title": "সেটিংস",
+    "company": "কোম্পানি প্রোফাইল", "branches": "শাখা ও গুদাম", "users": "ব্যবহারকারী", "roles": "ভূমিকা ও অনুমতি",
+    "numbering": "নম্বরিং", "pos": "পিওএস ও বিক্রয় নিয়ম", "auditLog": "অডিট লগ", "notifications": "বিজ্ঞপ্তি",
+    "masterData": "মাস্টার ডেটা", "paymentAccounts": "পেমেন্ট অ্যাকাউন্ট", "invoice": "ইনভয়েস ও প্রিন্ট", "importExport": "ইমপোর্ট / এক্সপোর্ট",
+    "system": "সিস্টেম তথ্য"
+  },
+  "company": {
+    "title": "কোম্পানি প্রোফাইল", "subtitle": "এই তথ্য প্রতিটি ইনভয়েসে ছাপা হয়। আবশ্যক: আইনি নাম, ঠিকানা লাইন ১ ও অন্তত একটি ফোন।",
+    "legalName": "আইনি নাম", "tradeName": "ব্যবসায়িক নাম", "tagline": "ট্যাগলাইন", "logo": "লোগো", "uploadLogo": "লোগো আপলোড",
+    "logoHelp": "শুধু আসল ফাইল। JPG, PNG বা WebP, সর্বোচ্চ ৮ MB। কখনো রং বদল বা ক্রপ নয়।",
+    "signature": "অনুমোদিত স্বাক্ষরের ছবি", "uploadSignature": "স্বাক্ষর আপলোড",
+    "addressLine1": "ঠিকানা লাইন ১", "addressLine2": "ঠিকানা লাইন ২", "city": "শহর", "district": "জেলা", "postcode": "পোস্টকোড",
+    "country": "দেশ", "phones": "ফোন নম্বর", "phonesHelp": "প্রতি লাইনে একটি। বাংলাদেশ ফরম্যাট 01XXXXXXXXX।",
+    "whatsapp": "হোয়াটসঅ্যাপ", "email": "ইমেইল", "website": "ওয়েবসাইট", "binNo": "BIN / ভ্যাট রেজি. নং", "tinNo": "TIN",
+    "tradeLicenseNo": "ট্রেড লাইসেন্স নং", "bank": "ইনভয়েসের ব্যাংক তথ্য", "bankName": "ব্যাংকের নাম", "bankBranch": "ব্যাংক শাখা",
+    "bankAccountName": "অ্যাকাউন্টের নাম", "bankAccountNo": "অ্যাকাউন্ট নম্বর", "invoiceTerms": "ইনভয়েসের ডিফল্ট শর্তাবলি",
+    "returnPolicyText": "ফেরত নীতির লেখা", "warrantyPolicyText": "ওয়ারেন্টি নীতির লেখা", "footerNote": "ফুটার নোট",
+    "sections": { "identity": "পরিচয়", "address": "ঠিকানা ও যোগাযোগ", "registration": "নিবন্ধন নম্বর", "bank": "ব্যাংক", "texts": "ইনভয়েসের লেখা" },
+    "preview": "ইনভয়েস প্রিভিউ", "previewHelp": "এই ফর্ম থেকে তৈরি ইনভয়েসের হেডার ও ফুটারের লাইভ প্রিভিউ। পূর্ণ PDF ধাপ ৩-এ আসবে।",
+    "previewBlocked": "আইনি নাম, ঠিকানা লাইন ১ ও একটি ফোন নম্বর না দেওয়া পর্যন্ত ইনভয়েস তৈরি বন্ধ থাকবে।",
+    "previewReady": "ইনভয়েস তৈরি চালু আছে।", "saved": "কোম্পানি প্রোফাইল সংরক্ষিত।", "logoSaved": "লোগো হালনাগাদ হয়েছে।",
+    "signatureSaved": "স্বাক্ষর হালনাগাদ হয়েছে।", "placeholderName": "কোম্পানির আইনি নাম", "placeholderAddress": "ঠিকানা লাইন ১",
+    "placeholderPhone": "ফোন", "invoiceWord": "INVOICE", "billTo": "বিল প্রাপক", "customerPlaceholder": "গ্রাহকের নাম", "sampleItem": "সাইড মিরর – নমুনা লাইন",
+    "grandTotal": "সর্বমোট", "authorizedSignature": "অনুমোদিত স্বাক্ষর", "customerSignature": "গ্রাহকের স্বাক্ষর"
+  },
+  "branches": {
+    "title": "শাখা ও গুদাম", "subtitle": "শুরুতে একটি শাখা; স্কিমা বহু-শাখার জন্য প্রস্তুত।",
+    "branches": "শাখা", "warehouses": "গুদাম", "locations": "সংরক্ষণ স্থান", "addBranch": "শাখা যোগ", "editBranch": "শাখা সম্পাদনা",
+    "addWarehouse": "গুদাম যোগ", "editWarehouse": "গুদাম সম্পাদনা", "addLocation": "স্থান যোগ", "editLocation": "স্থান সম্পাদনা",
+    "isDefault": "ডিফল্ট", "address": "ঠিকানা", "kind": "ধরন", "sellable": "পিওএস এখান থেকে বিক্রি করতে পারে", "showroom": "শোরুম", "godown": "গোডাউন",
+    "rack": "র‍্যাক", "shelf": "শেলফ", "bin": "বিন", "parent": "মূল স্থান", "warehouse": "গুদাম", "saved": "সংরক্ষিত।",
+    "emptyLocations": "এখনো কোনো সংরক্ষণ স্থান নেই। র‍্যাক, শেলফ ও বিন যোগ করুন যাতে স্টক সঠিক জায়গায় রাখা যায়।"
+  },
+  "users": {
+    "title": "ব্যবহারকারী", "subtitle": "প্রত্যেক কর্মীর নিজস্ব লগইন ও ভূমিকা থাকে।", "addUser": "ব্যবহারকারী যোগ", "editUser": "ব্যবহারকারী সম্পাদনা",
+    "fullName": "পুরো নাম", "defaultBranch": "ডিফল্ট শাখা", "branches": "অনুমোদিত শাখা", "language": "ভাষা",
+    "password": "পাসওয়ার্ড", "passwordHelp": "কমপক্ষে ৮ অক্ষর। প্রথম লগইনে বদলাতে বলা হবে।",
+    "mustChangePassword": "পরবর্তী লগইনে পাসওয়ার্ড বদল বাধ্যতামূলক", "resetPassword": "পাসওয়ার্ড রিসেট", "setPin": "ওভাররাইড পিন সেট",
+    "pin": "ওভাররাইড পিন (৪–৬ অঙ্ক)", "pinHelp": "পিওএসে ডিসকাউন্ট ও মূল্য ওভাররাইড অনুমোদনে ব্যবহৃত হয়।", "pinSet": "পিন সেট আছে",
+    "pinNotSet": "পিন নেই", "deactivate": "নিষ্ক্রিয় করুন", "activate": "সক্রিয় করুন", "deactivateConfirm": "{{name}} কে নিষ্ক্রিয় করবেন? তিনি সাইন আউট হবেন এবং লগইন করতে পারবেন না।",
+    "lastLogin": "শেষ লগইন", "never": "কখনো না", "saved": "ব্যবহারকারী সংরক্ষিত।", "passwordResetDone": "পাসওয়ার্ড রিসেট হয়েছে।", "pinSaved": "পিন সংরক্ষিত।",
+    "roles": { "super_admin": "সুপার অ্যাডমিন", "manager": "ম্যানেজার", "cashier": "ক্যাশিয়ার", "storekeeper": "স্টোরকিপার", "accountant": "হিসাবরক্ষক" },
+    "empty": "এই ফিল্টারে কোনো ব্যবহারকারী নেই।"
+  },
+  "roles": {
+    "title": "ভূমিকা ও অনুমতি", "subtitle": "প্রতিটি ভূমিকা কী করতে পারবে টিক দিন। সুপার অ্যাডমিনের সব অনুমতি সবসময় থাকে।",
+    "permission": "অনুমতি", "saved": "{{role}} এর অনুমতি সংরক্ষিত।", "resetDefaults": "ডিফল্টে ফিরিয়ে নিন",
+    "modules": { "settings": "সেটিংস", "users": "ব্যবহারকারী", "roles": "ভূমিকা", "audit": "অডিট", "periods": "পিরিয়ড", "masterdata": "মাস্টার ডেটা",
+      "products": "পণ্য", "pricing": "মূল্য", "pos": "পিওএস", "sales": "বিক্রয়", "quotations": "কোটেশন", "shifts": "শিফট",
+      "customers": "গ্রাহক", "suppliers": "সরবরাহকারী", "purchases": "ক্রয়", "inventory": "ইনভেন্টরি", "ledger": "লেজার",
+      "payments": "পেমেন্ট", "expenses": "খরচ", "accounts": "অ্যাকাউন্ট", "fund_transfers": "ফান্ড ট্রান্সফার", "reports": "রিপোর্ট" }
+  },
+  "numbering": {
+    "title": "নম্বরিং", "subtitle": "ডকুমেন্ট নম্বরের ফরম্যাট। নম্বর ফাঁকবিহীন এবং ডকুমেন্টের লেনদেনের ভেতরেই তৈরি হয়।",
+    "key": "ডকুমেন্ট", "prefix": "প্রিফিক্স", "dateToken": "তারিখ টোকেন", "padding": "প্যাডিং", "resetPolicy": "রিসেট", "nextValue": "পরবর্তী মান",
+    "example": "উদাহরণ", "never": "কখনো না", "yearly": "বার্ষিক", "monthly": "মাসিক", "saved": "নম্বরিং সংরক্ষিত।",
+    "keys": { "invoice": "ইনভয়েস", "quotation": "কোটেশন", "purchase_order": "ক্রয় আদেশ", "goods_receipt": "মাল গ্রহণ", "adjustment": "স্টক সমন্বয়",
+      "transfer": "স্টক স্থানান্তর", "count": "স্টক গণনা", "sale_return": "বিক্রয় ফেরত", "purchase_return": "ক্রয় ফেরত", "party_payment": "পার্টি পেমেন্ট",
+      "expense": "খরচ", "fund_transfer": "ফান্ড ট্রান্সফার", "shift": "শিফট", "warranty_claim": "ওয়ারেন্টি দাবি", "customer": "গ্রাহক", "supplier": "সরবরাহকারী" }
+  },
+  "appSettings": {
+    "title": "পিওএস ও বিক্রয় নিয়ম", "subtitle": "সার্ভার যে ব্যবসায়িক নিয়ম ব্যবহার করে। পরিবর্তন অডিট হয়।",
+    "saved": "সেটিংস সংরক্ষিত।",
+    "groups": { "sales": "বিক্রয় ও ডিসকাউন্ট", "stock": "স্টক", "session": "সেশন ও নিরাপত্তা", "invoice": "ইনভয়েস ও প্রিন্ট", "alerts": "সতর্কতা" },
+    "keys": {
+      "vat_mode": "ভ্যাট মোড", "default_tax_rate_code": "ডিফল্ট কর হার কোড", "rounding_mode": "ইনভয়েস রাউন্ডিং",
+      "cashier_max_discount_percent": "ক্যাশিয়ারের সর্বোচ্চ ডিসকাউন্ট %", "allow_negative_stock": "ঋণাত্মক স্টক অনুমোদন",
+      "require_customer_for_due": "বকেয়া বিক্রয়ে নামযুক্ত গ্রাহক আবশ্যক", "credit_limit_mode": "ক্রেডিট সীমা মোড",
+      "require_open_shift": "বিক্রির জন্য খোলা শিফট আবশ্যক", "reserve_on_hold": "হোল্ড বিলে স্টক সংরক্ষণ",
+      "default_return_window_days": "ডিফল্ট ফেরত সময়সীমা (দিন)", "driver_side": "চালকের দিক", "week_start": "সপ্তাহ শুরু",
+      "session_timeout_minutes": "সেশন টাইমআউট (মিনিট)", "idle_lock_minutes": "নিষ্ক্রিয় লক (মিনিট)",
+      "adjustment_approval_threshold_qty": "সমন্বয় অনুমোদনের সীমা (পরিমাণ)", "adjustment_approval_threshold_value": "সমন্বয় অনুমোদনের সীমা (৳)",
+      "pin_attempt_limit": "পিন চেষ্টার সীমা", "period_lock_date": "পিরিয়ড লক তারিখ", "invoice_default_language": "ইনভয়েসের ভাষা",
+      "show_bangla_labels": "ইনভয়েসে বাংলা লেবেল", "invoice_paper": "ইনভয়েস কাগজ", "receipt_width_mm": "রসিদের প্রস্থ (মিমি)",
+      "numeral_system": "সংখ্যা", "pos_auto_download_invoice": "বিক্রয়ের পর ইনভয়েস স্বয়ংক্রিয় ডাউনলোড", "pos_auto_reset_seconds": "পিওএস স্বয়ংক্রিয় রিসেট (সেকেন্ড)",
+      "require_verification_for_mfs": "MFS পেমেন্টে যাচাই আবশ্যক", "duplicate_trx_days": "ডুপ্লিকেট TrxID সময়সীমা (দিন)",
+      "dead_stock_days": "অচল স্টক (দিন পর)", "low_stock_notify": "কম স্টকের বিজ্ঞপ্তি", "void_same_day_manager_only": "ম্যানেজার শুধু একই দিনে বাতিল করতে পারেন"
+    },
+    "options": { "exclusive": "এক্সক্লুসিভ", "inclusive": "ইনক্লুসিভ", "none": "কিছু না", "nearest_1": "নিকটতম ৳১", "warn": "সতর্ক", "block": "বন্ধ",
+      "left": "বাম", "right": "ডান", "saturday": "শনিবার", "sunday": "রবিবার", "monday": "সোমবার", "en": "ইংরেজি", "bn": "বাংলা",
+      "a4": "A4", "latn": "ল্যাটিন (0-9)", "beng": "বাংলা (০-৯)" }
+  },
+  "audit": {
+    "title": "অডিট লগ", "subtitle": "কে, কী, কখন বদলেছে। সারি শুধু যোগ হয়, মুছা যায় না।", "occurredAt": "কখন", "actor": "কে", "action": "কাজ",
+    "entity": "রেকর্ড", "before": "আগে", "after": "পরে", "reason": "কারণ", "ip": "IP", "export": "CSV এক্সপোর্ট", "details": "বিস্তারিত",
+    "empty": "এই ফিল্টারে কোনো অডিট এন্ট্রি নেই।", "system": "সিস্টেম", "dateFrom": "থেকে", "dateTo": "পর্যন্ত", "allActions": "সব কাজ"
+  },
+  "notifications": {
+    "title": "বিজ্ঞপ্তি", "empty": "সব দেখা হয়ে গেছে।", "markAllRead": "সব পঠিত চিহ্নিত করুন", "markRead": "পঠিত চিহ্নিত করুন", "unread": "{{count}} অপঠিত"
+  },
+  "health": {
+    "title": "হোস্টিং স্বাস্থ্য", "subtitle": "cPanel পরিবেশের পরীক্ষা। লাইভে যাওয়ার আগে সব সবুজ থাকা উচিত।",
+    "refresh": "রিফ্রেশ", "ok": "ঠিক আছে", "warn": "সতর্কতা", "fail": "ব্যর্থ", "lastCron": "শেষ ক্রন রান", "cronNever": "কখনো চলেনি",
+    "cronStale": "গত ২ মিনিটে শিডিউলার চলেনি। ক্রন এন্ট্রি পরীক্ষা করুন।", "appVersion": "অ্যাপ সংস্করণ", "php": "PHP",
+    "extensions": "PHP এক্সটেনশন", "limits": "PHP সীমা", "database": "ডেটাবেজ", "writable": "লেখার যোগ্য ফোল্ডার", "envSafety": ".env সুরক্ষা",
+    "https": "HTTPS", "queue": "কিউ", "disk": "ডিস্ক খালি", "backup": "শেষ ব্যাকআপ", "maintenance": "রক্ষণাবেক্ষণ মোড",
+    "actions": "কার্যক্রম", "clearCaches": "ক্যাশ মুছে পুনর্নির্মাণ", "clearCachesConfirm": "কনফিগ, রুট ও ভিউ ক্যাশ মুছে পুনর্নির্মাণ করবেন?",
+    "maintenanceOn": "রক্ষণাবেক্ষণ চালু", "maintenanceOff": "রক্ষণাবেক্ষণ বন্ধ", "maintenanceOnConfirm": "অ্যাপ রক্ষণাবেক্ষণ মোডে নেবেন? বন্ধ না করা পর্যন্ত কর্মীরা রক্ষণাবেক্ষণ পাতা দেখবেন।",
+    "maintenanceOffConfirm": "অ্যাপ আবার চালু করবেন?", "runMigrations": "বাকি মাইগ্রেশন চালান", "runMigrationsConfirm": "বাকি ডেটাবেজ মাইগ্রেশন এখন চালাবেন? আগে ব্যাকআপ নিন।",
+    "pendingMigrations": "বাকি মাইগ্রেশন", "none": "নেই", "done": "সম্পন্ন।", "checks": "পরীক্ষা"
+  },
+  "gallery": {
+    "title": "কম্পোনেন্ট গ্যালারি", "subtitle": "প্রতিটি বেস কম্পোনেন্ট প্রতিটি অবস্থায়, শুধু ডিজাইন টোকেন দিয়ে তৈরি।",
+    "buttons": "বাটন", "inputs": "ইনপুট", "badges": "ব্যাজ ও স্ট্যাটাস চিপ", "cards": "কার্ড", "tables": "টেবিল", "overlays": "ড্রয়ার, মোডাল, টোস্ট",
+    "skeletons": "স্কেলেটন ও অবস্থা", "default": "ডিফল্ট", "hover": "হোভার", "focus": "ফোকাস", "pressed": "চাপা", "loading": "লোডিং", "disabled": "নিষ্ক্রিয়",
+    "openDrawer": "ড্রয়ার খুলুন", "openModal": "মোডাল খুলুন", "showToast": "টোস্ট দেখান", "drawerTitle": "ডান ড্রয়ার", "modalTitle": "মোডাল ডায়ালগ",
+    "toastTitle": "সংরক্ষিত", "toastBody": "আপনার পরিবর্তন সংরক্ষিত হয়েছে।", "inStock": "স্টকে আছে", "lowStock": "কম", "outOfStock": "শেষ",
+    "emptyTitle": "এখনো কিছু নেই", "emptyBody": "এটি একটি ডিজাইন করা খালি অবস্থা, একটি কাজসহ।", "errorTitle": "লোড করা যায়নি",
+    "errorBody": "এটি একটি ডিজাইন করা ত্রুটি অবস্থা, পুনরায় চেষ্টাসহ।", "kpi": "KPI কার্ড"
+  },
+  "empty": { "title": "এখনো কিছু নেই", "body": "রেকর্ড থাকলে এখানে দেখা যাবে।" },
+  "a11y": { "closeDialog": "ডায়ালগ বন্ধ", "loading": "বিষয়বস্তু লোড হচ্ছে", "requiredField": "আবশ্যক", "sortBy": "{{column}} অনুযায়ী সাজান" }
+}
