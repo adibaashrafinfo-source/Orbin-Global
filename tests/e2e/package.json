@@ -1,0 +1,14 @@
+{
+  "name": "orbin-pos-e2e",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "playwright test --trace off",
+    "capture": "CAPTURE=1 playwright test screenshots.spec.ts --trace off"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.65.0",
+    "@types/node": "24.19.2",
+    "typescript": "5.9.3"
+  }
+}
