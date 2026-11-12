@@ -143,8 +143,21 @@ class MasterDataController extends Controller
         if ($resource === 'vehicle-models') {
             $this->assertModelUnique($data, $existing);
         }
+        if ($existing === null && ! array_key_exists('sort_order', $data) && (MasterData::get($resource)['reorder'] ?? false)) {
+            $data['sort_order'] = $this->nextSortOrder($resource, $data);
+        }
 
         return $data;
+    }
+
+    /** New rows of an orderable list go to the end of their siblings, not to the top. */
+    private function nextSortOrder(string $resource, array $data): int
+    {
+        $query = $resource === 'categories'
+            ? DB::table('categories')->where('parent_id', $data['parent_id'] ?? null)
+            : DB::table('vehicle_makes');
+
+        return ((int) $query->whereNull('deleted_at')->max('sort_order')) + 10;
     }
 
     /** @param array<string, mixed> $data */

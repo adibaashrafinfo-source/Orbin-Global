@@ -16,7 +16,7 @@ const ITEMS: SubItem[] = [
   { key: 'branches', to: '/settings/branches', permissions: ['settings.system.manage'], available: true },
   { key: 'users', to: '/settings/users', permissions: ['users.manage'], available: true },
   { key: 'roles', to: '/settings/roles', permissions: ['roles.manage'], available: true },
-  { key: 'masterData', to: '/settings/master/vehicle-makes', permissions: ['masterdata.manage'], available: false },
+  { key: 'masterData', to: '/settings/master/vehicle-makes', permissions: ['masterdata.view', 'masterdata.manage'], available: true },
   { key: 'paymentAccounts', to: '/settings/payment-accounts', permissions: ['accounts.manage'], available: false },
   { key: 'numbering', to: '/settings/numbering', permissions: ['settings.system.manage'], available: true },
   { key: 'pos', to: '/settings/pos', permissions: ['settings.system.manage'], available: true },

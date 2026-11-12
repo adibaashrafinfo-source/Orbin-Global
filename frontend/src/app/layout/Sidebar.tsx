@@ -5,7 +5,7 @@ import { NavLink } from 'react-router-dom';
 import { LogoEmblem, LogoPlate, Tooltip } from '@/design/components';
 import { cn } from '@/lib/cn';
 import { useSession } from '@/features/auth/useSession';
-import { CURRENT_PHASE, NAV_GROUPS } from '../navigation';
+import { isPhaseAvailable, NAV_GROUPS } from '../navigation';
 
 interface SidebarProps {
   collapsed: boolean;
@@ -39,7 +39,7 @@ export function Sidebar({ collapsed, onToggle, logoUrl }: SidebarProps) {
               <ul className="flex flex-col gap-0.5">
                 {items.map((item) => {
                   const Icon = item.icon;
-                  const available = item.phase === CURRENT_PHASE;
+                  const available = isPhaseAvailable(item.phase);
                   const label = t(`nav.${item.key}`);
                   const body = (
                     <>

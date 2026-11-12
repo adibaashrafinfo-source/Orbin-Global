@@ -47,4 +47,11 @@ export const NAV_GROUPS: NavGroup[] = [
   },
 ];
 
-export const CURRENT_PHASE = 'P0';
+export const CURRENT_PHASE: NavItem['phase'] = 'P1';
+
+const phaseNumber = (p: NavItem['phase']) => Number(p.slice(1));
+
+/** A screen is live once its phase has shipped; later phases stay listed but disabled. */
+export function isPhaseAvailable(phase: NavItem['phase']): boolean {
+  return phaseNumber(phase) <= phaseNumber(CURRENT_PHASE);
+}

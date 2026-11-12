@@ -46,6 +46,22 @@ class MasterDataTest extends CatalogTestCase
         $this->assertSoftDeleted('vehicle_models', ['id' => $unused]);
     }
 
+    public function test_new_orderable_rows_go_to_the_end_of_their_siblings(): void
+    {
+        $this->actingAsRole('manager');
+        $last = VehicleMake::query()->max('sort_order');
+        $make = $this->postJson('/api/v1/vehicle-makes', ['name' => 'Zeekr'])->assertCreated()->json('data');
+        $this->assertGreaterThan($last, VehicleMake::query()->findOrFail($make['id'])->sort_order);
+
+        $parent = Category::query()->whereNull('parent_id')->orderByDesc('sort_order')->firstOrFail();
+        $first = $this->postJson('/api/v1/categories', ['name_en' => 'Kid A', 'parent_id' => $parent->id])->assertCreated()->json('data');
+        $second = $this->postJson('/api/v1/categories', ['name_en' => 'Kid B', 'parent_id' => $parent->id])->assertCreated()->json('data');
+        $this->assertGreaterThan(Category::query()->findOrFail($first['id'])->sort_order, Category::query()->findOrFail($second['id'])->sort_order);
+
+        $top = $this->postJson('/api/v1/categories', ['name_en' => 'Newest top'])->assertCreated()->json('data');
+        $this->assertGreaterThan($parent->sort_order, Category::query()->findOrFail($top['id'])->sort_order);
+    }
+
     public function test_makes_can_be_reordered(): void
     {
         $this->actingAsRole('manager');
