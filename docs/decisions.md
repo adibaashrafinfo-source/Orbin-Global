@@ -87,3 +87,39 @@ The lint rule forbids hex and `rgb()/rgba()` literals everywhere except `src/des
 - The user dialog assigns one default branch; multi-branch selection per user arrives with a second branch.
 - Notification generators (low stock, approvals, dues, open shift) arrive with their modules; the bell, polling and read state are done.
 - Date/time format and low-stock channel settings (FR-107) are not yet configurable; language is per user and the display timezone is fixed to Asia/Dhaka.
+
+## P1
+
+### D-021 Laravel 12 instead of 11
+The spec names Laravel 11. Laravel 11 no longer receives security fixes and `composer audit` reported four open advisories against it (including a CRLF injection in the email validation rule that login uses);
+the patched releases only exist in Laravel 12. The backend now runs Laravel 12.72, which still supports PHP 8.2, so the hosting requirement is unchanged. All 87 Phase 0 tests passed unchanged after the upgrade.
+
+### D-022 No hosting yet
+The owner has not bought hosting. Phase 1 is built and tested locally; the cPanel staging deployment and the hosting check stay open items for when the account exists.
+The owner will supply a transparent logo later; the JPEG stays in use (see D-003).
+
+### D-023 Images use PHP GD directly
+The spec allows "PHP GD / Intervention Image". GD is used directly (resize, EXIF rotation, thumbnails) to avoid another dependency. Files are stored under `public/uploads/products/<yyyy>/<mm>` with random names.
+
+### D-024 Duplicate guards are the database's unique keys
+Variant identity (BR-092) is the `signature` column, SKU and barcode are unique columns, fitments use a `signature` column. The service pre-checks to give a friendly message and a pointer to the existing record,
+but the unique key is the real guard: five racing processes create exactly one row (tests in `CatalogConcurrencyTest`, run 8 times). Duplicate-key errors are classified by the violated key name only.
+
+### D-025 Price columns need `pricing.manage`
+`products.manage` lets a role edit products and variants, but any price column (retail, wholesale, dealer, MRP, floor) can only be written with `pricing.manage`; an unchanged price in a payload is allowed. Cost (`last_cost`) is omitted from responses without `products.view_cost`.
+Import of products needs both `products.import` and `pricing.manage`.
+
+### D-026 Barcodes
+Generated barcodes are store-internal EAN-13: `200` + 9-digit variant id + check digit, unique by construction. Manually typed barcodes (including supplier EAN-13) and up to 10 aliases are supported.
+
+### D-027 Labels
+Two templates: an A4 sheet of 27 labels (3 × 9, 70 × 33 mm, with a start position to reuse a partly used sheet) and a 50 × 25 mm roll (one label per page). The price is printed as "Tk 12,500.00" because the PDF font used for barcodes has no reliable taka glyph; the Bangla and taka glyph test is part of the invoice work in Phase 3.
+
+### D-028 Imports
+Four importable kinds in Phase 1: vehicle makes, vehicle models, products with variants (one row per variant, product columns on the first row), and fitments. Customers, suppliers, opening stock and opening balances arrive with their modules.
+A dry run validates every row and returns row-level errors without writing; the commit re-reads the same file and applies it in one transaction, so an import is all or nothing. Imported products go live immediately.
+
+### D-029 Not in Phase 1
+- FR-308 (warning when deactivating a product that has stock) needs stock levels, which arrive in Phase 2.
+- Product "total stock" and stock-status filters show nothing until Phase 2.
+- Reordering uses up/down controls instead of drag and drop, which also works from the keyboard.

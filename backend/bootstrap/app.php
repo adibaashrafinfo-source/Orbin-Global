@@ -38,18 +38,19 @@ return Application::configure(basePath: dirname(__DIR__))
     })
     ->withExceptions(function (Exceptions $exceptions) {
         $wantsJson = fn (Request $request): bool => $request->is('api/*') || $request->expectsJson();
-        $body = function (string $code, string $message, array $fields = []): array {
+        $body = function (string $code, string $message, array $fields = [], array $context = []): array {
             return [
                 'code' => $code,
                 'message' => $message,
                 'fields' => (object) $fields,
+                'context' => (object) $context,
                 'request_id' => app()->bound('request_id') ? app('request_id') : null,
             ];
         };
 
         $exceptions->render(function (ApiException $e, Request $request) use ($wantsJson, $body) {
             if ($wantsJson($request)) {
-                return response()->json($body($e->errorCode, $e->getMessage(), $e->fields), $e->status);
+                return response()->json($body($e->errorCode, $e->getMessage(), $e->fields, $e->context), $e->status);
             }
 
             return null;

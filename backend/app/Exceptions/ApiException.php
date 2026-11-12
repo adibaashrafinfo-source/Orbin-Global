@@ -12,12 +12,14 @@ class ApiException extends RuntimeException
 {
     /**
      * @param  array<string, array<int, string>>  $fields
+     * @param  array<string, mixed>  $context  extra data for the client, e.g. the existing record behind a duplicate
      */
     public function __construct(
         public readonly string $errorCode,
         public readonly int $status = 422,
         string $message = '',
         public readonly array $fields = [],
+        public readonly array $context = [],
     ) {
         parent::__construct($message !== '' ? $message : 'errors.'.$errorCode);
     }

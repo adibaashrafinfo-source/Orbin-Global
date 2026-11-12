@@ -6,11 +6,21 @@ use App\Http\Controllers\Api\V1\AuditLogController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\BranchController;
 use App\Http\Controllers\Api\V1\CompanyProfileController;
+use App\Http\Controllers\Api\V1\CustomFieldController;
+use App\Http\Controllers\Api\V1\FitmentController;
+use App\Http\Controllers\Api\V1\ImageController;
+use App\Http\Controllers\Api\V1\ImportExportController;
+use App\Http\Controllers\Api\V1\LabelController;
+use App\Http\Controllers\Api\V1\LookupController;
+use App\Http\Controllers\Api\V1\MasterDataController;
 use App\Http\Controllers\Api\V1\NotificationController;
 use App\Http\Controllers\Api\V1\NumberingController;
+use App\Http\Controllers\Api\V1\ProductController;
 use App\Http\Controllers\Api\V1\RolePermissionController;
 use App\Http\Controllers\Api\V1\StorageLocationController;
 use App\Http\Controllers\Api\V1\UserController;
+use App\Http\Controllers\Api\V1\VariantController;
+use App\Http\Controllers\Api\V1\VariantSearchController;
 use App\Http\Controllers\Api\V1\WarehouseController;
 use Illuminate\Support\Facades\Route;
 
@@ -86,6 +96,73 @@ Route::middleware(['auth:sanctum', 'active'])->group(function (): void {
     Route::get('notifications', [NotificationController::class, 'index'])->name('notifications.index');
     Route::put('notifications/read-all', [NotificationController::class, 'markAllRead'])->name('notifications.read-all');
     Route::put('notifications/{notification}/read', [NotificationController::class, 'markRead'])->name('notifications.read');
+
+    // ---- Phase 1: catalog -------------------------------------------------------------------------------------
+    $master = 'vehicle-makes|vehicle-models|product-brands|categories|units|tax-rates';
+    Route::get('{resource}', [MasterDataController::class, 'index'])->where('resource', $master)->name('master.index');
+    Route::get('lookups', [LookupController::class, 'index'])->name('lookups.index');
+    Route::get('custom-fields', [CustomFieldController::class, 'index'])->name('custom-fields.index');
+    Route::middleware('permission:masterdata.manage')->group(function () use ($master): void {
+        Route::put('{resource}/reorder', [MasterDataController::class, 'reorder'])->where('resource', $master)->name('master.reorder');
+        Route::post('{resource}', [MasterDataController::class, 'store'])->where('resource', $master)->name('master.store');
+        Route::put('{resource}/{id}', [MasterDataController::class, 'update'])->where('resource', $master)->whereNumber('id')->name('master.update');
+        Route::delete('{resource}/{id}', [MasterDataController::class, 'destroy'])->where('resource', $master)->whereNumber('id')->name('master.destroy');
+
+        Route::post('lookups', [LookupController::class, 'storeType'])->name('lookups.store');
+        Route::put('lookups/{type}', [LookupController::class, 'updateType'])->name('lookups.update');
+        Route::delete('lookups/{type}', [LookupController::class, 'destroyType'])->name('lookups.destroy');
+        Route::post('lookups/{type}/values', [LookupController::class, 'storeValue'])->name('lookup-values.store');
+        Route::put('lookups/{type}/values/reorder', [LookupController::class, 'reorderValues'])->name('lookup-values.reorder');
+        Route::put('lookup-values/{value}', [LookupController::class, 'updateValue'])->name('lookup-values.update');
+        Route::delete('lookup-values/{value}', [LookupController::class, 'destroyValue'])->name('lookup-values.destroy');
+
+        Route::post('custom-fields', [CustomFieldController::class, 'store'])->name('custom-fields.store');
+        Route::put('custom-fields/reorder', [CustomFieldController::class, 'reorder'])->name('custom-fields.reorder');
+        Route::put('custom-fields/{field}', [CustomFieldController::class, 'update'])->name('custom-fields.update');
+        Route::delete('custom-fields/{field}', [CustomFieldController::class, 'destroy'])->name('custom-fields.destroy');
+    });
+
+    Route::middleware('permission:products.view')->group(function (): void {
+        Route::get('products', [ProductController::class, 'index'])->name('products.index');
+        Route::get('products/{product}', [ProductController::class, 'show'])->whereNumber('product')->name('products.show');
+        Route::get('variants/search', VariantSearchController::class)->name('variants.search');
+        Route::get('variants/{variant}', [VariantController::class, 'show'])->whereNumber('variant')->name('variants.show');
+    });
+    Route::middleware('permission:products.manage')->group(function (): void {
+        Route::post('products', [ProductController::class, 'store'])->name('products.store');
+        Route::put('products/{product}', [ProductController::class, 'update'])->name('products.update');
+        Route::delete('products/{product}', [ProductController::class, 'destroy'])->name('products.destroy');
+        Route::post('products/{product}/publish', [ProductController::class, 'publish'])->name('products.publish');
+        Route::post('products/{product}/deactivate', [ProductController::class, 'deactivate'])->name('products.deactivate');
+        Route::post('products/{product}/clone', [ProductController::class, 'clone'])->name('products.clone');
+
+        Route::post('products/{product}/variants', [VariantController::class, 'store'])->name('variants.store');
+        Route::post('products/{product}/variants/matrix', [VariantController::class, 'matrix'])->name('variants.matrix');
+        Route::put('variants/{variant}', [VariantController::class, 'update'])->name('variants.update');
+        Route::delete('variants/{variant}', [VariantController::class, 'destroy'])->name('variants.destroy');
+        Route::post('variants/{variant}/clone', [VariantController::class, 'clone'])->name('variants.clone');
+        Route::post('variants/{variant}/barcode', [VariantController::class, 'generateBarcode'])->name('variants.barcode');
+
+        Route::post('products/{product}/images', [ImageController::class, 'store'])->name('images.store');
+        Route::put('products/{product}/images/reorder', [ImageController::class, 'reorder'])->name('images.reorder');
+        Route::put('images/{image}', [ImageController::class, 'update'])->name('images.update');
+        Route::post('images/{image}/primary', [ImageController::class, 'setPrimary'])->name('images.primary');
+        Route::delete('images/{image}', [ImageController::class, 'destroy'])->name('images.destroy');
+
+        Route::post('variants/{variant}/fitments', [FitmentController::class, 'storeFitment'])->name('fitments.store');
+        Route::post('variants/{variant}/fitments/copy', [FitmentController::class, 'copyFitments'])->name('fitments.copy');
+        Route::delete('fitments/{fitment}', [FitmentController::class, 'destroyFitment'])->name('fitments.destroy');
+        Route::post('variants/{variant}/cross-references', [FitmentController::class, 'storeCrossReference'])->name('cross-references.store');
+        Route::delete('cross-references/{reference}', [FitmentController::class, 'destroyCrossReference'])->name('cross-references.destroy');
+    });
+    Route::post('labels', LabelController::class)->middleware('permission:products.view')->name('labels.render');
+    Route::middleware('permission:products.import|masterdata.manage')->group(function (): void {
+        Route::get('imports/templates/{kind}', [ImportExportController::class, 'template'])->name('imports.template');
+        Route::post('imports/dry-run', [ImportExportController::class, 'dryRun'])->name('imports.dry-run');
+        Route::post('imports/commit', [ImportExportController::class, 'commit'])->name('imports.commit');
+    });
+    Route::get('products-export', [ImportExportController::class, 'exportProducts'])->middleware('permission:products.import|reports.export')->name('products.export');
+    Route::post('variants/bulk-price', [VariantController::class, 'bulkPrice'])->middleware('permission:pricing.manage')->name('variants.bulk-price');
 
     // Admin → Health (super_admin only via settings.system.manage)
     Route::prefix('admin/health')->middleware('permission:settings.system.manage')->group(function (): void {

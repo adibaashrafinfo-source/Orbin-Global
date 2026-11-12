@@ -6,6 +6,9 @@ return [
     // Nightly dumps live outside the web root (DEPLOY_CPANEL.md §10). Resolved relative to the account home.
     'backup_dir' => env('ORBIN_BACKUP_DIR', dirname(base_path()).'/backups/orbin-pos'),
 
+    // PDF streams are compressed in production; tests switch this off to read text from the PDF.
+    'pdf_compress' => (bool) env('ORBIN_PDF_COMPRESS', true),
+
     // Route-level login throttle per IP and minute. Tests/E2E raise it via ORBIN_LOGIN_RATE_LIMIT; production keeps 10.
     'login_route_per_minute' => (int) env('ORBIN_LOGIN_RATE_LIMIT', 10),
 
