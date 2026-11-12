@@ -1,0 +1,4925 @@
+{
+  "meta": {
+    "name": "Orbin POS - Car Mirror Edition",
+    "version": "1.1.0",
+    "specDate": "2026-11-12",
+    "owner": "Orbin Global",
+    "market": "Bangladesh",
+    "currency": {
+      "code": "BDT",
+      "symbol": "৳",
+      "locale": "en-BD",
+      "grouping": "lakh-crore",
+      "decimals": 2
+    },
+    "timezone": "Asia/Dhaka",
+    "weekStart": "saturday",
+    "documents": {
+      "CLAUDE.md": "Process rules and build order for the coding agent",
+      "PRD.md": "Behavior and UX authority",
+      "orbin-pos-spec.json": "Data model, enums, tokens, roles, services, API conventions, hosting, phases authority",
+      "DEPLOY_CPANEL.md": "Hosting check, release packaging, cPanel deployment, cron, backups, update and rollback runbook",
+      "FABLE_KICKOFF.md": "Master prompt and per-phase prompts for the coding agent"
+    },
+    "conflictRule": "Data model, enums, tokens, hosting constraints: JSON wins. Behavior and UX: PRD wins. Deployment steps: DEPLOY_CPANEL.md wins. If still ambiguous: ask the owner.",
+    "noCodeInSpec": true,
+    "dataModelFormat": "Each column is a string: 'name | type | constraints | note'. Logical types: bigint, text, json, int, decimal(p,s), bool, date, datetime, enum:<enumName>. Constraint tokens (space separated): pk, req, uniq, idx, default:<value>, fk:<table>.<column>, check:<expression>. Tables without 'appendOnly' also get the common columns. Tables with 'branchScoped' also get branch_id (fk branches.id, req, idx).",
+    "commonColumns": [
+      "id | bigint | pk auto_increment",
+      "created_at | datetime | req default:CURRENT_TIMESTAMP",
+      "created_by | bigint | fk:users.id",
+      "updated_at | datetime | req default:CURRENT_TIMESTAMP | on update CURRENT_TIMESTAMP",
+      "updated_by | bigint | fk:users.id",
+      "deleted_at | datetime | idx | soft delete marker; null = active"
+    ],
+    "appendOnlyColumns": [
+      "id | bigint | pk auto_increment",
+      "created_at | datetime | req default:CURRENT_TIMESTAMP",
+      "created_by | bigint | fk:users.id"
+    ],
+    "appendOnlyRule": "Append-only tables are never updated or deleted. Enforced in the application: Eloquent models throw on update/delete, no controller exposes them, and a feature test proves it. Corrections are new reversing rows. (cPanel does not allow a separate restricted DB user per table, so enforcement is in code and in the nightly integrity check.)",
+    "changeLog": [
+      "1.1.0: Removed Supabase/Postgres and every third-party database. Backend is Laravel (PHP) + MySQL/MariaDB created inside the owner cPanel hosting. All transactional logic moved from Postgres service/RLS to PHP services + policies. Added hosting and deployment sections."
+    ],
+    "engine": {
+      "database": "MySQL 8.0+ or MariaDB 10.5+ created in the owner cPanel (MySQL Databases / phpMyAdmin). InnoDB only. utf8mb4 / utf8mb4_unicode_ci (Bangla safe). No third-party database service.",
+      "forbiddenDbFeatures": [
+        "stored procedures",
+        "triggers",
+        "events",
+        "definer views requiring SUPER",
+        "extensions or plugins",
+        "anything needing root or SUPER privilege"
+      ],
+      "reason": "Shared cPanel hosts usually do not grant SUPER/TRIGGER/ROUTINE privileges. All business logic lives in PHP services inside DB transactions.",
+      "transactions": "Laravel DB::transaction with SELECT ... FOR UPDATE (lockForUpdate) in deterministic id order; retry up to 3 times on deadlock (MySQL error 1213) and lock wait timeout (1205).",
+      "idStrategy": "BIGINT UNSIGNED AUTO_INCREMENT primary keys. Public/unguessable references use random tokens (verify_token, 40 chars), never sequential ids.",
+      "timeStrategy": "Store UTC in DATETIME(3). Application timezone config = UTC; display and day boundaries in Asia/Dhaka.",
+      "dateDefaults": "Date columns that default to today are set by the application, not by SQL defaults.",
+      "jsonNote": "JSON columns are nullable; null means empty object/array. MariaDB stores JSON as LONGTEXT with JSON_VALID check.",
+      "searchStrategy": "No trigram/GIN. POS search uses a maintained lowercase search_text column plus indexed sku, barcode, oem number_normalized and phone_primary; fitment lookup via composite index. LIKE scan over 10 000 variants must meet NFR-001; use FULLTEXT only if available on the host.",
+      "uniquenessWithNulls": "MySQL allows many NULLs in a unique index and has no partial indexes. Where uniqueness applies only to some rows, the table has a nullable computed key column (signature, trx_key, open_key, walkin_key) that holds the unique value for qualifying rows and NULL otherwise. The application maintains it inside the same transaction; a feature test proves the guard."
+    },
+    "typeMapping": {
+      "bigint": "BIGINT UNSIGNED for ids and foreign keys; BIGINT for counters",
+      "text": "VARCHAR(255) by default; TEXT when the column name contains description, note, notes, address, terms, policy, body, issue, resolution, reason, snapshot or payload; any text column that is uniq or idx must be VARCHAR(191) or shorter",
+      "json": "JSON",
+      "bool": "TINYINT(1)",
+      "datetime": "DATETIME(3), UTC",
+      "date": "DATE",
+      "int": "INT",
+      "decimal(p,s)": "DECIMAL(p,s); money decimal(14,2); quantity decimal(14,3); cost decimal(14,4)",
+      "enum:<name>": "native ENUM built from enums.<name>"
+    },
+    "frameworkTables": [
+      "migrations",
+      "password_reset_tokens",
+      "sessions",
+      "cache",
+      "cache_locks",
+      "jobs",
+      "job_batches",
+      "failed_jobs"
+    ],
+    "accessControl": "Every API endpoint is guarded by auth middleware plus a Policy/Gate that reads role_permissions. Sensitive columns (cost, margin) are omitted by API Resources unless the user has the permission. There is no client-side database access of any kind. The access field on each table lists the permission keys that govern it."
+  },
+  "brand": {
+    "company": "Orbin Global",
+    "tagline": "Trust. Growth. Excellence.",
+    "logo": {
+      "sourceFile": "backend/public/assets/brand/orbin-logo.png (copy also in frontend/public/assets/brand/)",
+      "storageBucket": "public/uploads/brand (server folder)",
+      "dbField": "company_profile.logo_url",
+      "rules": [
+        "Use the original file only. Never redraw, recolor, crop, stretch or re-compress below 200 DPI at print size.",
+        "Place on white or navy-50 surfaces. On navy surfaces use a white rounded plate behind it.",
+        "Minimum width 120 px on screen, 35 mm on paper. Clear space equals the height of the O in ORBIN.",
+        "Collapsed sidebar shows the emblem region via CSS masking of the original file, not an edited copy.",
+        "Invoice embeds the original at full resolution."
+      ]
+    },
+    "colors": {
+      "navy": "#002756",
+      "orange": "#FF7900"
+    }
+  },
+  "designSystem": {
+    "colorTokens": {
+      "navy": {
+        "50": "#F3F6FB",
+        "100": "#E6EDF7",
+        "200": "#C7D5EA",
+        "300": "#97B0D3",
+        "400": "#5B80B5",
+        "500": "#2A5A9C",
+        "600": "#0F4180",
+        "700": "#0A3468",
+        "800": "#062D5E",
+        "900": "#002756",
+        "950": "#001734"
+      },
+      "orange": {
+        "50": "#FFF6ED",
+        "100": "#FFEAD6",
+        "200": "#FFD4AD",
+        "300": "#FFBC80",
+        "400": "#FF9A40",
+        "500": "#FF7900",
+        "600": "#E06A00",
+        "700": "#B85200",
+        "800": "#8C4300"
+      },
+      "semantic": {
+        "success": "#16A34A",
+        "warning": "#D97706",
+        "danger": "#DC2626",
+        "info": "#0F4180"
+      },
+      "neutral": {
+        "text": "#0F172A",
+        "textMuted": "#475569",
+        "textSubtle": "#94A3B8",
+        "border": "#C7D5EA",
+        "surface": "#FFFFFF",
+        "background": "#F3F6FB"
+      }
+    },
+    "contrast": {
+      "whiteOnNavy900": 14.74,
+      "navy900OnOrange500": 5.61,
+      "whiteOnOrange500": 2.63,
+      "orange500OnWhite": 2.63,
+      "orange700OnWhite": 4.95,
+      "rules": [
+        "Text on orange (accent) buttons is navy-900. Never white on orange-500.",
+        "Orange as text on white must use orange-700. Brand orange is for fills, indicators and chart accents only.",
+        "Primary text on white is neutral.text; secondary is neutral.textMuted (7.58:1)."
+      ]
+    },
+    "typography": {
+      "heading": "Plus Jakarta Sans",
+      "body": "Inter",
+      "bangla": [
+        "Noto Sans Bengali",
+        "Hind Siliguri"
+      ],
+      "bundleLocally": true,
+      "tabularNumbers": true,
+      "scalePx": [
+        12,
+        13,
+        14,
+        16,
+        18,
+        20,
+        24,
+        30,
+        36,
+        48
+      ]
+    },
+    "radius": {
+      "input": 8,
+      "button": 8,
+      "card": 12,
+      "modal": 16,
+      "pill": 999
+    },
+    "spacingBasePx": 4,
+    "shadows": {
+      "sm": "0 1px 2px rgba(0,39,86,.06)",
+      "md": "0 6px 16px rgba(0,39,86,.10)",
+      "lg": "0 16px 40px rgba(0,39,86,.16)",
+      "glowOrange": "0 8px 24px rgba(255,121,0,.35)"
+    },
+    "motion": {
+      "durationMs": {
+        "fast": 120,
+        "base": 220,
+        "slow": 400,
+        "hero": 700
+      },
+      "easing": {
+        "standard": [
+          0.2,
+          0,
+          0,
+          1
+        ],
+        "emphasized": [
+          0.3,
+          0,
+          0,
+          1.2
+        ]
+      },
+      "spring": {
+        "soft": {
+          "stiffness": 260,
+          "damping": 26
+        }
+      },
+      "animateOnly": [
+        "transform",
+        "opacity"
+      ],
+      "reducedMotion": "Replace all motion with instant opacity change and disable Mirror Shine.",
+      "required": [
+        "page-transition fade + 8px slide 220ms",
+        "list stagger 30ms, max 12 items",
+        "kpi count-up 600ms",
+        "button press scale .97 with spring release and loading morph without width jump",
+        "drawer/modal scale .98 to 1 with backdrop blur 6px; right drawer slide 320ms",
+        "cart row enter with orange flash; qty flip; removal collapse 180ms",
+        "skeleton shimmer navy-100 to navy-50",
+        "sale success animated check 600ms, invoice number type-in, download toast",
+        "toast slide from bottom-right 4s autodismiss pause on hover",
+        "chart draw-in 500ms, tooltip fade 120ms",
+        "low-stock badge pulse 2s",
+        "Mirror Shine gloss sweep 700ms once per hover on accent/primary buttons, product cards, KPI cards, success screen"
+      ]
+    },
+    "mirrorShine": {
+      "description": "Diagonal 20deg white-to-transparent band at 18% opacity sweeping across the element on hover; product cards also tilt up to 2deg following the pointer.",
+      "applyTo": [
+        "button.primary",
+        "button.accent",
+        "card.product",
+        "card.kpi",
+        "screen.saleSuccess",
+        "login.logoPlate(ambient every 8s)"
+      ],
+      "neverApplyTo": [
+        "table",
+        "form",
+        "modal body text"
+      ]
+    },
+    "components": {
+      "button": {
+        "heightsPx": {
+          "sm": 32,
+          "md": 40,
+          "lg": 48,
+          "xl": 56
+        },
+        "variants": {
+          "primary": {
+            "bg": "gradient navy-800 to navy-900",
+            "text": "#FFFFFF",
+            "extras": [
+              "shadow.md",
+              "mirrorShine"
+            ]
+          },
+          "accent": {
+            "bg": "gradient orange-400 to orange-500",
+            "text": "navy-900",
+            "extras": [
+              "glowOrange on hover",
+              "mirrorShine"
+            ],
+            "rule": "Max one per view; reserved for the hero action (Pay, Complete Sale)."
+          },
+          "secondary": {
+            "bg": "#FFFFFF",
+            "border": "navy-200",
+            "text": "navy-900",
+            "hoverBg": "navy-50"
+          },
+          "ghost": {
+            "bg": "transparent",
+            "text": "navy-700",
+            "hoverBg": "navy-100"
+          },
+          "danger": {
+            "bg": "gradient red-500 to red-600",
+            "text": "#FFFFFF",
+            "rule": "Only behind a confirm dialog."
+          },
+          "icon": {
+            "sizePx": 40,
+            "shape": "round",
+            "tooltipRequired": true
+          }
+        },
+        "states": [
+          "default",
+          "hover",
+          "focus-visible",
+          "pressed",
+          "loading",
+          "disabled"
+        ],
+        "focusRing": {
+          "onLight": "2px navy-600 + 2px offset",
+          "onDark": "2px orange-300 + 2px offset"
+        }
+      },
+      "input": {
+        "heightPx": {
+          "pos": 44,
+          "default": 40
+        },
+        "label": "floating",
+        "numeric": "stepper + select-on-focus",
+        "currencyPrefix": "৳"
+      },
+      "card": {
+        "bg": "#FFFFFF",
+        "radius": 12,
+        "shadow": "sm",
+        "hover": "lift 2px + shadow.md for interactive cards only"
+      },
+      "table": {
+        "header": "navy-900 bg, white text, 12px uppercase",
+        "rowHeightPx": {
+          "comfortable": 52,
+          "compact": 40
+        },
+        "rowHover": "navy-100",
+        "stickyHeader": true,
+        "stickyFirstColumn": true,
+        "pageSizeDefault": 25,
+        "serverPagination": true
+      },
+      "badge": {
+        "style": "soft *-100 background with *-800 text",
+        "stock": {
+          "in": "success",
+          "low": "orange pulse",
+          "out": "danger"
+        }
+      },
+      "sidebar": {
+        "widthPx": 264,
+        "collapsedPx": 72,
+        "bg": "navy-900",
+        "activeItem": "3px orange-500 left bar + navy-700 bg + white text",
+        "icons": "lucide-react 20px",
+        "groupLabel": "navy-300 11px uppercase"
+      },
+      "topbar": {
+        "heightPx": 64,
+        "items": [
+          "global search (/)",
+          "branch selector",
+          "shift pill",
+          "notifications",
+          "language toggle EN|BN",
+          "user menu"
+        ]
+      }
+    },
+    "accessibility": {
+      "standard": "WCAG 2.1 AA",
+      "touchTargetMinPx": 44,
+      "keyboardFullPos": true
+    },
+    "responsive": {
+      "primary": "desktop",
+      "tuned": [
+        "1366x768",
+        "1920x1080"
+      ],
+      "tablet": "full POS usable >= 768px",
+      "phone": "read-only dashboards, stock lookup, invoice lookup"
+    },
+    "theme": {
+      "phase1": "light",
+      "phase2": "dark"
+    }
+  },
+  "techStack": {
+    "frontend": [
+      "React 18",
+      "TypeScript (strict)",
+      "Vite",
+      "React Router",
+      "Tailwind CSS",
+      "shadcn/ui (Radix)",
+      "Framer Motion",
+      "TanStack Query",
+      "TanStack Table",
+      "Zustand (cart and POS UI state)",
+      "React Hook Form + Zod",
+      "i18next (en, bn)",
+      "date-fns",
+      "Recharts (styled with tokens)",
+      "lucide-react",
+      "fetch/axios wrapper with Sanctum CSRF cookie handling"
+    ],
+    "backend": [
+      "PHP 8.2+ (if the host maximum is 8.1, use Laravel 10 and record it in docs/decisions.md)",
+      "Laravel 11 REST API under /api/v1",
+      "Laravel Sanctum SPA cookie authentication (same-origin, httpOnly session cookie, CSRF)",
+      "Eloquent ORM + reversible migrations + seeders",
+      "Form Requests for validation",
+      "Policies/Gates + permission middleware backed by role_permissions",
+      "API Resources (column-level filtering)",
+      "Service classes for every transactional operation (see transactionalServices)",
+      "Laravel scheduler driven by one cPanel cron entry",
+      "Queue driver database or sync (no daemon workers on shared hosting)",
+      "SMTP mail via the hosting mailbox for password reset"
+    ],
+    "database": [
+      "MySQL 8.0+ or MariaDB 10.5+ in the owner cPanel",
+      "InnoDB, utf8mb4_unicode_ci",
+      "no stored procedures, triggers or events"
+    ],
+    "pdfAndCodes": [
+      "mPDF 8 (server side) for every PDF: invoice, receipt, credit note, quotation, PO, statements, Z-report. Supports Bangla (Noto Sans Bengali) with OpenType shaping. Built-in QR and barcodes.",
+      "@react-pdf/renderer only as a fallback if mPDF fails the host memory or Bangla test (decision recorded)",
+      "bwip-js on the client for barcode label preview; mPDF for label sheets",
+      "openspout for streaming CSV/XLSX export and import",
+      "PHP GD (Intervention Image) for server-side image resize and thumbnails"
+    ],
+    "testing": [
+      "Pest or PHPUnit feature tests against a MySQL test database (Docker locally) for services, endpoints, authorization matrix and invariants",
+      "Vitest + React Testing Library",
+      "Playwright E2E"
+    ],
+    "tooling": [
+      "Composer",
+      "pnpm or npm",
+      "Laravel Pint",
+      "ESLint",
+      "Prettier",
+      "eslint-plugin-jsx-a11y",
+      "Husky + lint-staged",
+      "GitHub Actions CI that also builds the release zip"
+    ],
+    "hosting": "Owner cPanel hosting. App on a dedicated subdomain (for example pos.example.com) whose document root points to backend/public. See hosting and DEPLOY_CPANEL.md.",
+    "swapRule": "A library may be swapped only if it fails a stated requirement or a hosting limit; record the reason in docs/decisions.md.",
+    "envVars": [
+      "APP_NAME",
+      "APP_ENV",
+      "APP_KEY",
+      "APP_DEBUG (false in production)",
+      "APP_URL",
+      "APP_TIMEZONE=UTC",
+      "DB_CONNECTION=mysql",
+      "DB_HOST",
+      "DB_PORT",
+      "DB_DATABASE",
+      "DB_USERNAME",
+      "DB_PASSWORD",
+      "SESSION_DRIVER=database",
+      "SESSION_LIFETIME",
+      "SESSION_DOMAIN",
+      "SESSION_SECURE_COOKIE=true",
+      "SANCTUM_STATEFUL_DOMAINS",
+      "QUEUE_CONNECTION",
+      "MAIL_MAILER",
+      "MAIL_HOST",
+      "MAIL_PORT",
+      "MAIL_USERNAME",
+      "MAIL_PASSWORD",
+      "MAIL_FROM_ADDRESS",
+      "LOG_CHANNEL",
+      "INSTALL_KEY (one-time web installer)"
+    ],
+    "forbidden": [
+      "any third-party database or backend-as-a-service (Supabase, Firebase, PlanetScale, Neon, Appwrite and similar)",
+      "stored procedures, triggers, events",
+      "APP_DEBUG=true in production",
+      "committing .env or any secret",
+      "app code, .env, storage or vendor reachable from the public web root",
+      "client-side final money/stock math",
+      "raw hex colors outside the token file",
+      "long-running daemons or workers"
+    ]
+  },
+  "hosting": {
+    "summary": "Owner cPanel hosting only. No third-party database or backend service.",
+    "owner_must_confirm": [
+      "PHP version selectable in MultiPHP Manager (8.2 or higher preferred)",
+      "Select PHP Version / MultiPHP INI Editor: extensions and memory_limit as in nonFunctional.hosting",
+      "MySQL Databases and phpMyAdmin available; MySQL/MariaDB version (phpMyAdmin home page)",
+      "Terminal or SSH access (yes/no)",
+      "Composer available on the server (yes/no); if not, vendor is built locally and uploaded",
+      "Cron Jobs available with a 1-minute interval",
+      "Subdomain creation with custom document root",
+      "Free SSL (AutoSSL / Lets Encrypt) active",
+      "Disk space and inode limits (at least 5 GB free)",
+      "Backup tool available (JetBackup or cPanel Backup)"
+    ],
+    "fallbacks": {
+      "noSsh": "Use the one-time web installer (FR-111); upload the release zip via File Manager and extract",
+      "noComposerOnServer": "Release zip already contains vendor/",
+      "phpOnly81": "Laravel 10 build",
+      "lowMemory": "Switch invoice PDF to the @react-pdf fallback and record the decision",
+      "noSubdomainDocroot": "Place the contents of backend/public in public_html subfolder and keep the app outside public_html with an adjusted index.php path (documented in DEPLOY_CPANEL.md)"
+    }
+  },
+  "deployment": {
+    "document": "DEPLOY_CPANEL.md",
+    "releaseArtifact": "orbin-pos-release-<version>.zip built by CI or a local script: backend (with vendor, optimized autoload, no dev dependencies), built frontend inside backend/public, .htaccess files, no .env, no tests, no node_modules",
+    "layout": {
+      "recommended": "~/orbin-pos/ (app, vendor, storage, .env) with subdomain document root ~/orbin-pos/public",
+      "alternative": "app in ~/orbin-pos/, public files in ~/public_html/pos/ with index.php paths adjusted"
+    },
+    "installSteps": [
+      "create MySQL database and user in cPanel and add the user to the database with all privileges",
+      "create subdomain and point document root to the app public folder",
+      "upload and extract release zip",
+      "create .env from the template with DB credentials, APP_URL, mail and a long random INSTALL_KEY",
+      "run migrations and seeders via SSH, or open /install with the INSTALL_KEY if no SSH",
+      "create the super admin account",
+      "set permissions (storage and bootstrap/cache writable)",
+      "add the cron entry for the scheduler",
+      "enable HTTPS and verify forced redirect",
+      "open /admin/health and confirm all checks green",
+      "delete or lock the installer (storage/installed.lock)"
+    ],
+    "cron": [
+      "* * * * * php /home/<cpanel_user>/orbin-pos/artisan schedule:run >> /dev/null 2>&1"
+    ],
+    "scheduledCommands": [
+      "db:backup nightly 02:30 Asia/Dhaka",
+      "integrity:check nightly 03:00",
+      "stock:alerts hourly",
+      "queue:work --stop-when-empty every minute (database queue)"
+    ],
+    "backups": {
+      "nightly": "mysqldump gzip to ~/backups/orbin-pos, 14-day retention",
+      "cpanel": "enable the hosting provider backups as a second layer",
+      "offsite": "owner downloads weekly backup to another device or cloud drive; admin page lists backups with download",
+      "restore": "tested runbook in docs/restore-runbook.md"
+    },
+    "update": [
+      "enable maintenance mode",
+      "take a database backup",
+      "upload and extract the new release over the app folder (keep .env and storage)",
+      "run migrations",
+      "clear and rebuild caches",
+      "disable maintenance mode",
+      "verify health page and one test sale in staging first"
+    ],
+    "rollback": "restore previous release zip and the pre-update database backup",
+    "securityChecklist": [
+      "app, vendor, storage and .env outside the web root or protected by .htaccess",
+      "APP_DEBUG=false",
+      "deny dotfiles and sensitive extensions via .htaccess",
+      "force HTTPS and HSTS",
+      "strong DB password, unique per environment",
+      "installer disabled after use",
+      "file permissions 644/755",
+      "cPanel two-factor authentication enabled by owner",
+      "change the default super admin password at first login"
+    ]
+  },
+  "api": {
+    "base": "/api/v1",
+    "style": "REST + JSON, resource names plural kebab-case",
+    "auth": "Sanctum SPA cookie: GET /sanctum/csrf-cookie then POST /api/v1/auth/login; same origin so no CORS",
+    "idempotency": "Idempotency-Key header required on checkout, payments, returns, goods receipt posting",
+    "pagination": "?page=&per_page= returns {data, meta{page, per_page, total}}",
+    "filtering": "?filter[field]=value&sort=-field&search=text",
+    "errors": "HTTP status + {code, message, fields, request_id}; codes listed per service",
+    "money": "decimal strings in JSON (\"12500.00\") to avoid float errors",
+    "versioning": "/v1 prefix; breaking changes require /v2",
+    "groups": [
+      "auth (login, logout, me, password reset, idle-lock PIN verify)",
+      "settings (company, app, numbering, period-lock)",
+      "users, roles, role-permissions",
+      "branches, warehouses, storage-locations",
+      "lookups, custom-fields",
+      "vehicle-makes, vehicle-models, product-brands, categories, units, tax-rates",
+      "products, variants (matrix generate, clone, bulk-price), images, fitments, cross-references, import/export, labels",
+      "pos (variant search, customers quick-add, held bills)",
+      "sales (checkout, list, show, void, pdf, reprint), quotations, sale-returns, warranty-claims, shifts",
+      "stock (levels, movements, adjustments, transfers, counts, alerts, reorder, aging, stock-card)",
+      "suppliers, purchase-orders, goods-receipts, purchase-returns",
+      "customers, customer-vehicles",
+      "financial-accounts, party-ledger, party-payments, expenses, expense-categories, fund-transfers, day-book, dues",
+      "reports/{id}, dashboard",
+      "files (private download), attachments",
+      "audit-logs, notifications",
+      "admin/health (status, backup-now, maintenance on/off, run-migrations, clear-caches), admin/integrity, admin/backups",
+      "verify/{token} (public, Blade)"
+    ]
+  },
+  "projectStructure": {
+    "root": [
+      "backend/ (Laravel): app/Http/Controllers/Api/V1, app/Http/Requests, app/Http/Resources, app/Models, app/Policies, app/Services (NumberService, VariantSearchService, SaleService, SaleReturnService, GoodsReceiptService, StockPostingService, StockAdjustmentService, StockTransferService, StockCountService, PartyPaymentService, ShiftService, PeriodLockService, AuditService, PdfService, ImportExportService), app/Support (Money, BdtToWords, Permissions), app/Console/Commands (integrity:check, db:backup, stock:alerts), app/Pdf (Blade templates per document), database/migrations, database/seeders, resources/views (pdf/*, verify, app shell), routes/api.php, routes/web.php, tests/Feature, tests/Unit",
+      "frontend/ (React): src/app, src/design (tokens, tailwind preset, motion presets, base components), src/features/<feature> (components, hooks, api, schemas, types) for auth, settings, masterdata, catalog, inventory, purchasing, customers, pos, sales, ledger, reports, dashboard; src/lib (api client, money, format, permissions); src/locales (en.json, bn.json)",
+      "tests/e2e (Playwright)",
+      "deploy/ (release packaging notes, .htaccess templates, cron examples, hosting-check page notes)",
+      "docs/ (decisions.md, phase-N-summary.md, user-guide-en.md, user-guide-bn.md, restore-runbook.md)",
+      "backend/public/assets/brand/orbin-logo.png (original logo, untouched; also copied to frontend public for the login screen)"
+    ],
+    "build": "Vite builds frontend/dist. The release step copies it into backend/public (index.html served as the SPA shell). Laravel handles /api/*, /sanctum/*, /verify/*, /files/*; every other non-file request falls back to the SPA shell."
+  },
+  "roles": {
+    "enum": [
+      "super_admin",
+      "manager",
+      "cashier",
+      "storekeeper",
+      "accountant"
+    ],
+    "permissionKeys": [
+      "settings.company.manage",
+      "settings.system.manage",
+      "users.manage",
+      "roles.manage",
+      "audit.view",
+      "periods.lock",
+      "masterdata.manage",
+      "masterdata.view",
+      "products.view",
+      "products.manage",
+      "products.view_cost",
+      "pricing.manage",
+      "products.import",
+      "pos.sell",
+      "pos.discount_over_limit",
+      "pos.price_override",
+      "pos.sell_below_floor",
+      "sales.view_all",
+      "sales.view_own",
+      "sales.void",
+      "sales.return.create",
+      "sales.return.approve",
+      "quotations.manage",
+      "shifts.open_close_own",
+      "shifts.close_any",
+      "shifts.view_all",
+      "customers.view",
+      "customers.manage",
+      "suppliers.manage",
+      "purchases.manage",
+      "purchases.grn",
+      "purchases.view",
+      "inventory.view",
+      "inventory.adjust",
+      "inventory.adjust.approve",
+      "inventory.transfer",
+      "inventory.count",
+      "inventory.reports",
+      "ledger.view",
+      "ledger.receive_payment",
+      "ledger.pay_supplier",
+      "ledger.writeoff",
+      "payments.verify",
+      "expenses.manage",
+      "accounts.manage",
+      "fund_transfers.manage",
+      "reports.view_all",
+      "reports.view_own",
+      "reports.view_stock",
+      "reports.view_profit",
+      "reports.export"
+    ],
+    "defaultMatrix": {
+      "super_admin": [
+        "*"
+      ],
+      "manager": [
+        "masterdata.manage",
+        "masterdata.view",
+        "products.view",
+        "products.manage",
+        "products.view_cost",
+        "pricing.manage",
+        "products.import",
+        "pos.sell",
+        "pos.discount_over_limit",
+        "pos.price_override",
+        "pos.sell_below_floor",
+        "sales.view_all",
+        "sales.void",
+        "sales.return.create",
+        "sales.return.approve",
+        "quotations.manage",
+        "shifts.open_close_own",
+        "shifts.close_any",
+        "shifts.view_all",
+        "customers.view",
+        "customers.manage",
+        "suppliers.manage",
+        "purchases.manage",
+        "purchases.grn",
+        "purchases.view",
+        "inventory.view",
+        "inventory.adjust",
+        "inventory.adjust.approve",
+        "inventory.transfer",
+        "inventory.count",
+        "inventory.reports",
+        "ledger.view",
+        "ledger.receive_payment",
+        "ledger.pay_supplier",
+        "payments.verify",
+        "expenses.manage",
+        "accounts.manage",
+        "fund_transfers.manage",
+        "reports.view_all",
+        "reports.view_stock",
+        "reports.view_profit",
+        "reports.export",
+        "audit.view"
+      ],
+      "cashier": [
+        "products.view",
+        "pos.sell",
+        "pos.price_override",
+        "sales.view_own",
+        "sales.return.create",
+        "quotations.manage",
+        "shifts.open_close_own",
+        "customers.view",
+        "customers.manage",
+        "ledger.receive_payment",
+        "inventory.view",
+        "reports.view_own"
+      ],
+      "storekeeper": [
+        "masterdata.view",
+        "products.view",
+        "inventory.view",
+        "inventory.adjust",
+        "inventory.transfer",
+        "inventory.count",
+        "purchases.grn",
+        "purchases.view",
+        "reports.view_stock",
+        "inventory.reports"
+      ],
+      "accountant": [
+        "products.view",
+        "products.view_cost",
+        "customers.view",
+        "purchases.view",
+        "inventory.view",
+        "ledger.view",
+        "ledger.receive_payment",
+        "ledger.pay_supplier",
+        "ledger.writeoff",
+        "payments.verify",
+        "expenses.manage",
+        "accounts.manage",
+        "fund_transfers.manage",
+        "reports.view_all",
+        "reports.view_stock",
+        "reports.view_profit",
+        "reports.export",
+        "sales.view_all"
+      ]
+    },
+    "overridePin": {
+      "storage": "users.override_pin_hash (Laravel Hash)",
+      "length": "4-6 digits",
+      "lockAfterFailures": 5,
+      "approverLogged": true
+    }
+  },
+  "routes": [
+    "/login",
+    "/dashboard",
+    "/pos",
+    "/sales",
+    "/sales/:id",
+    "/sales/returns",
+    "/sales/returns/:id",
+    "/quotations",
+    "/quotations/:id",
+    "/shifts",
+    "/shifts/:id",
+    "/products",
+    "/products/new",
+    "/products/:id",
+    "/products/labels",
+    "/products/import",
+    "/inventory",
+    "/inventory/movements",
+    "/inventory/adjustments",
+    "/inventory/adjustments/:id",
+    "/inventory/breakage",
+    "/inventory/transfers",
+    "/inventory/transfers/:id",
+    "/inventory/counts",
+    "/inventory/counts/:id",
+    "/inventory/reorder",
+    "/inventory/aging",
+    "/inventory/stock-card/:variantId",
+    "/purchases/suppliers",
+    "/purchases/suppliers/:id",
+    "/purchases/orders",
+    "/purchases/orders/:id",
+    "/purchases/receipts",
+    "/purchases/receipts/:id",
+    "/purchases/returns",
+    "/purchases/payments",
+    "/customers",
+    "/customers/:id",
+    "/ledger/parties",
+    "/ledger/accounts",
+    "/ledger/accounts/:id",
+    "/ledger/receive-pay",
+    "/ledger/expenses",
+    "/ledger/transfers",
+    "/ledger/day-book",
+    "/ledger/dues",
+    "/reports",
+    "/reports/:reportId",
+    "/settings/company",
+    "/settings/branches",
+    "/settings/users",
+    "/settings/roles",
+    "/settings/master/vehicle-makes",
+    "/settings/master/vehicle-models",
+    "/settings/master/brands",
+    "/settings/master/categories",
+    "/settings/master/units",
+    "/settings/master/tax-rates",
+    "/settings/master/lookups",
+    "/settings/master/custom-fields",
+    "/settings/payment-accounts",
+    "/settings/numbering",
+    "/settings/pos",
+    "/settings/invoice",
+    "/settings/notifications",
+    "/settings/import-export",
+    "/settings/audit-log",
+    "/verify/:token",
+    "/admin/health",
+    "/admin/integrity",
+    "/admin/backups",
+    "/install"
+  ],
+  "routesNote": "/verify/:token and /install are server-rendered Laravel pages (no SPA, no personal data). All other routes are SPA routes.",
+  "enums": {
+    "user_role": [
+      "super_admin",
+      "manager",
+      "cashier",
+      "storekeeper",
+      "accountant"
+    ],
+    "warehouse_kind": [
+      "showroom",
+      "godown"
+    ],
+    "location_kind": [
+      "rack",
+      "shelf",
+      "bin"
+    ],
+    "mirror_type": [
+      "side_mirror",
+      "interior_mirror",
+      "mirror_glass",
+      "mirror_cover",
+      "mirror_signal_lamp",
+      "mirror_motor",
+      "blind_spot_mirror",
+      "accessory"
+    ],
+    "mirror_position": [
+      "left",
+      "right",
+      "interior",
+      "pair",
+      "universal"
+    ],
+    "adjustment_type": [
+      "manual",
+      "electric",
+      "cable"
+    ],
+    "price_tier": [
+      "retail",
+      "wholesale",
+      "dealer"
+    ],
+    "payment_method": [
+      "cash",
+      "bkash",
+      "nagad",
+      "rocket",
+      "bank_transfer"
+    ],
+    "payment_verification": [
+      "confirmed",
+      "pending",
+      "rejected"
+    ],
+    "payment_status": [
+      "unpaid",
+      "partial",
+      "paid"
+    ],
+    "sale_status": [
+      "draft",
+      "held",
+      "completed",
+      "void",
+      "partially_returned",
+      "returned"
+    ],
+    "sale_channel": [
+      "counter",
+      "phone",
+      "wholesale",
+      "online_order"
+    ],
+    "discount_type": [
+      "none",
+      "percent",
+      "amount"
+    ],
+    "vat_mode": [
+      "inclusive",
+      "exclusive"
+    ],
+    "quotation_status": [
+      "draft",
+      "sent",
+      "accepted",
+      "expired",
+      "converted",
+      "cancelled"
+    ],
+    "po_status": [
+      "draft",
+      "approved",
+      "partially_received",
+      "received",
+      "closed",
+      "cancelled"
+    ],
+    "grn_status": [
+      "draft",
+      "posted",
+      "cancelled"
+    ],
+    "purchase_return_status": [
+      "draft",
+      "posted",
+      "cancelled"
+    ],
+    "supplier_type": [
+      "local",
+      "import"
+    ],
+    "cost_allocation_basis": [
+      "value",
+      "quantity"
+    ],
+    "extra_cost_type": [
+      "freight",
+      "customs_duty",
+      "clearing_forwarding",
+      "local_transport",
+      "insurance",
+      "other"
+    ],
+    "stock_movement_type": [
+      "opening",
+      "purchase_receipt",
+      "purchase_return",
+      "sale",
+      "sale_return",
+      "adjustment_in",
+      "adjustment_out",
+      "transfer_out",
+      "transfer_in",
+      "breakage",
+      "damage",
+      "count_correction"
+    ],
+    "adjustment_status": [
+      "draft",
+      "pending_approval",
+      "posted",
+      "rejected"
+    ],
+    "transfer_status": [
+      "draft",
+      "in_transit",
+      "received",
+      "cancelled"
+    ],
+    "count_status": [
+      "draft",
+      "counting",
+      "review",
+      "posted",
+      "cancelled"
+    ],
+    "count_scope": [
+      "full",
+      "category",
+      "location"
+    ],
+    "xref_type": [
+      "oem",
+      "aftermarket",
+      "competitor",
+      "supplier"
+    ],
+    "sale_return_status": [
+      "draft",
+      "pending_approval",
+      "posted",
+      "cancelled"
+    ],
+    "return_condition": [
+      "resellable",
+      "broken"
+    ],
+    "refund_mode": [
+      "original_method",
+      "cash",
+      "other_method",
+      "ledger_credit"
+    ],
+    "warranty_status": [
+      "open",
+      "in_review",
+      "replaced",
+      "refunded",
+      "rejected"
+    ],
+    "shift_status": [
+      "open",
+      "closed"
+    ],
+    "financial_account_type": [
+      "cash",
+      "bkash",
+      "nagad",
+      "rocket",
+      "bank"
+    ],
+    "account_txn_direction": [
+      "in",
+      "out"
+    ],
+    "account_txn_ref_type": [
+      "opening",
+      "sale_payment",
+      "sale_refund",
+      "party_payment",
+      "expense",
+      "fund_transfer",
+      "shift_cash_movement",
+      "adjustment"
+    ],
+    "ledger_party_type": [
+      "customer",
+      "supplier"
+    ],
+    "ledger_entry_type": [
+      "opening",
+      "invoice",
+      "payment",
+      "return",
+      "discount",
+      "adjustment",
+      "writeoff",
+      "advance"
+    ],
+    "payment_direction": [
+      "receive",
+      "pay"
+    ],
+    "expense_status": [
+      "pending_approval",
+      "posted",
+      "rejected"
+    ],
+    "custom_field_entity": [
+      "product",
+      "variant",
+      "customer",
+      "supplier"
+    ],
+    "custom_field_type": [
+      "text",
+      "long_text",
+      "number",
+      "date",
+      "select",
+      "multi_select",
+      "boolean",
+      "url"
+    ],
+    "reset_policy": [
+      "never",
+      "yearly",
+      "monthly"
+    ],
+    "notification_severity": [
+      "info",
+      "warning",
+      "critical"
+    ]
+  },
+  "lookups": {
+    "note": "All lookup types are admin-extensible. System types cannot be deleted, only extended. Variant and product columns reference lookup_values by id.",
+    "systemTypes": [
+      {
+        "key": "origin_country",
+        "name_en": "Country of origin",
+        "seed": [
+          "Japan",
+          "Taiwan",
+          "China",
+          "Thailand",
+          "India",
+          "South Korea",
+          "Malaysia",
+          "Bangladesh"
+        ]
+      },
+      {
+        "key": "quality_grade",
+        "name_en": "Quality grade",
+        "seed": [
+          "Genuine OEM",
+          "OEM equivalent",
+          "Aftermarket premium",
+          "Aftermarket standard",
+          "Used / reconditioned"
+        ]
+      },
+      {
+        "key": "glass_type",
+        "name_en": "Glass type",
+        "seed": [
+          "Flat",
+          "Convex",
+          "Aspheric (multi-radius)",
+          "Anti-glare",
+          "Wide-angle"
+        ]
+      },
+      {
+        "key": "glass_tint",
+        "name_en": "Glass tint / coating",
+        "seed": [
+          "Clear chrome",
+          "Blue tint",
+          "Anti-glare blue",
+          "Hydrophobic"
+        ]
+      },
+      {
+        "key": "color_finish",
+        "name_en": "Color / finish",
+        "seed": [
+          "Black",
+          "Chrome",
+          "Silver",
+          "Body color (painted)",
+          "Carbon look",
+          "Unpainted / primed"
+        ]
+      },
+      {
+        "key": "customer_type",
+        "name_en": "Customer type",
+        "seed": [
+          "Retail",
+          "Wholesale",
+          "Garage / workshop",
+          "Dealer",
+          "Corporate"
+        ]
+      },
+      {
+        "key": "return_reason",
+        "name_en": "Sales return reason",
+        "seed": [
+          "Wrong fitment",
+          "Wrong size",
+          "Damaged on delivery",
+          "Defective glass",
+          "Customer changed mind",
+          "Other"
+        ]
+      },
+      {
+        "key": "adjustment_reason",
+        "name_en": "Stock adjustment reason",
+        "seed": [
+          "Breakage",
+          "Damaged in transit",
+          "Lost / theft",
+          "Found",
+          "Recount",
+          "Sample / demo",
+          "Other"
+        ]
+      },
+      {
+        "key": "body_type",
+        "name_en": "Vehicle body type",
+        "seed": [
+          "Sedan",
+          "Hatchback",
+          "SUV",
+          "MPV / Microbus",
+          "Pickup",
+          "Truck",
+          "Bus",
+          "Coupe",
+          "Station wagon"
+        ]
+      }
+    ]
+  },
+  "productInfoSheet": {
+    "note": "Everything below is editable by admin. Variant holds stock, price, SKU, barcode.",
+    "product": [
+      "name_en*",
+      "name_bn",
+      "code*",
+      "mirror_type*",
+      "category*",
+      "brand",
+      "quality_grade*",
+      "origin_country",
+      "short_description",
+      "description",
+      "warranty_months",
+      "return_window_days",
+      "tax_rate",
+      "unit*",
+      "tags",
+      "is_active*",
+      "custom fields"
+    ],
+    "variant": {
+      "identity": [
+        "sku*",
+        "barcode",
+        "barcode_aliases",
+        "variant_name(computed)"
+      ],
+      "position": [
+        "position*"
+      ],
+      "size": [
+        "size_width_mm",
+        "size_height_mm",
+        "thickness_mm",
+        "size_label",
+        "weight_g"
+      ],
+      "glass": [
+        "glass_type",
+        "tint",
+        "is_glass_only"
+      ],
+      "housing": [
+        "color_finish",
+        "cover_included"
+      ],
+      "features": [
+        "adjustment",
+        "heated",
+        "auto_fold",
+        "turn_signal",
+        "blind_spot_sensor",
+        "side_camera",
+        "memory_tilt",
+        "auto_dimming",
+        "puddle_light",
+        "pin_count",
+        "connector_note"
+      ],
+      "identification": [
+        "oem_cross_references[]",
+        "supplier_part_no",
+        "year_from",
+        "year_to"
+      ],
+      "pricing": [
+        "retail_price*",
+        "wholesale_price",
+        "dealer_price",
+        "mrp",
+        "min_price",
+        "tax_rate_override",
+        "last_cost (system)",
+        "avg_cost (system, per warehouse)"
+      ],
+      "stockControl": [
+        "reorder_level",
+        "reorder_qty",
+        "max_stock",
+        "default_location",
+        "track_serial(phase2)"
+      ],
+      "bundle": [
+        "is_bundle",
+        "variant_bundle_items[]"
+      ],
+      "media": [
+        "images up to 8 with labels front/back/connector/package/size-chart/other"
+      ],
+      "notes": [
+        "internal_note",
+        "is_discontinued",
+        "is_active",
+        "custom fields"
+      ]
+    },
+    "fitment": [
+      "vehicle_model*",
+      "year_from*",
+      "year_to",
+      "trim",
+      "note"
+    ],
+    "sizeDisplay": "Store mm; UI toggle mm / inch; size_label auto-generated and overridable."
+  },
+  "appSettingsDefaults": {
+    "vat_mode": "exclusive",
+    "default_tax_rate_code": "VAT0",
+    "rounding_mode": "none",
+    "cashier_max_discount_percent": 5,
+    "allow_negative_stock": false,
+    "require_customer_for_due": true,
+    "credit_limit_mode": "warn",
+    "require_open_shift": true,
+    "reserve_on_hold": false,
+    "default_return_window_days": 7,
+    "driver_side": "right",
+    "week_start": "saturday",
+    "session_timeout_minutes": 480,
+    "idle_lock_minutes": 10,
+    "adjustment_approval_threshold_qty": 5,
+    "adjustment_approval_threshold_value": 10000,
+    "pin_attempt_limit": 5,
+    "period_lock_date": null,
+    "invoice_default_language": "en",
+    "show_bangla_labels": false,
+    "invoice_paper": "a4",
+    "receipt_width_mm": 80,
+    "numeral_system": "latn",
+    "pos_auto_download_invoice": true,
+    "pos_auto_reset_seconds": 0,
+    "require_verification_for_mfs": false,
+    "duplicate_trx_days": 30,
+    "dead_stock_days": 90,
+    "low_stock_notify": true,
+    "void_same_day_manager_only": true
+  },
+  "dataModel": {
+    "tableCount": 61,
+    "tables": [
+      {
+        "name": "company_profile",
+        "group": "system",
+        "singleton": true,
+        "description": "Single row. Drives invoice header, footer, terms. Snapshotted into every sale.",
+        "columns": [
+          "singleton | int | req uniq default:1 | always 1; guarantees a single row",
+          "legal_name | text | req",
+          "trade_name | text",
+          "tagline | text | default:'Trust. Growth. Excellence.'",
+          "logo_url | text",
+          "logo_storage_path | text",
+          "address_line1 | text | req",
+          "address_line2 | text",
+          "city | text",
+          "district | text",
+          "postcode | text",
+          "country | text | default:'Bangladesh'",
+          "phones | json | req",
+          "whatsapp | text",
+          "email | text",
+          "website | text",
+          "bin_no | text",
+          "tin_no | text",
+          "trade_license_no | text",
+          "bank_name | text",
+          "bank_branch | text",
+          "bank_account_name | text",
+          "bank_account_no | text",
+          "signature_url | text",
+          "invoice_terms | text",
+          "return_policy_text | text",
+          "warranty_policy_text | text",
+          "footer_note | text",
+          "invoice_primary_color | text | default:'#002756'",
+          "invoice_accent_color | text | default:'#FF7900'"
+        ],
+        "constraints": [
+          "single row guaranteed by unique singleton column"
+        ],
+        "access": "read: all authenticated; write: settings.company.manage"
+      },
+      {
+        "name": "branches",
+        "group": "system",
+        "columns": [
+          "code | text | req uniq",
+          "name | text | req",
+          "address | text",
+          "phone | text",
+          "is_default | bool | default:false",
+          "is_active | bool | default:true"
+        ],
+        "access": "read: authenticated; write: settings.system.manage"
+      },
+      {
+        "name": "warehouses",
+        "group": "system",
+        "branchScoped": true,
+        "columns": [
+          "code | text | req uniq",
+          "name | text | req",
+          "kind | enum:warehouse_kind | req default:'showroom'",
+          "is_default | bool | default:false",
+          "is_sellable | bool | default:true | POS may sell from it",
+          "is_active | bool | default:true"
+        ],
+        "access": "read: authenticated; write: settings.system.manage"
+      },
+      {
+        "name": "storage_locations",
+        "group": "system",
+        "columns": [
+          "warehouse_id | bigint | req fk:warehouses.id idx",
+          "parent_id | bigint | fk:storage_locations.id",
+          "code | text | req",
+          "name | text",
+          "kind | enum:location_kind | default:'rack'",
+          "is_active | bool | default:true"
+        ],
+        "indexes": [
+          "unique (warehouse_id, code)"
+        ],
+        "access": "read: authenticated; write: inventory.adjust or settings.system.manage"
+      },
+      {
+        "name": "users",
+        "group": "system",
+        "description": "One row per login user. Passwords hashed with Laravel Hash. Replaces any external auth service.",
+        "columns": [
+          "full_name | text | req",
+          "phone | text",
+          "email | text | req uniq",
+          "password_hash | text | req | bcrypt/argon2id via Hash::make",
+          "role | enum:user_role | req idx",
+          "default_branch_id | bigint | fk:branches.id",
+          "branch_ids | json | | array of branch ids the user may use",
+          "override_pin_hash | text",
+          "pin_failed_attempts | int | default:0",
+          "pin_locked_until | datetime",
+          "avatar_url | text",
+          "language | text | default:'en' | check:language in ('en','bn')",
+          "is_active | bool | default:true",
+          "must_change_password | bool | default:false",
+          "remember_token | text",
+          "last_login_at | datetime"
+        ],
+        "access": "read: self + users.manage; write: users.manage (self can edit full_name, phone, language, avatar, password)"
+      },
+      {
+        "name": "role_permissions",
+        "group": "system",
+        "columns": [
+          "role | enum:user_role | req idx",
+          "permission_key | text | req",
+          "allowed | bool | req default:false"
+        ],
+        "indexes": [
+          "unique (role, permission_key)"
+        ],
+        "access": "read: authenticated; write: roles.manage"
+      },
+      {
+        "name": "app_settings",
+        "group": "system",
+        "columns": [
+          "key | text | req uniq",
+          "value | json | req",
+          "group_name | text",
+          "description | text"
+        ],
+        "access": "read: authenticated (non-secret keys); write: settings.system.manage"
+      },
+      {
+        "name": "number_sequences",
+        "group": "system",
+        "columns": [
+          "key | text | req | invoice, quotation, purchase_order, goods_receipt, adjustment, transfer, count, sale_return, purchase_return, party_payment, expense, fund_transfer, shift, warranty_claim, customer, supplier",
+          "branch_id | bigint | fk:branches.id",
+          "prefix | text | req",
+          "date_token | text | | e.g. YYMM",
+          "padding | int | req default:6",
+          "reset_policy | enum:reset_policy | req default:'yearly'",
+          "period_key | text | req default:'all'",
+          "next_value | bigint | req default:1"
+        ],
+        "indexes": [
+          "unique (key, branch_id, period_key)"
+        ],
+        "access": "no API endpoint; NumberService only"
+      },
+      {
+        "name": "audit_logs",
+        "group": "system",
+        "appendOnly": true,
+        "columns": [
+          "occurred_at | datetime | req default:CURRENT_TIMESTAMP idx",
+          "actor_id | bigint | fk:users.id idx",
+          "action | text | req | create, update, delete, void, price_change, stock_adjust, override, permission_change, login, export",
+          "entity_table | text | req idx",
+          "entity_id | bigint | idx",
+          "before | json",
+          "after | json",
+          "reason | text",
+          "approver_id | bigint | fk:users.id",
+          "ip | text",
+          "user_agent | text",
+          "request_id | text"
+        ],
+        "access": "read: audit.view; written by AuditService only"
+      },
+      {
+        "name": "notifications",
+        "group": "system",
+        "columns": [
+          "user_id | bigint | fk:users.id idx",
+          "role | enum:user_role",
+          "type | text | req | low_stock, approval_pending, overdue_due, shift_open, payment_pending",
+          "severity | enum:notification_severity | default:'info'",
+          "title | text | req",
+          "body | text",
+          "entity_table | text",
+          "entity_id | bigint",
+          "is_read | bool | default:false",
+          "read_at | datetime"
+        ],
+        "access": "read/update: own user_id or own role"
+      },
+      {
+        "name": "attachments",
+        "group": "system",
+        "columns": [
+          "entity_table | text | req idx",
+          "entity_id | bigint | req idx",
+          "storage_bucket | text | req",
+          "storage_path | text | req",
+          "file_name | text",
+          "mime_type | text",
+          "size_bytes | bigint",
+          "label | text"
+        ],
+        "access": "read/write: follows parent entity permission"
+      },
+      {
+        "name": "lookup_types",
+        "group": "system",
+        "columns": [
+          "key | text | req uniq",
+          "name_en | text | req",
+          "name_bn | text",
+          "description | text",
+          "is_system | bool | default:false",
+          "is_active | bool | default:true"
+        ],
+        "access": "read: authenticated; write: masterdata.manage; system rows cannot be deleted"
+      },
+      {
+        "name": "lookup_values",
+        "group": "system",
+        "columns": [
+          "type_id | bigint | req fk:lookup_types.id idx",
+          "code | text | req",
+          "label_en | text | req",
+          "label_bn | text",
+          "sort_order | int | default:0",
+          "meta | json |",
+          "is_active | bool | default:true"
+        ],
+        "indexes": [
+          "unique (type_id, code)"
+        ],
+        "access": "read: authenticated; write: masterdata.manage"
+      },
+      {
+        "name": "custom_field_defs",
+        "group": "system",
+        "columns": [
+          "entity | enum:custom_field_entity | req idx",
+          "key | text | req",
+          "label_en | text | req",
+          "label_bn | text",
+          "field_type | enum:custom_field_type | req",
+          "options | json | | for select/multi_select",
+          "is_required | bool | default:false",
+          "show_on_pos_card | bool | default:false",
+          "show_on_invoice | bool | default:false",
+          "is_searchable | bool | default:false",
+          "sort_order | int | default:0",
+          "is_active | bool | default:true"
+        ],
+        "indexes": [
+          "unique (entity, key)"
+        ],
+        "access": "read: authenticated; write: masterdata.manage"
+      },
+      {
+        "name": "vehicle_makes",
+        "group": "catalog",
+        "columns": [
+          "name | text | req uniq",
+          "logo_url | text",
+          "sort_order | int | default:0",
+          "is_active | bool | default:true"
+        ],
+        "access": "read: authenticated; write: masterdata.manage"
+      },
+      {
+        "name": "vehicle_models",
+        "group": "catalog",
+        "columns": [
+          "make_id | bigint | req fk:vehicle_makes.id idx",
+          "name | text | req",
+          "generation_code | text | req default:'' | e.g. NZE141; empty string when unknown",
+          "body_type_id | bigint | fk:lookup_values.id",
+          "year_from | int",
+          "year_to | int",
+          "is_active | bool | default:true"
+        ],
+        "indexes": [
+          "unique (make_id, name, generation_code)",
+          "index (name)"
+        ],
+        "access": "read: authenticated; write: masterdata.manage"
+      },
+      {
+        "name": "product_brands",
+        "group": "catalog",
+        "columns": [
+          "name | text | req uniq",
+          "country_id | bigint | fk:lookup_values.id",
+          "logo_url | text",
+          "website | text",
+          "is_oem | bool | default:false",
+          "is_active | bool | default:true"
+        ],
+        "access": "read: authenticated; write: masterdata.manage"
+      },
+      {
+        "name": "categories",
+        "group": "catalog",
+        "columns": [
+          "parent_id | bigint | fk:categories.id idx",
+          "name_en | text | req",
+          "name_bn | text",
+          "slug | text | req uniq",
+          "sort_order | int | default:0",
+          "is_active | bool | default:true"
+        ],
+        "access": "read: authenticated; write: masterdata.manage"
+      },
+      {
+        "name": "units",
+        "group": "catalog",
+        "columns": [
+          "code | text | req uniq",
+          "name_en | text | req",
+          "name_bn | text",
+          "is_pair_unit | bool | default:false",
+          "is_active | bool | default:true"
+        ],
+        "access": "read: authenticated; write: masterdata.manage"
+      },
+      {
+        "name": "tax_rates",
+        "group": "catalog",
+        "columns": [
+          "code | text | req uniq",
+          "name | text | req",
+          "rate_percent | decimal(5,2) | req default:0 check:rate_percent >= 0",
+          "is_default | bool | default:false",
+          "is_active | bool | default:true"
+        ],
+        "access": "read: authenticated; write: masterdata.manage"
+      },
+      {
+        "name": "products",
+        "group": "catalog",
+        "description": "Mirror family. Stock, price, SKU live on variants.",
+        "columns": [
+          "code | text | req uniq | SKU prefix",
+          "name_en | text | req idx",
+          "name_bn | text",
+          "mirror_type | enum:mirror_type | req idx",
+          "category_id | bigint | req fk:categories.id idx",
+          "brand_id | bigint | fk:product_brands.id idx",
+          "quality_grade_id | bigint | req fk:lookup_values.id",
+          "origin_country_id | bigint | fk:lookup_values.id",
+          "short_description | text",
+          "description | text",
+          "warranty_months | int | default:0 check:warranty_months >= 0",
+          "return_window_days | int",
+          "tax_rate_id | bigint | fk:tax_rates.id",
+          "unit_id | bigint | req fk:units.id",
+          "tags | json |",
+          "primary_image_url | text",
+          "custom | json |",
+          "is_active | bool | default:true idx",
+          "search_text | text | | lowercase name_en, name_bn, code, tags, brand; system maintained"
+        ],
+        "indexes": [
+          "index (name_en)",
+          "index (name_bn)",
+          "index (is_active, mirror_type)"
+        ],
+        "access": "read: products.view; write: products.manage"
+      },
+      {
+        "name": "product_variants",
+        "group": "catalog",
+        "description": "Sellable and stockable unit. Uniqueness by BR-092 via the signature column.",
+        "columns": [
+          "product_id | bigint | req fk:products.id idx",
+          "sku | text | req uniq",
+          "barcode | text | uniq",
+          "barcode_aliases | json |",
+          "position | enum:mirror_position | req idx",
+          "size_width_mm | decimal(7,1)",
+          "size_height_mm | decimal(7,1)",
+          "thickness_mm | decimal(5,1)",
+          "size_label | text | idx",
+          "weight_g | decimal(8,1)",
+          "glass_type_id | bigint | fk:lookup_values.id",
+          "tint_id | bigint | fk:lookup_values.id",
+          "is_glass_only | bool | default:false",
+          "color_finish_id | bigint | fk:lookup_values.id",
+          "cover_included | bool | default:false",
+          "adjustment | enum:adjustment_type",
+          "heated | bool | default:false",
+          "auto_fold | bool | default:false",
+          "turn_signal | bool | default:false",
+          "blind_spot_sensor | bool | default:false",
+          "side_camera | bool | default:false",
+          "memory_tilt | bool | default:false",
+          "auto_dimming | bool | default:false",
+          "puddle_light | bool | default:false",
+          "pin_count | int",
+          "connector_note | text",
+          "supplier_part_no | text",
+          "year_from | int",
+          "year_to | int",
+          "last_cost | decimal(14,2) | default:0 | system maintained",
+          "retail_price | decimal(14,2) | req check:retail_price >= 0",
+          "wholesale_price | decimal(14,2) | check:wholesale_price >= 0",
+          "dealer_price | decimal(14,2) | check:dealer_price >= 0",
+          "mrp | decimal(14,2)",
+          "min_price | decimal(14,2) | | floor price (BR-020)",
+          "tax_rate_id | bigint | fk:tax_rates.id | overrides product tax",
+          "reorder_level | decimal(14,3) | default:0",
+          "reorder_qty | decimal(14,3) | default:0",
+          "max_stock | decimal(14,3)",
+          "default_location_id | bigint | fk:storage_locations.id",
+          "track_serial | bool | default:false | phase 2",
+          "is_bundle | bool | default:false",
+          "is_discontinued | bool | default:false",
+          "is_active | bool | default:true idx",
+          "internal_note | text",
+          "custom | json |",
+          "variant_name | text | | generated display name",
+          "signature | text | req uniq | sha1 of product_id, position, size_label, glass_type_id, tint_id, color_finish_id, adjustment and feature flags (BR-092); on soft delete append the row id so the slot is freed",
+          "search_text | text | | lowercase product names, sku, barcode, variant_name, oem numbers, tags, brand, size_label; system maintained"
+        ],
+        "indexes": [
+          "unique (signature)",
+          "index (sku)",
+          "index (barcode)",
+          "index (product_id, position)",
+          "index (is_active, is_discontinued)"
+        ],
+        "access": "read: products.view (cost columns omitted from API responses unless products.view_cost); write: products.manage / pricing.manage for price columns"
+      },
+      {
+        "name": "product_images",
+        "group": "catalog",
+        "columns": [
+          "product_id | bigint | req fk:products.id idx",
+          "variant_id | bigint | fk:product_variants.id idx",
+          "storage_path | text | req",
+          "url | text | req",
+          "thumb_url | text",
+          "label | text | default:'other' | check:label in ('front','back','connector','package','size-chart','other')",
+          "alt_text | text",
+          "sort_order | int | default:0",
+          "is_primary | bool | default:false"
+        ],
+        "constraints": [
+          "max 8 images per variant (enforced in service)",
+          "at most one primary per product (enforced in service)"
+        ],
+        "access": "read: authenticated; write: products.manage"
+      },
+      {
+        "name": "oem_cross_references",
+        "group": "catalog",
+        "columns": [
+          "variant_id | bigint | req fk:product_variants.id idx",
+          "ref_type | enum:xref_type | req default:'oem'",
+          "number | text | req",
+          "number_normalized | text | req idx | uppercase, no spaces or dashes",
+          "brand | text",
+          "note | text"
+        ],
+        "indexes": [
+          "unique (variant_id, ref_type, number_normalized)",
+          "index (number_normalized)"
+        ],
+        "access": "read: products.view; write: products.manage"
+      },
+      {
+        "name": "vehicle_fitments",
+        "group": "catalog",
+        "columns": [
+          "variant_id | bigint | req fk:product_variants.id idx",
+          "vehicle_model_id | bigint | req fk:vehicle_models.id idx",
+          "year_from | int | req",
+          "year_to | int | | null = open ended",
+          "trim | text",
+          "note | text",
+          "signature | text | req uniq | sha1 of variant_id, vehicle_model_id, year_from, year_to, trim; prevents duplicates despite NULLs"
+        ],
+        "indexes": [
+          "index (vehicle_model_id, year_from, year_to)",
+          "unique (signature)"
+        ],
+        "constraints": [
+          "check year_to is null or year_to >= year_from"
+        ],
+        "access": "read: products.view; write: products.manage"
+      },
+      {
+        "name": "variant_bundle_items",
+        "group": "catalog",
+        "columns": [
+          "bundle_variant_id | bigint | req fk:product_variants.id idx",
+          "component_variant_id | bigint | req fk:product_variants.id",
+          "qty | decimal(14,3) | req default:1 check:qty > 0"
+        ],
+        "constraints": [
+          "check bundle_variant_id <> component_variant_id",
+          "bundle variant must have is_bundle = true",
+          "no nested bundles"
+        ],
+        "access": "read: products.view; write: products.manage"
+      },
+      {
+        "name": "stock_levels",
+        "group": "inventory",
+        "description": "Maintained only by posting functions in the same transaction as stock_movements. One row per variant and warehouse.",
+        "columns": [
+          "variant_id | bigint | req fk:product_variants.id idx",
+          "warehouse_id | bigint | req fk:warehouses.id idx",
+          "location_id | bigint | fk:storage_locations.id | informational primary bin",
+          "qty_on_hand | decimal(14,3) | req default:0",
+          "qty_reserved | decimal(14,3) | req default:0",
+          "avg_cost | decimal(14,4) | req default:0",
+          "last_movement_at | datetime"
+        ],
+        "indexes": [
+          "unique (variant_id, warehouse_id)"
+        ],
+        "constraints": [
+          "StockPostingService blocks qty_on_hand < 0 unless app_settings.allow_negative_stock = true; nightly integrity:check also reports it"
+        ],
+        "access": "read: inventory.view; no direct write (StockPostingService only)"
+      },
+      {
+        "name": "stock_movements",
+        "group": "inventory",
+        "appendOnly": true,
+        "branchScoped": true,
+        "description": "Source of truth for stock. stock_levels.qty_on_hand must equal sum(qty_delta) per variant and warehouse (invariant test).",
+        "columns": [
+          "variant_id | bigint | req fk:product_variants.id idx",
+          "warehouse_id | bigint | req fk:warehouses.id idx",
+          "movement_type | enum:stock_movement_type | req idx",
+          "qty_delta | decimal(14,3) | req check:qty_delta <> 0",
+          "unit_cost | decimal(14,4) | req default:0",
+          "balance_after | decimal(14,3) | req",
+          "ref_table | text | idx",
+          "ref_id | bigint | idx",
+          "ref_no | text",
+          "reason | text",
+          "note | text",
+          "occurred_at | datetime | req default:CURRENT_TIMESTAMP idx"
+        ],
+        "access": "read: inventory.view; insert: services only"
+      },
+      {
+        "name": "stock_adjustments",
+        "group": "inventory",
+        "branchScoped": true,
+        "columns": [
+          "adj_no | text | req uniq",
+          "warehouse_id | bigint | req fk:warehouses.id",
+          "status | enum:adjustment_status | req default:'draft' idx",
+          "reason_id | bigint | req fk:lookup_values.id",
+          "note | text",
+          "requires_approval | bool | default:false",
+          "approved_by | bigint | fk:users.id",
+          "approved_at | datetime",
+          "posted_at | datetime",
+          "total_value | decimal(14,2) | default:0"
+        ],
+        "access": "read: inventory.view; write: inventory.adjust; approve: inventory.adjust.approve"
+      },
+      {
+        "name": "stock_adjustment_items",
+        "group": "inventory",
+        "columns": [
+          "adjustment_id | bigint | req fk:stock_adjustments.id idx",
+          "variant_id | bigint | req fk:product_variants.id",
+          "qty_delta | decimal(14,3) | req check:qty_delta <> 0",
+          "unit_cost | decimal(14,4) | default:0",
+          "is_breakage | bool | default:false",
+          "supplier_id | bigint | fk:suppliers.id | for supplier claim",
+          "photo_attachment_id | bigint | fk:attachments.id",
+          "note | text"
+        ],
+        "access": "follows stock_adjustments"
+      },
+      {
+        "name": "stock_transfers",
+        "group": "inventory",
+        "branchScoped": true,
+        "columns": [
+          "transfer_no | text | req uniq",
+          "from_warehouse_id | bigint | req fk:warehouses.id",
+          "to_warehouse_id | bigint | req fk:warehouses.id",
+          "status | enum:transfer_status | req default:'draft' idx",
+          "sent_at | datetime",
+          "sent_by | bigint | fk:users.id",
+          "received_at | datetime",
+          "received_by | bigint | fk:users.id",
+          "note | text"
+        ],
+        "constraints": [
+          "check from_warehouse_id <> to_warehouse_id"
+        ],
+        "access": "read: inventory.view; write: inventory.transfer"
+      },
+      {
+        "name": "stock_transfer_items",
+        "group": "inventory",
+        "columns": [
+          "transfer_id | bigint | req fk:stock_transfers.id idx",
+          "variant_id | bigint | req fk:product_variants.id",
+          "qty_sent | decimal(14,3) | req check:qty_sent > 0",
+          "qty_received | decimal(14,3) | default:0",
+          "unit_cost | decimal(14,4) | default:0",
+          "note | text"
+        ],
+        "access": "follows stock_transfers"
+      },
+      {
+        "name": "stock_counts",
+        "group": "inventory",
+        "branchScoped": true,
+        "columns": [
+          "count_no | text | req uniq",
+          "warehouse_id | bigint | req fk:warehouses.id",
+          "scope | enum:count_scope | req default:'full'",
+          "scope_ref | bigint | | category_id or location_id",
+          "is_blind | bool | default:false",
+          "status | enum:count_status | req default:'draft' idx",
+          "started_at | datetime",
+          "posted_at | datetime",
+          "note | text"
+        ],
+        "access": "read: inventory.view; write: inventory.count"
+      },
+      {
+        "name": "stock_count_items",
+        "group": "inventory",
+        "columns": [
+          "count_id | bigint | req fk:stock_counts.id idx",
+          "variant_id | bigint | req fk:product_variants.id",
+          "system_qty | decimal(14,3) | req | snapshot at count start",
+          "counted_qty | decimal(14,3)",
+          "variance | decimal(14,3) | | counted_qty - system_qty (computed by service or generated column)",
+          "unit_cost | decimal(14,4) | default:0",
+          "note | text"
+        ],
+        "indexes": [
+          "unique (count_id, variant_id)"
+        ],
+        "access": "follows stock_counts"
+      },
+      {
+        "name": "suppliers",
+        "group": "purchasing",
+        "columns": [
+          "code | text | req uniq",
+          "name | text | req idx",
+          "contact_person | text",
+          "phones | json |",
+          "email | text",
+          "address | text",
+          "city | text",
+          "country | text | default:'Bangladesh'",
+          "supplier_type | enum:supplier_type | req default:'local'",
+          "payment_terms_days | int | default:0",
+          "credit_limit | decimal(14,2) | default:0",
+          "opening_balance | decimal(14,2) | default:0 | amount we owe at go-live",
+          "bank_details | json |",
+          "notes | text",
+          "custom | json |",
+          "is_active | bool | default:true"
+        ],
+        "access": "read: purchases.view; write: suppliers.manage"
+      },
+      {
+        "name": "purchase_orders",
+        "group": "purchasing",
+        "branchScoped": true,
+        "columns": [
+          "po_no | text | req uniq",
+          "supplier_id | bigint | req fk:suppliers.id idx",
+          "status | enum:po_status | req default:'draft' idx",
+          "order_date | date | req",
+          "expected_date | date",
+          "subtotal | decimal(14,2) | default:0",
+          "tax_total | decimal(14,2) | default:0",
+          "extra_total | decimal(14,2) | default:0",
+          "grand_total | decimal(14,2) | default:0",
+          "note | text",
+          "approved_by | bigint | fk:users.id",
+          "approved_at | datetime",
+          "pdf_path | text"
+        ],
+        "access": "read: purchases.view; write: purchases.manage"
+      },
+      {
+        "name": "purchase_order_items",
+        "group": "purchasing",
+        "columns": [
+          "po_id | bigint | req fk:purchase_orders.id idx",
+          "variant_id | bigint | req fk:product_variants.id idx",
+          "qty_ordered | decimal(14,3) | req check:qty_ordered > 0",
+          "qty_received | decimal(14,3) | req default:0",
+          "unit_cost | decimal(14,2) | req check:unit_cost >= 0",
+          "tax_rate_percent | decimal(5,2) | default:0",
+          "line_total | decimal(14,2) | req"
+        ],
+        "access": "follows purchase_orders"
+      },
+      {
+        "name": "goods_receipts",
+        "group": "purchasing",
+        "branchScoped": true,
+        "columns": [
+          "grn_no | text | req uniq",
+          "warehouse_id | bigint | req fk:warehouses.id",
+          "supplier_id | bigint | req fk:suppliers.id idx",
+          "po_id | bigint | fk:purchase_orders.id",
+          "supplier_invoice_no | text",
+          "supplier_invoice_date | date",
+          "received_date | date | req idx",
+          "status | enum:grn_status | req default:'draft' idx",
+          "allocation_basis | enum:cost_allocation_basis | req default:'value'",
+          "items_total | decimal(14,2) | default:0",
+          "extra_cost_total | decimal(14,2) | default:0",
+          "grand_total | decimal(14,2) | default:0",
+          "paid_total | decimal(14,2) | default:0",
+          "note | text",
+          "posted_at | datetime"
+        ],
+        "access": "read: purchases.view; write: purchases.grn / purchases.manage"
+      },
+      {
+        "name": "goods_receipt_items",
+        "group": "purchasing",
+        "columns": [
+          "grn_id | bigint | req fk:goods_receipts.id idx",
+          "po_item_id | bigint | fk:purchase_order_items.id",
+          "variant_id | bigint | req fk:product_variants.id idx",
+          "qty_received | decimal(14,3) | req check:qty_received >= 0",
+          "qty_damaged | decimal(14,3) | req default:0 | damaged on arrival; posts damage movement",
+          "unit_cost | decimal(14,2) | req check:unit_cost >= 0",
+          "allocated_extra | decimal(14,2) | default:0",
+          "landed_unit_cost | decimal(14,4) | default:0 | (qty*unit_cost + allocated_extra) / good qty",
+          "line_total | decimal(14,2) | req"
+        ],
+        "access": "follows goods_receipts"
+      },
+      {
+        "name": "purchase_extra_costs",
+        "group": "purchasing",
+        "columns": [
+          "grn_id | bigint | req fk:goods_receipts.id idx",
+          "cost_type | enum:extra_cost_type | req",
+          "description | text",
+          "amount | decimal(14,2) | req check:amount >= 0",
+          "paid_to | text",
+          "account_id | bigint | fk:financial_accounts.id | if paid immediately"
+        ],
+        "access": "follows goods_receipts"
+      },
+      {
+        "name": "purchase_returns",
+        "group": "purchasing",
+        "branchScoped": true,
+        "columns": [
+          "return_no | text | req uniq",
+          "supplier_id | bigint | req fk:suppliers.id idx",
+          "grn_id | bigint | fk:goods_receipts.id",
+          "warehouse_id | bigint | req fk:warehouses.id",
+          "status | enum:purchase_return_status | req default:'draft'",
+          "return_date | date | req",
+          "reason | text",
+          "total | decimal(14,2) | default:0",
+          "posted_at | datetime"
+        ],
+        "access": "read: purchases.view; write: purchases.manage"
+      },
+      {
+        "name": "purchase_return_items",
+        "group": "purchasing",
+        "columns": [
+          "return_id | bigint | req fk:purchase_returns.id idx",
+          "variant_id | bigint | req fk:product_variants.id",
+          "qty | decimal(14,3) | req check:qty > 0",
+          "unit_cost | decimal(14,2) | req"
+        ],
+        "access": "follows purchase_returns"
+      },
+      {
+        "name": "customers",
+        "group": "sales",
+        "columns": [
+          "code | text | req uniq | CUS-000001",
+          "customer_type_id | bigint | fk:lookup_values.id",
+          "price_tier | enum:price_tier | req default:'retail'",
+          "name | text | req idx",
+          "company_name | text",
+          "phones | json | req | first item is primary, validated 01XXXXXXXXX",
+          "whatsapp | text",
+          "email | text",
+          "address_line1 | text",
+          "address_line2 | text",
+          "area | text",
+          "district | text",
+          "postcode | text",
+          "nid_no | text",
+          "trade_license_no | text",
+          "bin_no | text",
+          "credit_limit | decimal(14,2) | default:0",
+          "opening_balance | decimal(14,2) | default:0 | amount customer owes at go-live",
+          "notes | text",
+          "custom | json |",
+          "is_walk_in | bool | default:false",
+          "is_active | bool | default:true",
+          "phone_primary | text | idx | first phone, digits only; system maintained; used for lookup and duplicate warning",
+          "walkin_key | int | uniq | 1 only for the walk-in customer, otherwise NULL; guarantees exactly one walk-in row",
+          "search_text | text | | lowercase code, name, company, phones; system maintained"
+        ],
+        "indexes": [
+          "index (name)",
+          "index (company_name)"
+        ],
+        "access": "read: customers.view; write: customers.manage"
+      },
+      {
+        "name": "customer_vehicles",
+        "group": "sales",
+        "columns": [
+          "customer_id | bigint | req fk:customers.id idx",
+          "reg_no | text | req",
+          "make_id | bigint | fk:vehicle_makes.id",
+          "model_id | bigint | fk:vehicle_models.id",
+          "year | int",
+          "color | text",
+          "note | text"
+        ],
+        "indexes": [
+          "unique (customer_id, reg_no)"
+        ],
+        "access": "follows customers"
+      },
+      {
+        "name": "quotations",
+        "group": "sales",
+        "branchScoped": true,
+        "columns": [
+          "quote_no | text | req uniq",
+          "customer_id | bigint | fk:customers.id",
+          "customer_snapshot | json | req",
+          "vehicle_snapshot | json",
+          "status | enum:quotation_status | req default:'draft' idx",
+          "quote_date | date | req",
+          "valid_until | date",
+          "subtotal | decimal(14,2) | default:0",
+          "discount_total | decimal(14,2) | default:0",
+          "tax_total | decimal(14,2) | default:0",
+          "delivery_charge | decimal(14,2) | default:0",
+          "grand_total | decimal(14,2) | default:0",
+          "note | text",
+          "converted_sale_id | bigint | fk:sales.id",
+          "pdf_path | text"
+        ],
+        "access": "read: sales.view_all or own; write: quotations.manage"
+      },
+      {
+        "name": "quotation_items",
+        "group": "sales",
+        "columns": [
+          "quotation_id | bigint | req fk:quotations.id idx",
+          "variant_id | bigint | req fk:product_variants.id",
+          "description_snapshot | text | req",
+          "qty | decimal(14,3) | req check:qty > 0",
+          "unit_price | decimal(14,2) | req",
+          "discount_type | enum:discount_type | default:'none'",
+          "discount_value | decimal(14,2) | default:0",
+          "tax_rate_percent | decimal(5,2) | default:0",
+          "line_total | decimal(14,2) | req"
+        ],
+        "access": "follows quotations"
+      },
+      {
+        "name": "cash_shifts",
+        "group": "sales",
+        "branchScoped": true,
+        "columns": [
+          "shift_no | text | req uniq",
+          "cashier_id | bigint | req fk:users.id idx",
+          "cash_account_id | bigint | req fk:financial_accounts.id",
+          "status | enum:shift_status | req default:'open' idx",
+          "opened_at | datetime | req default:CURRENT_TIMESTAMP",
+          "opening_float | decimal(14,2) | req default:0",
+          "closed_at | datetime",
+          "expected_cash | decimal(14,2)",
+          "counted_cash | decimal(14,2)",
+          "variance | decimal(14,2)",
+          "denomination_counts | json | | {1000:n,500:n,...}",
+          "totals | json | | sales by method, returns, cash in/out",
+          "note | text",
+          "z_report_path | text",
+          "open_key | text | uniq | cashier_id:cash_account_id while status = 'open', NULL when closed"
+        ],
+        "constraints": [
+          "one open shift per cashier per cash account via unique open_key"
+        ],
+        "access": "read: shifts.view_all or own; write: shifts.open_close_own; close others: shifts.close_any"
+      },
+      {
+        "name": "sales",
+        "group": "sales",
+        "branchScoped": true,
+        "description": "Invoice header. Immutable once status = completed (BR-050). Stores snapshots.",
+        "columns": [
+          "invoice_no | text | uniq | null while draft/held",
+          "idempotency_key | text | uniq",
+          "verify_token | text | uniq | for /verify/:token",
+          "warehouse_id | bigint | req fk:warehouses.id",
+          "shift_id | bigint | fk:cash_shifts.id idx",
+          "customer_id | bigint | req fk:customers.id idx",
+          "customer_snapshot | json | req",
+          "company_snapshot | json | req",
+          "vehicle_snapshot | json",
+          "sale_channel | enum:sale_channel | req default:'counter'",
+          "status | enum:sale_status | req default:'draft' idx",
+          "sale_date | datetime | req default:CURRENT_TIMESTAMP idx",
+          "due_date | date",
+          "vat_mode_snapshot | enum:vat_mode | req",
+          "subtotal | decimal(14,2) | req default:0",
+          "line_discount_total | decimal(14,2) | default:0",
+          "cart_discount_type | enum:discount_type | default:'none'",
+          "cart_discount_value | decimal(14,2) | default:0",
+          "cart_discount_amount | decimal(14,2) | default:0",
+          "taxable_amount | decimal(14,2) | default:0",
+          "tax_total | decimal(14,2) | default:0",
+          "delivery_charge | decimal(14,2) | default:0",
+          "round_off | decimal(14,2) | default:0",
+          "grand_total | decimal(14,2) | req default:0",
+          "paid_total | decimal(14,2) | req default:0",
+          "due_total | decimal(14,2) | req default:0",
+          "change_given | decimal(14,2) | default:0",
+          "payment_status | enum:payment_status | req default:'unpaid' idx",
+          "salesperson_id | bigint | fk:users.id",
+          "cashier_id | bigint | fk:users.id idx",
+          "note | text",
+          "held_name | text",
+          "held_payload | json | | cart for held bills",
+          "pdf_path | text",
+          "pdf_generated_at | datetime",
+          "reprint_count | int | default:0",
+          "void_reason | text",
+          "voided_by | bigint | fk:users.id",
+          "voided_at | datetime"
+        ],
+        "constraints": [
+          "check grand_total = paid_total + due_total when completed",
+          "check due_total > 0 implies customer is not walk-in (BR-040)"
+        ],
+        "indexes": [
+          "index (branch_id, sale_date)",
+          "index (customer_id, sale_date)",
+          "index (payment_status, due_total)"
+        ],
+        "access": "read: sales.view_all or (sales.view_own and cashier_id = current user); insert/update only through SaleService; no delete"
+      },
+      {
+        "name": "sale_items",
+        "group": "sales",
+        "columns": [
+          "sale_id | bigint | req fk:sales.id idx",
+          "line_no | int | req",
+          "variant_id | bigint | req fk:product_variants.id idx",
+          "product_name_snapshot | text | req",
+          "sku_snapshot | text | req",
+          "spec_snapshot | json | req",
+          "qty | decimal(14,3) | req check:qty > 0",
+          "qty_returned | decimal(14,3) | req default:0",
+          "unit_price | decimal(14,2) | req",
+          "price_tier_used | enum:price_tier | req",
+          "discount_type | enum:discount_type | default:'none'",
+          "discount_value | decimal(14,2) | default:0",
+          "discount_amount | decimal(14,2) | default:0",
+          "cart_discount_share | decimal(14,2) | default:0",
+          "tax_rate_percent | decimal(5,2) | default:0",
+          "tax_amount | decimal(14,2) | default:0",
+          "line_total | decimal(14,2) | req",
+          "unit_cost | decimal(14,4) | req | COGS snapshot (BR-031)",
+          "warranty_months | int | default:0",
+          "warranty_until | date",
+          "bundle_parent_line | int | | line_no of bundle line when this row is a component",
+          "note | text",
+          "price_override_by | bigint | fk:users.id",
+          "price_override_reason | text"
+        ],
+        "indexes": [
+          "unique (sale_id, line_no)"
+        ],
+        "access": "follows sales"
+      },
+      {
+        "name": "sale_payments",
+        "group": "sales",
+        "columns": [
+          "sale_id | bigint | req fk:sales.id idx",
+          "method | enum:payment_method | req idx",
+          "amount | decimal(14,2) | req check:amount > 0",
+          "tendered | decimal(14,2) | | cash only",
+          "change_amount | decimal(14,2) | default:0 | cash only",
+          "account_id | bigint | req fk:financial_accounts.id",
+          "sender_number | text | | bkash, nagad, rocket",
+          "trx_id | text | idx | bkash, nagad, rocket",
+          "bank_name | text",
+          "bank_account_no | text",
+          "bank_ref | text",
+          "transfer_date | date",
+          "attachment_id | bigint | fk:attachments.id",
+          "verification | enum:payment_verification | req default:'confirmed'",
+          "verified_by | bigint | fk:users.id",
+          "verified_at | datetime",
+          "duplicate_override_by | bigint | fk:users.id | manager who allowed a duplicate TrxID",
+          "received_at | datetime | req default:CURRENT_TIMESTAMP",
+          "trx_key | text | uniq | method:trx_id for bkash/nagad/rocket when verification <> 'rejected' and no duplicate override; otherwise NULL (BR-061)"
+        ],
+        "constraints": [
+          "check method in (bkash,nagad,rocket) implies sender_number and trx_id not null (BR-060)",
+          "check method = bank_transfer implies bank_name and bank_ref not null (BR-060)"
+        ],
+        "indexes": [
+          "unique (trx_key)",
+          "index (method, trx_id)"
+        ],
+        "access": "follows sales; verification update: payments.verify"
+      },
+      {
+        "name": "sale_returns",
+        "group": "sales",
+        "branchScoped": true,
+        "columns": [
+          "return_no | text | req uniq",
+          "sale_id | bigint | req fk:sales.id idx",
+          "customer_id | bigint | req fk:customers.id",
+          "status | enum:sale_return_status | req default:'draft' idx",
+          "return_date | datetime | req default:CURRENT_TIMESTAMP",
+          "reason_id | bigint | fk:lookup_values.id",
+          "refund_mode | enum:refund_mode | req default:'ledger_credit'",
+          "refund_method | enum:payment_method",
+          "refund_account_id | bigint | fk:financial_accounts.id",
+          "subtotal | decimal(14,2) | default:0",
+          "tax_total | decimal(14,2) | default:0",
+          "refund_total | decimal(14,2) | default:0 | paid out now",
+          "ledger_credit_total | decimal(14,2) | default:0 | credited to customer balance",
+          "note | text",
+          "approved_by | bigint | fk:users.id",
+          "approved_at | datetime",
+          "pdf_path | text"
+        ],
+        "access": "read: sales.view_all or own; create: sales.return.create; approve: sales.return.approve"
+      },
+      {
+        "name": "sale_return_items",
+        "group": "sales",
+        "columns": [
+          "return_id | bigint | req fk:sale_returns.id idx",
+          "sale_item_id | bigint | req fk:sale_items.id",
+          "variant_id | bigint | req fk:product_variants.id",
+          "qty | decimal(14,3) | req check:qty > 0",
+          "unit_price | decimal(14,2) | req",
+          "tax_amount | decimal(14,2) | default:0",
+          "line_total | decimal(14,2) | req",
+          "condition | enum:return_condition | req",
+          "restock_warehouse_id | bigint | fk:warehouses.id"
+        ],
+        "access": "follows sale_returns"
+      },
+      {
+        "name": "warranty_claims",
+        "group": "sales",
+        "branchScoped": true,
+        "columns": [
+          "claim_no | text | req uniq",
+          "sale_item_id | bigint | req fk:sale_items.id idx",
+          "customer_id | bigint | req fk:customers.id",
+          "status | enum:warranty_status | req default:'open' idx",
+          "issue | text | req",
+          "claimed_at | datetime | req default:CURRENT_TIMESTAMP",
+          "photo_attachment_id | bigint | fk:attachments.id",
+          "resolution | text",
+          "replacement_variant_id | bigint | fk:product_variants.id",
+          "resolved_at | datetime",
+          "resolved_by | bigint | fk:users.id",
+          "note | text"
+        ],
+        "access": "read: sales.view_all; write: sales.return.create"
+      },
+      {
+        "name": "financial_accounts",
+        "group": "finance",
+        "branchScoped": true,
+        "columns": [
+          "code | text | req uniq",
+          "name | text | req",
+          "account_type | enum:financial_account_type | req idx",
+          "provider | text | | bKash, Nagad, Rocket, bank name",
+          "account_number | text | | MFS number or bank account no",
+          "bank_name | text",
+          "bank_branch | text",
+          "opening_balance | decimal(14,2) | req default:0",
+          "opening_date | date | req",
+          "is_default_for_method | bool | default:false",
+          "is_active | bool | default:true",
+          "note | text"
+        ],
+        "access": "read: ledger.view or pos.sell (names only); write: accounts.manage"
+      },
+      {
+        "name": "account_transactions",
+        "group": "finance",
+        "appendOnly": true,
+        "branchScoped": true,
+        "description": "Every money movement in or out of a financial account.",
+        "columns": [
+          "account_id | bigint | req fk:financial_accounts.id idx",
+          "direction | enum:account_txn_direction | req",
+          "amount | decimal(14,2) | req check:amount > 0",
+          "txn_date | date | req idx",
+          "occurred_at | datetime | req default:CURRENT_TIMESTAMP",
+          "ref_type | enum:account_txn_ref_type | req idx",
+          "ref_id | bigint | idx",
+          "ref_no | text",
+          "counterparty_type | enum:ledger_party_type",
+          "counterparty_id | bigint",
+          "description | text"
+        ],
+        "access": "read: ledger.view; insert: services only"
+      },
+      {
+        "name": "party_ledger_entries",
+        "group": "finance",
+        "appendOnly": true,
+        "branchScoped": true,
+        "description": "Customer: debit increases what they owe us. Supplier: credit increases what we owe them. Balance via v_party_balance.",
+        "columns": [
+          "party_type | enum:ledger_party_type | req idx",
+          "party_id | bigint | req idx",
+          "entry_date | date | req idx",
+          "entry_type | enum:ledger_entry_type | req",
+          "debit | decimal(14,2) | req default:0 check:debit >= 0",
+          "credit | decimal(14,2) | req default:0 check:credit >= 0",
+          "ref_table | text",
+          "ref_id | bigint | idx",
+          "ref_no | text",
+          "description | text"
+        ],
+        "constraints": [
+          "check (debit > 0) <> (credit > 0)"
+        ],
+        "access": "read: ledger.view (cashier: own customers via customers.view balance only); insert: services only"
+      },
+      {
+        "name": "party_payments",
+        "group": "finance",
+        "branchScoped": true,
+        "columns": [
+          "payment_no | text | req uniq",
+          "party_type | enum:ledger_party_type | req",
+          "party_id | bigint | req idx",
+          "direction | enum:payment_direction | req",
+          "method | enum:payment_method | req",
+          "amount | decimal(14,2) | req check:amount > 0",
+          "account_id | bigint | req fk:financial_accounts.id",
+          "sender_number | text",
+          "trx_id | text | idx",
+          "bank_name | text",
+          "bank_ref | text",
+          "payment_date | date | req idx",
+          "allocated_total | decimal(14,2) | default:0",
+          "advance_amount | decimal(14,2) | default:0",
+          "verification | enum:payment_verification | req default:'confirmed'",
+          "attachment_id | bigint | fk:attachments.id",
+          "receipt_pdf_path | text",
+          "note | text"
+        ],
+        "access": "read: ledger.view; create: ledger.receive_payment / ledger.pay_supplier"
+      },
+      {
+        "name": "party_payment_allocations",
+        "group": "finance",
+        "columns": [
+          "payment_id | bigint | req fk:party_payments.id idx",
+          "doc_table | text | req | sales or goods_receipts",
+          "doc_id | bigint | req idx",
+          "amount | decimal(14,2) | req check:amount > 0"
+        ],
+        "access": "follows party_payments"
+      },
+      {
+        "name": "expense_categories",
+        "group": "finance",
+        "columns": [
+          "parent_id | bigint | fk:expense_categories.id",
+          "name_en | text | req",
+          "name_bn | text",
+          "is_active | bool | default:true"
+        ],
+        "access": "read: authenticated; write: masterdata.manage or expenses.manage"
+      },
+      {
+        "name": "expenses",
+        "group": "finance",
+        "branchScoped": true,
+        "columns": [
+          "expense_no | text | req uniq",
+          "category_id | bigint | req fk:expense_categories.id idx",
+          "amount | decimal(14,2) | req check:amount > 0",
+          "account_id | bigint | req fk:financial_accounts.id",
+          "expense_date | date | req idx",
+          "payee | text",
+          "note | text",
+          "attachment_id | bigint | fk:attachments.id",
+          "status | enum:expense_status | req default:'posted'",
+          "approved_by | bigint | fk:users.id"
+        ],
+        "access": "read/write: expenses.manage"
+      },
+      {
+        "name": "fund_transfers",
+        "group": "finance",
+        "branchScoped": true,
+        "columns": [
+          "transfer_no | text | req uniq",
+          "from_account_id | bigint | req fk:financial_accounts.id",
+          "to_account_id | bigint | req fk:financial_accounts.id",
+          "amount | decimal(14,2) | req check:amount > 0",
+          "fee_amount | decimal(14,2) | default:0",
+          "fee_expense_id | bigint | fk:expenses.id",
+          "transfer_date | date | req",
+          "note | text"
+        ],
+        "constraints": [
+          "check from_account_id <> to_account_id"
+        ],
+        "access": "read/write: fund_transfers.manage"
+      }
+    ]
+  },
+  "transactionalServices": {
+    "note": "Implemented as PHP service classes. Each transactional method runs inside one DB::transaction, locks rows in deterministic order, writes audit_logs, and is covered by feature tests for every error code. No stored procedures or triggers anywhere.",
+    "errorShape": {
+      "code": "UPPER_SNAKE error code",
+      "message": "friendly text key for i18n",
+      "fields": "per-field messages when VALIDATION",
+      "request_id": "string"
+    },
+    "items": [
+      {
+        "name": "next_number",
+        "purpose": "Gap-free document numbers (BR-070). Called inside the same DB transaction as the document insert; row locked with SELECT ... FOR UPDATE.",
+        "input": [
+          "key",
+          "branch_id",
+          "doc_date"
+        ],
+        "steps": [
+          "lock sequence row for (key, branch, period)",
+          "reset counter if period changed per reset_policy",
+          "format prefix + date_token + zero-padded counter",
+          "increment next_value"
+        ],
+        "output": "text document number",
+        "class": "NumberService::next",
+        "transactional": true
+      },
+      {
+        "name": "search_variants_by_vehicle",
+        "purpose": "Vehicle Finder and POS search.",
+        "input": [
+          "make_id?",
+          "model_id?",
+          "year?",
+          "position?",
+          "text?",
+          "only_in_stock?",
+          "warehouse_id",
+          "limit",
+          "offset"
+        ],
+        "steps": [
+          "join vehicle_fitments on model and year range",
+          "apply position filter (include pair and universal when relevant)",
+          "text match on name, sku, barcode, oem number_normalized, tags",
+          "attach stock available per warehouse",
+          "sort by availability then price"
+        ],
+        "output": "variants with product name, image, spec, size_label, prices, stock, fitment note",
+        "class": "VariantSearchService::search",
+        "endpoint": "GET /api/v1/pos/variants",
+        "transactional": false
+      },
+      {
+        "name": "complete_sale",
+        "purpose": "Atomic checkout. The only way a completed invoice is created (FR-711).",
+        "input": [
+          "idempotency_key",
+          "cart (lines: variant_id, qty, unit_price_client, discount_type, discount_value, note, override_reason?)",
+          "customer_id",
+          "vehicle (object)",
+          "sale_channel",
+          "warehouse_id",
+          "cart_discount (type, value)",
+          "delivery_charge",
+          "payments[] (method, amount, account_id, tendered?, sender_number?, trx_id?, bank_name?, bank_ref?, transfer_date?, attachment_id?)",
+          "client_expected_grand_total",
+          "approvals (manager_pin?, reason?)",
+          "note"
+        ],
+        "steps": [
+          "read Idempotency-Key header; if a sale with the key exists return it unchanged (idempotent)",
+          "authorize pos.sell and require an open shift when require_open_shift",
+          "check company_profile completeness else COMPANY_PROFILE_INCOMPLETE",
+          "inside DB::transaction lock stock_levels rows with SELECT ... FOR UPDATE ordered by id; retry up to 3 times on deadlock",
+          "load variants; server recomputes price tier, discounts (BR-010), tax (BR-003), rounding (BR-001); reject if abs(total - client_expected_grand_total) > 0.01 with TOTAL_MISMATCH",
+          "enforce price floor and discount limit; require valid manager PIN when exceeded (BR-020, BR-021); audit override",
+          "enforce walk-in no due (BR-040) and credit limit (BR-041)",
+          "validate payments: references (BR-060), duplicate TrxID (BR-061), cash change math, no overpay on non-cash",
+          "expand bundles to components; verify stock for every component else INSUFFICIENT_STOCK with variant list",
+          "next_number('invoice') and insert sales with company, customer, vehicle snapshots and verify_token",
+          "insert sale_items with spec_snapshot, unit_cost from stock_levels.avg_cost (BR-031), warranty_until",
+          "insert stock_movements (sale) and update stock_levels",
+          "insert sale_payments and account_transactions (in) per payment",
+          "insert party_ledger_entries: invoice debit, payment credits",
+          "set paid_total, due_total, payment_status",
+          "write audit_logs",
+          "return full sale snapshot (header, items, payments) for PDF"
+        ],
+        "output": "sale snapshot json",
+        "errors": [
+          "FORBIDDEN",
+          "NO_OPEN_SHIFT",
+          "COMPANY_PROFILE_INCOMPLETE",
+          "TOTAL_MISMATCH",
+          "PIN_REQUIRED",
+          "PIN_INVALID",
+          "INSUFFICIENT_STOCK",
+          "WALKIN_DUE",
+          "CREDIT_LIMIT",
+          "PAYMENT_REFERENCE_REQUIRED",
+          "DUPLICATE_TRXID",
+          "PERIOD_LOCKED",
+          "VALIDATION"
+        ],
+        "class": "SaleService::complete",
+        "endpoint": "POST /api/v1/sales/checkout",
+        "transactional": true
+      },
+      {
+        "name": "void_sale",
+        "purpose": "Void a completed invoice (BR-051).",
+        "input": [
+          "sale_id",
+          "reason",
+          "manager_pin?"
+        ],
+        "steps": [
+          "check permission and same-day rule",
+          "reject if period locked or any returns exist",
+          "reverse stock via sale_return-like movements marked void",
+          "insert reversing account_transactions (out)",
+          "insert reversing ledger entries",
+          "set status = void with reason, actor, time",
+          "audit"
+        ],
+        "output": "updated sale",
+        "errors": [
+          "FORBIDDEN",
+          "PERIOD_LOCKED",
+          "HAS_RETURNS",
+          "ALREADY_VOID"
+        ],
+        "class": "SaleService::void",
+        "endpoint": "POST /api/v1/sales/{id}/void",
+        "transactional": true
+      },
+      {
+        "name": "create_sale_return",
+        "purpose": "Return or exchange against an invoice (BR-052).",
+        "input": [
+          "sale_id",
+          "items (sale_item_id, qty, condition, restock_warehouse_id)",
+          "reason_id",
+          "refund_mode",
+          "refund_method?",
+          "refund_account_id?",
+          "note"
+        ],
+        "steps": [
+          "validate qty <= qty - qty_returned and return window",
+          "compute proportional refund including cart-discount share and tax",
+          "split refund_total vs ledger_credit_total",
+          "if status pending_approval wait for sales.return.approve",
+          "on post: resellable -> sale_return movement in; broken -> breakage movement; bundles return components",
+          "account_transactions out for cash refunds",
+          "ledger credit entries",
+          "update sale_items.qty_returned and sale status",
+          "next_number('sale_return')",
+          "audit"
+        ],
+        "output": "sale_return with credit note data",
+        "errors": [
+          "FORBIDDEN",
+          "WINDOW_EXPIRED",
+          "QTY_EXCEEDS_SOLD",
+          "PERIOD_LOCKED"
+        ],
+        "class": "SaleReturnService::create and ::post",
+        "endpoint": "POST /api/v1/sale-returns",
+        "transactional": true
+      },
+      {
+        "name": "post_goods_receipt",
+        "purpose": "Receive stock and compute landed cost (FR-503).",
+        "input": [
+          "grn_id"
+        ],
+        "steps": [
+          "validate draft and lines",
+          "allocate purchase_extra_costs to lines by value or quantity",
+          "landed_unit_cost = (qty_good * unit_cost + allocated_extra) / qty_good",
+          "recalculate weighted average per stock_levels (BR-032)",
+          "insert purchase_receipt movements; insert damage movements for qty_damaged",
+          "update variant last_cost",
+          "update PO item received and PO status",
+          "supplier ledger credit for items_total + billed extras",
+          "audit"
+        ],
+        "output": "posted grn",
+        "errors": [
+          "FORBIDDEN",
+          "EMPTY_RECEIPT",
+          "PERIOD_LOCKED"
+        ],
+        "class": "GoodsReceiptService::post",
+        "endpoint": "POST /api/v1/goods-receipts/{id}/post",
+        "transactional": true
+      },
+      {
+        "name": "post_stock_adjustment",
+        "purpose": "Post approved adjustment (FR-403).",
+        "input": [
+          "adjustment_id"
+        ],
+        "steps": [
+          "require approval if over threshold",
+          "insert adjustment_in/out or breakage/damage movements",
+          "update stock_levels",
+          "audit"
+        ],
+        "output": "posted adjustment",
+        "errors": [
+          "FORBIDDEN",
+          "APPROVAL_REQUIRED",
+          "INSUFFICIENT_STOCK"
+        ],
+        "class": "StockAdjustmentService::post",
+        "endpoint": "POST /api/v1/stock-adjustments/{id}/post",
+        "transactional": true
+      },
+      {
+        "name": "post_stock_transfer",
+        "purpose": "Two-step transfer.",
+        "input": [
+          "transfer_id",
+          "action: send | receive",
+          "received_qty per item (receive)"
+        ],
+        "steps": [
+          "send: transfer_out movements at source with cost",
+          "receive: transfer_in movements at destination carrying cost; weighted-average recalculated at destination",
+          "qty differences create adjustment draft",
+          "audit"
+        ],
+        "output": "transfer",
+        "errors": [
+          "FORBIDDEN",
+          "INSUFFICIENT_STOCK",
+          "INVALID_STATE"
+        ],
+        "class": "StockTransferService::post",
+        "endpoint": "POST /api/v1/stock-transfers/{id}/send|receive",
+        "transactional": true
+      },
+      {
+        "name": "post_stock_count",
+        "purpose": "Apply count variances.",
+        "input": [
+          "count_id"
+        ],
+        "steps": [
+          "recompute variance against current system qty if movements happened since snapshot (reconcile)",
+          "insert count_correction movements",
+          "audit"
+        ],
+        "output": "posted count",
+        "errors": [
+          "FORBIDDEN",
+          "INCOMPLETE_COUNT"
+        ],
+        "class": "StockCountService::post",
+        "endpoint": "POST /api/v1/stock-counts/{id}/post",
+        "transactional": true
+      },
+      {
+        "name": "record_party_payment",
+        "purpose": "Customer receipt or supplier payment with allocation (FR-1002).",
+        "input": [
+          "party_type",
+          "party_id",
+          "direction",
+          "method + references",
+          "amount",
+          "account_id",
+          "allocations[] or auto_oldest_first",
+          "payment_date"
+        ],
+        "steps": [
+          "validate references and duplicate TrxID",
+          "allocate oldest-first unless manual (BR-062)",
+          "remainder recorded as advance",
+          "insert party_payments, allocations, account_transactions, ledger entries",
+          "update sales.paid_total/due_total/payment_status or goods_receipts.paid_total",
+          "next_number('party_payment')",
+          "audit"
+        ],
+        "output": "payment with receipt data",
+        "errors": [
+          "FORBIDDEN",
+          "DUPLICATE_TRXID",
+          "ALLOCATION_EXCEEDS_DUE",
+          "PERIOD_LOCKED"
+        ],
+        "class": "PartyPaymentService::record",
+        "endpoint": "POST /api/v1/party-payments",
+        "transactional": true
+      },
+      {
+        "name": "open_cash_shift",
+        "purpose": "Start shift.",
+        "input": [
+          "cash_account_id",
+          "opening_float"
+        ],
+        "steps": [
+          "reject if cashier already has open shift",
+          "next_number('shift')",
+          "insert shift and opening account transaction if float > 0"
+        ],
+        "output": "shift",
+        "errors": [
+          "SHIFT_ALREADY_OPEN",
+          "FORBIDDEN"
+        ],
+        "class": "ShiftService::open",
+        "endpoint": "POST /api/v1/shifts/open",
+        "transactional": true
+      },
+      {
+        "name": "close_cash_shift",
+        "purpose": "Close shift and produce Z-report data.",
+        "input": [
+          "shift_id",
+          "denomination_counts",
+          "note"
+        ],
+        "steps": [
+          "expected_cash = opening_float + cash sales - cash refunds + cash in - cash out",
+          "counted_cash from denominations",
+          "variance",
+          "totals by method",
+          "set closed",
+          "audit"
+        ],
+        "output": "shift with totals",
+        "errors": [
+          "FORBIDDEN",
+          "ALREADY_CLOSED"
+        ],
+        "class": "ShiftService::close",
+        "endpoint": "POST /api/v1/shifts/{id}/close",
+        "transactional": true
+      },
+      {
+        "name": "lock_period",
+        "purpose": "Set period_lock_date.",
+        "input": [
+          "lock_date"
+        ],
+        "steps": [
+          "permission periods.lock",
+          "reject moving lock backwards unless super_admin",
+          "update app_settings",
+          "audit"
+        ],
+        "output": "settings row",
+        "errors": [
+          "FORBIDDEN"
+        ],
+        "class": "PeriodLockService::lock",
+        "endpoint": "POST /api/v1/settings/period-lock",
+        "transactional": true
+      }
+    ]
+  },
+  "views": [
+    {
+      "name": "v_stock_summary",
+      "purpose": "variant x warehouse: on_hand, reserved, available, avg_cost, stock_value, reorder flags",
+      "implementation": "Repository query by default; a MySQL VIEW only if the host grants CREATE VIEW without SUPER"
+    },
+    {
+      "name": "v_low_stock",
+      "purpose": "variants at or below reorder_level with suggested reorder_qty and last supplier",
+      "implementation": "Repository query by default; a MySQL VIEW only if the host grants CREATE VIEW without SUPER"
+    },
+    {
+      "name": "v_party_balance",
+      "purpose": "party balance = sum(debit) - sum(credit) for customers; sum(credit) - sum(debit) for suppliers; with last activity date",
+      "implementation": "Repository query by default; a MySQL VIEW only if the host grants CREATE VIEW without SUPER"
+    },
+    {
+      "name": "v_account_balance",
+      "purpose": "opening_balance + sum(in) - sum(out) per financial account",
+      "implementation": "Repository query by default; a MySQL VIEW only if the host grants CREATE VIEW without SUPER"
+    },
+    {
+      "name": "v_day_book",
+      "purpose": "account_transactions joined to references for any date range",
+      "implementation": "Repository query by default; a MySQL VIEW only if the host grants CREATE VIEW without SUPER"
+    },
+    {
+      "name": "v_sales_profit",
+      "purpose": "per sale line revenue, discount share, tax, cogs, gross profit, margin",
+      "implementation": "Repository query by default; a MySQL VIEW only if the host grants CREATE VIEW without SUPER"
+    },
+    {
+      "name": "v_variant_cost_visible",
+      "purpose": "variant columns plus cost for users with products.view_cost; others use the plain table",
+      "implementation": "Repository query by default; a MySQL VIEW only if the host grants CREATE VIEW without SUPER"
+    },
+    {
+      "name": "v_receivable_aging",
+      "purpose": "customer dues bucketed 0-15, 16-30, 31-60, 61-90, 90+ days by invoice date",
+      "implementation": "Repository query by default; a MySQL VIEW only if the host grants CREATE VIEW without SUPER"
+    },
+    {
+      "name": "v_payable_aging",
+      "purpose": "supplier dues bucketed the same way by GRN date",
+      "implementation": "Repository query by default; a MySQL VIEW only if the host grants CREATE VIEW without SUPER"
+    }
+  ],
+  "storage": {
+    "note": "Plain folders on the hosting account. No external object storage.",
+    "folders": [
+      {
+        "name": "brand",
+        "visibility": "public",
+        "path": "backend/public/uploads/brand",
+        "write": "settings.company.manage",
+        "contents": "logo, signature"
+      },
+      {
+        "name": "product-images",
+        "visibility": "public",
+        "path": "backend/public/uploads/products/<yyyy>/<mm>",
+        "write": "products.manage",
+        "contents": "images resized to 2000px max plus 400px thumbs by PHP GD; jpg/png/webp up to 8MB; random file names"
+      },
+      {
+        "name": "invoices",
+        "visibility": "private",
+        "path": "backend/storage/app/private/invoices/<yyyy>/<mm>/<document_no>.pdf",
+        "access": "streamed by authenticated endpoint /api/v1/files or short-lived signed URL; sales.view_all or own"
+      },
+      {
+        "name": "attachments",
+        "visibility": "private",
+        "path": "backend/storage/app/private/attachments",
+        "access": "follows parent entity permission"
+      },
+      {
+        "name": "backups",
+        "visibility": "private",
+        "path": "outside public_html, for example ~/backups/orbin-pos",
+        "contents": "nightly gzip mysqldump, 14-day retention"
+      }
+    ],
+    "rules": [
+      "Upload validation by MIME sniffing and extension allow-list; never trust client file names",
+      "Disable PHP execution in uploads directories via .htaccess",
+      "Public upload paths use random names; private files never directly reachable"
+    ]
+  },
+  "businessRules": {
+    "BR-001": "Money numeric(14,2); round half-up at line level; optional invoice round-off to nearest 1 BDT stored separately",
+    "BR-002": "Price tier by customer: retail/walk-in retail_price, wholesale wholesale_price, dealer/garage dealer_price; fallback retail",
+    "BR-003": "VAT inclusive or exclusive via setting; rate precedence variant, product, default",
+    "BR-010": "Line discount first; cart discount allocated proportionally to lines",
+    "BR-020": "Below floor price or over discount limit requires manager PIN, audited",
+    "BR-021": "Cashier max discount percent from settings",
+    "BR-030": "Stock deducted at sale completion; quotations and holds do not reserve unless reserve_on_hold",
+    "BR-031": "sale_items.unit_cost snapshot for COGS",
+    "BR-032": "Weighted average recalculated on purchase receipts only; transfers carry cost",
+    "BR-033": "Bundles decrement and return components",
+    "BR-040": "Walk-in cannot have due",
+    "BR-041": "Credit limit warn or block, PIN override",
+    "BR-050": "Completed invoice immutable; void or return only",
+    "BR-051": "Void same day by manager+, any day super_admin, never in locked period",
+    "BR-052": "Return window default 7 days; refund <= paid; broken goes to breakage",
+    "BR-060": "MFS requires sender number + TrxID; bank requires bank name + reference",
+    "BR-061": "Duplicate TrxID per method blocked within 30 days unless manager override",
+    "BR-062": "Payments allocate oldest invoice first; remainder is advance",
+    "BR-070": "Gap-free numbering inside the document transaction",
+    "BR-080": "Period lock blocks create/edit/void on or before lock date",
+    "BR-090": "Asia/Dhaka display, UTC storage, week starts Saturday",
+    "BR-091": "left/right from driver seat view; driver_side setting default right",
+    "BR-092": "Variant uniqueness by product, position, size, glass, tint, finish, adjustment, feature hash",
+    "BR-093": "SKU and barcode globally unique including deactivated",
+    "BR-094": "Prices never negative; zero cost only for flagged samples"
+  },
+  "workflows": {
+    "complete_sale": {
+      "trigger": "Cashier presses Complete Sale in the payment drawer",
+      "ui": [
+        "disable button and morph to spinner",
+        "POST /api/v1/sales/checkout with Idempotency-Key header",
+        "on success show success screen, request the PDF from the server and trigger the browser download automatically, show toast",
+        "on failure keep cart and show mapped error with Retry"
+      ],
+      "autoDownload": {
+        "fileName": "Invoice_<invoice_no>_<customer_name_slug>.pdf",
+        "generation": "server side by PdfService (mPDF) from the stored snapshot; stored at storage/app/private/invoices/<yyyy>/<mm>/<invoice_no>.pdf and sale.pdf_path set; client fetches the file as a blob and triggers the download",
+        "fallback": "Prominent Download button on the success screen if the browser blocks the automatic download"
+      }
+    },
+    "invoice_lifecycle": [
+      "draft",
+      "held",
+      "completed",
+      "partially_returned",
+      "returned",
+      "void"
+    ],
+    "purchase_to_stock": [
+      "PO draft",
+      "PO approved",
+      "GRN draft",
+      "add extra costs",
+      "choose allocation basis",
+      "post GRN",
+      "stock movements + avg cost + supplier ledger"
+    ],
+    "stock_adjustment": [
+      "draft",
+      "pending_approval if over threshold",
+      "approved",
+      "posted"
+    ],
+    "stock_transfer": [
+      "draft",
+      "in_transit (stock_out at source)",
+      "received (stock_in at destination; discrepancies recorded as adjustment)"
+    ],
+    "stock_count": [
+      "draft",
+      "counting (blind optional)",
+      "review variances",
+      "approve",
+      "post count_correction movements"
+    ],
+    "sale_return": [
+      "select invoice lines",
+      "condition + reason",
+      "refund mode",
+      "approval if cashier",
+      "post: restock or breakage, refund/ledger credit, credit note PDF"
+    ],
+    "void_sale": [
+      "permission + reason",
+      "reverse stock, payments, account transactions, ledger",
+      "keep invoice with VOID watermark"
+    ],
+    "cash_shift": [
+      "open with float",
+      "sales and cash movements",
+      "close with denomination count",
+      "variance + Z-report"
+    ],
+    "party_payment": [
+      "receive/pay",
+      "choose method and references",
+      "allocate oldest-first or manual",
+      "remainder as advance",
+      "receipt PDF"
+    ]
+  },
+  "invoiceSpec": {
+    "paper": "A4 portrait",
+    "marginsMm": 14,
+    "fonts": [
+      "Plus Jakarta Sans",
+      "Inter",
+      "Noto Sans Bengali (only when Bangla text present)"
+    ],
+    "snapshotSchema": {
+      "company_snapshot": [
+        "legal_name",
+        "trade_name",
+        "tagline",
+        "logo_url",
+        "address_line1",
+        "address_line2",
+        "city",
+        "district",
+        "postcode",
+        "country",
+        "phones[]",
+        "whatsapp",
+        "email",
+        "website",
+        "bin_no",
+        "tin_no",
+        "trade_license_no",
+        "bank_name",
+        "bank_branch",
+        "bank_account_name",
+        "bank_account_no",
+        "signature_url",
+        "invoice_terms",
+        "return_policy_text",
+        "warranty_policy_text",
+        "footer_note"
+      ],
+      "customer_snapshot": [
+        "code",
+        "name",
+        "company_name",
+        "phones[]",
+        "email",
+        "address_line1",
+        "address_line2",
+        "area",
+        "district",
+        "postcode",
+        "bin_no",
+        "nid_no",
+        "customer_type",
+        "is_walk_in"
+      ],
+      "vehicle_snapshot": [
+        "reg_no",
+        "make",
+        "model",
+        "year",
+        "color"
+      ],
+      "sale_item.spec_snapshot": [
+        "position",
+        "size_label",
+        "size_mm",
+        "glass_type",
+        "tint",
+        "color_finish",
+        "adjustment",
+        "features[]",
+        "sku",
+        "oem_numbers[]",
+        "brand",
+        "quality_grade",
+        "origin"
+      ]
+    },
+    "sections": [
+      {
+        "id": "header",
+        "left": "original logo 48mm wide",
+        "right": "company legal name, address, phones, whatsapp, email, website, BIN, TIN, trade license (print only non-empty)",
+        "accent": "1.2mm orange-500 rule with short navy segment at left"
+      },
+      {
+        "id": "titleRow",
+        "left": "INVOICE (navy-900, heading 800) + status pill PAID/PARTIAL/DUE",
+        "right": "QR code to /verify/:token"
+      },
+      {
+        "id": "meta",
+        "fields": [
+          "invoice_no",
+          "sale_date time",
+          "due_date if any",
+          "sale_channel",
+          "branch",
+          "cashier/salesperson",
+          "shift_no",
+          "payment_status",
+          "payment methods summary"
+        ]
+      },
+      {
+        "id": "billTo",
+        "fields": [
+          "customer code",
+          "name",
+          "company",
+          "phones",
+          "email",
+          "full address",
+          "BIN/NID"
+        ],
+        "vehicleCard": [
+          "reg_no",
+          "make",
+          "model",
+          "year",
+          "color"
+        ]
+      },
+      {
+        "id": "items",
+        "columns": [
+          "SL",
+          "Item (name + spec line + SKU)",
+          "Warranty",
+          "Qty",
+          "Unit price",
+          "Disc.",
+          "VAT",
+          "Amount"
+        ],
+        "rules": [
+          "rows never split across pages",
+          "header repeats each page",
+          "bundle components in small text"
+        ]
+      },
+      {
+        "id": "totals",
+        "rows": [
+          "Subtotal",
+          "Discount",
+          "Taxable amount",
+          "VAT",
+          "Delivery/handling",
+          "Round-off",
+          "Grand total (navy-900 bar, white text)",
+          "Paid",
+          "Due (orange-700 on orange-50 if > 0)"
+        ]
+      },
+      {
+        "id": "amountInWords",
+        "format": "Taka <words> Only (lakh/crore aware, paisa supported)"
+      },
+      {
+        "id": "payments",
+        "columns": [
+          "Method",
+          "Reference (TrxID / bank ref)",
+          "Received into",
+          "Date time",
+          "Amount"
+        ]
+      },
+      {
+        "id": "terms",
+        "source": [
+          "company_snapshot.invoice_terms",
+          "return_policy_text",
+          "warranty_policy_text",
+          "per-line warranty"
+        ]
+      },
+      {
+        "id": "bankDetails",
+        "source": "company_snapshot bank fields",
+        "show": "when due > 0 or setting enabled"
+      },
+      {
+        "id": "signatures",
+        "fields": [
+          "Customer's signature",
+          "Authorized signature (image optional)"
+        ]
+      },
+      {
+        "id": "footer",
+        "everyPage": true,
+        "content": [
+          "tagline Trust. Growth. Excellence.",
+          "thank-you line",
+          "Page x of y",
+          "Generated by Orbin POS",
+          "invoice_no"
+        ]
+      }
+    ],
+    "watermarks": {
+      "void": "diagonal red VOID",
+      "paid": "navy-50 PAID at max 6% opacity"
+    },
+    "variants": [
+      "a4_invoice",
+      "receipt_80mm",
+      "credit_note",
+      "quotation",
+      "purchase_order",
+      "payment_receipt",
+      "customer_statement",
+      "supplier_statement",
+      "z_report"
+    ],
+    "receipt80mm": [
+      "logo 40mm",
+      "company short block",
+      "items two-line rows",
+      "totals",
+      "payments",
+      "QR",
+      "tagline"
+    ],
+    "blockWhenIncomplete": [
+      "company_profile.legal_name",
+      "company_profile.address_line1",
+      "company_profile.phones"
+    ],
+    "fileMetadataTitle": "invoice_no",
+    "tests": [
+      "logo image present and not distorted",
+      "totals equal sale totals",
+      "amount in words matches grand total",
+      "Bangla conjunct test per NFR-020"
+    ],
+    "engine": "mPDF (server side) with embedded fonts Plus Jakarta Sans, Inter, Noto Sans Bengali (OpenType shaping enabled). Blade templates in app/Pdf. Fallback @react-pdf/renderer only if the Bangla or memory test fails.",
+    "hostingNeeds": "memory_limit >= 256M and max_execution_time >= 60 for PDF generation; fonts subset; original logo embedded at full resolution"
+  },
+  "posShortcuts": {
+    "/": "focus search",
+    "F2": "focus search",
+    "F3": "vehicle finder",
+    "F4": "customer",
+    "F6": "delivery charge",
+    "F8": "cart discount",
+    "F9": "pay",
+    "F10": "hold bill",
+    "F11": "resume held",
+    "Ctrl+Enter": "complete sale (pay drawer)",
+    "Esc": "close drawer/dialog",
+    "Ctrl+P": "reprint last invoice",
+    "Alt+N": "new sale",
+    "Del": "remove selected line",
+    "+": "qty up",
+    "-": "qty down"
+  },
+  "modules": [
+    {
+      "id": "foundation",
+      "phase": "P0",
+      "fr": "FR-100",
+      "screens": [
+        "login",
+        "app shell",
+        "company profile",
+        "users",
+        "roles",
+        "branches",
+        "numbering",
+        "settings",
+        "audit log",
+        "hosting health page",
+        "integrity page",
+        "backups page",
+        "web installer (only if no SSH)"
+      ]
+    },
+    {
+      "id": "masterdata",
+      "phase": "P1",
+      "fr": "FR-200",
+      "screens": [
+        "vehicle makes",
+        "vehicle models",
+        "brands",
+        "categories",
+        "units",
+        "tax rates",
+        "lookup manager",
+        "custom field builder",
+        "import"
+      ]
+    },
+    {
+      "id": "catalog",
+      "phase": "P1",
+      "fr": "FR-300",
+      "screens": [
+        "product list",
+        "product editor stepper",
+        "variant matrix generator",
+        "images",
+        "fitment editor",
+        "labels"
+      ]
+    },
+    {
+      "id": "inventory",
+      "phase": "P2",
+      "fr": "FR-400",
+      "screens": [
+        "overview",
+        "movements",
+        "adjustments",
+        "breakage",
+        "transfers",
+        "counts",
+        "reorder",
+        "aging",
+        "stock card"
+      ]
+    },
+    {
+      "id": "purchasing",
+      "phase": "P2",
+      "fr": "FR-500",
+      "screens": [
+        "suppliers",
+        "purchase orders",
+        "goods receipts with landed cost",
+        "purchase returns",
+        "supplier payments"
+      ]
+    },
+    {
+      "id": "customers",
+      "phase": "P3",
+      "fr": "FR-600",
+      "screens": [
+        "customer list",
+        "customer 360",
+        "vehicles"
+      ]
+    },
+    {
+      "id": "pos",
+      "phase": "P3",
+      "fr": "FR-700,FR-800,FR-900",
+      "screens": [
+        "POS terminal",
+        "vehicle finder",
+        "payment drawer",
+        "success screen",
+        "held bills",
+        "quotation"
+      ]
+    },
+    {
+      "id": "sales",
+      "phase": "P3",
+      "fr": "FR-713..FR-717",
+      "screens": [
+        "sales list",
+        "sale detail",
+        "returns",
+        "void",
+        "shifts",
+        "warranty claims"
+      ]
+    },
+    {
+      "id": "ledger",
+      "phase": "P4",
+      "fr": "FR-1000",
+      "screens": [
+        "party ledger",
+        "accounts",
+        "receive/pay",
+        "expenses",
+        "fund transfers",
+        "day book",
+        "dues and aging"
+      ]
+    },
+    {
+      "id": "reports",
+      "phase": "P5",
+      "fr": "FR-1100",
+      "screens": [
+        "dashboard",
+        "reports hub",
+        "report pages"
+      ]
+    }
+  ],
+  "reports": [
+    {
+      "id": "sales-summary",
+      "name": "Sales summary",
+      "domain": "sales",
+      "groupBy": [
+        "day",
+        "month"
+      ],
+      "measures": [
+        "invoices",
+        "gross",
+        "discount",
+        "tax",
+        "net",
+        "paid",
+        "due",
+        "avg_ticket"
+      ]
+    },
+    {
+      "id": "sales-by-product",
+      "name": "Sales by product / variant / size",
+      "domain": "sales",
+      "groupBy": [
+        "product",
+        "variant",
+        "size_label"
+      ],
+      "measures": [
+        "qty",
+        "revenue",
+        "cogs",
+        "profit",
+        "margin"
+      ]
+    },
+    {
+      "id": "sales-by-brand",
+      "name": "Sales by brand and category",
+      "domain": "sales",
+      "groupBy": [
+        "brand",
+        "category"
+      ],
+      "measures": [
+        "qty",
+        "revenue",
+        "profit"
+      ]
+    },
+    {
+      "id": "sales-by-vehicle",
+      "name": "Sales by vehicle make and model",
+      "domain": "sales",
+      "groupBy": [
+        "make",
+        "model",
+        "year"
+      ],
+      "measures": [
+        "qty",
+        "revenue"
+      ],
+      "note": "Demand insight from invoice vehicle snapshot"
+    },
+    {
+      "id": "sales-by-cashier",
+      "name": "Sales by cashier",
+      "domain": "sales",
+      "groupBy": [
+        "cashier"
+      ],
+      "measures": [
+        "invoices",
+        "revenue",
+        "discount",
+        "voids"
+      ]
+    },
+    {
+      "id": "sales-by-customer",
+      "name": "Sales by customer",
+      "domain": "sales",
+      "groupBy": [
+        "customer"
+      ],
+      "measures": [
+        "invoices",
+        "revenue",
+        "due"
+      ]
+    },
+    {
+      "id": "sales-by-payment-method",
+      "name": "Collections by payment method",
+      "domain": "sales",
+      "groupBy": [
+        "method",
+        "account"
+      ],
+      "measures": [
+        "amount",
+        "count"
+      ]
+    },
+    {
+      "id": "sales-hourly",
+      "name": "Hourly sales heatmap",
+      "domain": "sales",
+      "groupBy": [
+        "weekday",
+        "hour"
+      ],
+      "measures": [
+        "invoices",
+        "revenue"
+      ]
+    },
+    {
+      "id": "discount-report",
+      "name": "Discounts given",
+      "domain": "sales",
+      "groupBy": [
+        "cashier",
+        "invoice"
+      ],
+      "measures": [
+        "discount",
+        "approver"
+      ]
+    },
+    {
+      "id": "returns-report",
+      "name": "Sales returns",
+      "domain": "sales",
+      "groupBy": [
+        "reason",
+        "product"
+      ],
+      "measures": [
+        "qty",
+        "value",
+        "refund",
+        "credit"
+      ]
+    },
+    {
+      "id": "void-report",
+      "name": "Voided invoices",
+      "domain": "sales",
+      "groupBy": [
+        "day",
+        "user"
+      ],
+      "measures": [
+        "count",
+        "value",
+        "reason"
+      ]
+    },
+    {
+      "id": "profit-by-invoice",
+      "name": "Gross profit by invoice",
+      "domain": "profit",
+      "groupBy": [
+        "invoice"
+      ],
+      "measures": [
+        "revenue",
+        "cogs",
+        "profit",
+        "margin"
+      ]
+    },
+    {
+      "id": "profit-by-product",
+      "name": "Gross profit by product and category",
+      "domain": "profit",
+      "groupBy": [
+        "product",
+        "category"
+      ],
+      "measures": [
+        "revenue",
+        "cogs",
+        "profit",
+        "margin"
+      ]
+    },
+    {
+      "id": "profit-loss",
+      "name": "Profit and loss",
+      "domain": "profit",
+      "groupBy": [
+        "month"
+      ],
+      "measures": [
+        "revenue",
+        "cogs",
+        "gross_profit",
+        "expenses",
+        "net_profit"
+      ]
+    },
+    {
+      "id": "stock-current",
+      "name": "Current stock",
+      "domain": "inventory",
+      "groupBy": [
+        "warehouse",
+        "category",
+        "brand"
+      ],
+      "measures": [
+        "on_hand",
+        "available",
+        "value"
+      ]
+    },
+    {
+      "id": "stock-valuation",
+      "name": "Stock valuation as of date",
+      "domain": "inventory",
+      "groupBy": [
+        "warehouse",
+        "category"
+      ],
+      "measures": [
+        "qty",
+        "avg_cost",
+        "value"
+      ]
+    },
+    {
+      "id": "stock-low-out-over",
+      "name": "Low, out and over stock",
+      "domain": "inventory",
+      "measures": [
+        "on_hand",
+        "reorder_level",
+        "suggested_qty"
+      ]
+    },
+    {
+      "id": "stock-dead",
+      "name": "Dead stock",
+      "domain": "inventory",
+      "measures": [
+        "days_since_last_sale",
+        "on_hand",
+        "value"
+      ]
+    },
+    {
+      "id": "stock-aging",
+      "name": "Stock aging",
+      "domain": "inventory",
+      "groupBy": [
+        "bucket"
+      ],
+      "measures": [
+        "qty",
+        "value"
+      ]
+    },
+    {
+      "id": "stock-movement-summary",
+      "name": "Stock movement summary",
+      "domain": "inventory",
+      "groupBy": [
+        "movement_type"
+      ],
+      "measures": [
+        "in",
+        "out",
+        "net"
+      ]
+    },
+    {
+      "id": "stock-card",
+      "name": "Stock card",
+      "domain": "inventory",
+      "measures": [
+        "running_balance"
+      ]
+    },
+    {
+      "id": "breakage-report",
+      "name": "Breakage and damage",
+      "domain": "inventory",
+      "groupBy": [
+        "product",
+        "supplier",
+        "user",
+        "month"
+      ],
+      "measures": [
+        "qty",
+        "cost"
+      ]
+    },
+    {
+      "id": "adjustment-report",
+      "name": "Stock adjustments",
+      "domain": "inventory",
+      "groupBy": [
+        "reason",
+        "user"
+      ],
+      "measures": [
+        "qty",
+        "value"
+      ]
+    },
+    {
+      "id": "count-variance",
+      "name": "Count variance",
+      "domain": "inventory",
+      "measures": [
+        "system_qty",
+        "counted_qty",
+        "variance",
+        "value"
+      ]
+    },
+    {
+      "id": "reorder-list",
+      "name": "Reorder list by supplier",
+      "domain": "inventory",
+      "groupBy": [
+        "supplier"
+      ],
+      "measures": [
+        "suggested_qty",
+        "last_cost"
+      ]
+    },
+    {
+      "id": "purchase-summary",
+      "name": "Purchases by supplier / product / period",
+      "domain": "purchase",
+      "groupBy": [
+        "supplier",
+        "product",
+        "month"
+      ],
+      "measures": [
+        "qty",
+        "amount"
+      ]
+    },
+    {
+      "id": "landed-cost",
+      "name": "Landed cost analysis",
+      "domain": "purchase",
+      "groupBy": [
+        "grn",
+        "variant"
+      ],
+      "measures": [
+        "unit_cost",
+        "allocated_extra",
+        "landed_cost",
+        "extra_pct"
+      ]
+    },
+    {
+      "id": "pending-po",
+      "name": "Pending purchase orders",
+      "domain": "purchase",
+      "measures": [
+        "ordered",
+        "received",
+        "balance"
+      ]
+    },
+    {
+      "id": "supplier-price-trend",
+      "name": "Supplier price trend",
+      "domain": "purchase",
+      "groupBy": [
+        "variant",
+        "supplier"
+      ],
+      "measures": [
+        "unit_cost over time"
+      ]
+    },
+    {
+      "id": "receivable-aging",
+      "name": "Customer dues and aging",
+      "domain": "finance",
+      "groupBy": [
+        "customer",
+        "bucket"
+      ],
+      "measures": [
+        "due"
+      ]
+    },
+    {
+      "id": "payable-aging",
+      "name": "Supplier dues and aging",
+      "domain": "finance",
+      "groupBy": [
+        "supplier",
+        "bucket"
+      ],
+      "measures": [
+        "due"
+      ]
+    },
+    {
+      "id": "account-balances",
+      "name": "Cash, bKash, Nagad, Rocket and bank balances",
+      "domain": "finance",
+      "groupBy": [
+        "account"
+      ],
+      "measures": [
+        "opening",
+        "in",
+        "out",
+        "closing"
+      ]
+    },
+    {
+      "id": "day-book",
+      "name": "Day book",
+      "domain": "finance",
+      "measures": [
+        "in",
+        "out",
+        "closing per account"
+      ]
+    },
+    {
+      "id": "expense-report",
+      "name": "Expenses",
+      "domain": "finance",
+      "groupBy": [
+        "category",
+        "month"
+      ],
+      "measures": [
+        "amount"
+      ]
+    },
+    {
+      "id": "fund-transfer-report",
+      "name": "Fund transfers",
+      "domain": "finance",
+      "measures": [
+        "amount",
+        "fee"
+      ]
+    },
+    {
+      "id": "shift-z-report",
+      "name": "Cashier shift / Z-report",
+      "domain": "finance",
+      "groupBy": [
+        "shift"
+      ],
+      "measures": [
+        "opening",
+        "sales by method",
+        "expected",
+        "counted",
+        "variance"
+      ]
+    },
+    {
+      "id": "pending-payments",
+      "name": "Pending verification payments",
+      "domain": "finance",
+      "measures": [
+        "amount",
+        "age"
+      ]
+    },
+    {
+      "id": "vat-summary",
+      "name": "VAT collected and paid summary",
+      "domain": "tax",
+      "groupBy": [
+        "month",
+        "rate"
+      ],
+      "measures": [
+        "taxable",
+        "vat_collected",
+        "vat_paid"
+      ]
+    },
+    {
+      "id": "audit-price-changes",
+      "name": "Price changes",
+      "domain": "audit",
+      "measures": [
+        "old",
+        "new",
+        "user",
+        "time"
+      ]
+    },
+    {
+      "id": "audit-overrides",
+      "name": "Overrides and approvals",
+      "domain": "audit",
+      "measures": [
+        "type",
+        "approver",
+        "reason"
+      ]
+    },
+    {
+      "id": "audit-login",
+      "name": "Login history",
+      "domain": "audit",
+      "measures": [
+        "user",
+        "time",
+        "ip"
+      ]
+    }
+  ],
+  "reportCommon": {
+    "filters": [
+      "date range",
+      "branch",
+      "warehouse (inventory)",
+      "compare to previous period"
+    ],
+    "exports": [
+      "csv",
+      "xlsx",
+      "pdf",
+      "print"
+    ],
+    "drillDown": "every document number links to its document",
+    "presets": "saved per user"
+  },
+  "dashboardWidgets": [
+    {
+      "id": "kpi-sales",
+      "roles": [
+        "super_admin",
+        "manager",
+        "cashier(own)",
+        "accountant"
+      ]
+    },
+    {
+      "id": "kpi-orders"
+    },
+    {
+      "id": "kpi-profit",
+      "roles": [
+        "super_admin",
+        "manager",
+        "accountant"
+      ]
+    },
+    {
+      "id": "kpi-collections"
+    },
+    {
+      "id": "kpi-dues"
+    },
+    {
+      "id": "sales-trend"
+    },
+    {
+      "id": "payment-method-donut"
+    },
+    {
+      "id": "top-products"
+    },
+    {
+      "id": "top-vehicle-models"
+    },
+    {
+      "id": "low-stock"
+    },
+    {
+      "id": "account-balances",
+      "roles": [
+        "super_admin",
+        "manager",
+        "accountant"
+      ]
+    },
+    {
+      "id": "pending-approvals",
+      "roles": [
+        "super_admin",
+        "manager"
+      ]
+    },
+    {
+      "id": "recent-sales"
+    }
+  ],
+  "seedData": {
+    "note": "Starter data only; everything is editable. Seeds live in backend/database/seeders and must be idempotent.",
+    "app_settings": "see appSettingsDefaults",
+    "roles_permissions": "see roles.defaultMatrix",
+    "lookups": "see lookups.systemTypes",
+    "warehouses": [
+      {
+        "code": "SHOW",
+        "name": "Showroom",
+        "kind": "showroom",
+        "is_default": true
+      },
+      {
+        "code": "GODOWN",
+        "name": "Godown",
+        "kind": "godown",
+        "is_sellable": false
+      }
+    ],
+    "branches": [
+      {
+        "code": "HQ",
+        "name": "Head Office / Main Shop",
+        "is_default": true
+      }
+    ],
+    "financial_accounts": [
+      {
+        "code": "CASH-01",
+        "name": "Cash Drawer",
+        "account_type": "cash"
+      },
+      {
+        "code": "BKASH-01",
+        "name": "bKash",
+        "account_type": "bkash",
+        "provider": "bKash"
+      },
+      {
+        "code": "NAGAD-01",
+        "name": "Nagad",
+        "account_type": "nagad",
+        "provider": "Nagad"
+      },
+      {
+        "code": "ROCKET-01",
+        "name": "Rocket",
+        "account_type": "rocket",
+        "provider": "Rocket"
+      },
+      {
+        "code": "BANK-01",
+        "name": "Bank Account",
+        "account_type": "bank",
+        "provider": ""
+      }
+    ],
+    "customers": [
+      {
+        "code": "CUS-WALKIN",
+        "name": "Walk-in Customer",
+        "is_walk_in": true,
+        "phones": [
+          "00000000000"
+        ]
+      }
+    ],
+    "units": [
+      {
+        "code": "pcs",
+        "name_en": "Piece"
+      },
+      {
+        "code": "pair",
+        "name_en": "Pair",
+        "is_pair_unit": true
+      },
+      {
+        "code": "set",
+        "name_en": "Set"
+      },
+      {
+        "code": "box",
+        "name_en": "Box"
+      }
+    ],
+    "tax_rates": [
+      {
+        "code": "VAT0",
+        "name": "No VAT",
+        "rate_percent": 0,
+        "is_default": true
+      },
+      {
+        "code": "VAT15",
+        "name": "VAT 15%",
+        "rate_percent": 15
+      }
+    ],
+    "categories": [
+      "Side Mirrors",
+      "Interior Rear-view Mirrors",
+      "Mirror Glass",
+      "Mirror Covers and Caps",
+      "Mirror Signal Lamps",
+      "Mirror Motors and Actuators",
+      "Blind-spot Mirrors",
+      "Accessories (clips, adhesive, tools)"
+    ],
+    "expense_categories": [
+      "Rent",
+      "Staff salary",
+      "Utilities",
+      "Transport and delivery",
+      "Packaging",
+      "Marketing",
+      "Repair and maintenance",
+      "Bank and MFS charges",
+      "Miscellaneous"
+    ],
+    "number_sequences": [
+      {
+        "key": "invoice",
+        "prefix": "ORB-INV",
+        "date_token": "YYMM",
+        "padding": 6,
+        "reset_policy": "yearly"
+      },
+      {
+        "key": "quotation",
+        "prefix": "ORB-QT",
+        "date_token": "YYMM",
+        "padding": 5,
+        "reset_policy": "yearly"
+      },
+      {
+        "key": "purchase_order",
+        "prefix": "ORB-PO",
+        "date_token": "YYMM",
+        "padding": 5,
+        "reset_policy": "yearly"
+      },
+      {
+        "key": "goods_receipt",
+        "prefix": "ORB-GRN",
+        "date_token": "YYMM",
+        "padding": 5,
+        "reset_policy": "yearly"
+      },
+      {
+        "key": "adjustment",
+        "prefix": "ORB-ADJ",
+        "date_token": "YYMM",
+        "padding": 5,
+        "reset_policy": "yearly"
+      },
+      {
+        "key": "transfer",
+        "prefix": "ORB-TRF",
+        "date_token": "YYMM",
+        "padding": 5,
+        "reset_policy": "yearly"
+      },
+      {
+        "key": "count",
+        "prefix": "ORB-CNT",
+        "date_token": "YYMM",
+        "padding": 5,
+        "reset_policy": "yearly"
+      },
+      {
+        "key": "sale_return",
+        "prefix": "ORB-SR",
+        "date_token": "YYMM",
+        "padding": 5,
+        "reset_policy": "yearly"
+      },
+      {
+        "key": "purchase_return",
+        "prefix": "ORB-PR",
+        "date_token": "YYMM",
+        "padding": 5,
+        "reset_policy": "yearly"
+      },
+      {
+        "key": "party_payment",
+        "prefix": "ORB-PAY",
+        "date_token": "YYMM",
+        "padding": 5,
+        "reset_policy": "yearly"
+      },
+      {
+        "key": "expense",
+        "prefix": "ORB-EXP",
+        "date_token": "YYMM",
+        "padding": 5,
+        "reset_policy": "yearly"
+      },
+      {
+        "key": "fund_transfer",
+        "prefix": "ORB-FT",
+        "date_token": "YYMM",
+        "padding": 5,
+        "reset_policy": "yearly"
+      },
+      {
+        "key": "shift",
+        "prefix": "ORB-SH",
+        "date_token": "YYMMDD",
+        "padding": 3,
+        "reset_policy": "never"
+      },
+      {
+        "key": "warranty_claim",
+        "prefix": "ORB-WC",
+        "date_token": "YYMM",
+        "padding": 5,
+        "reset_policy": "yearly"
+      },
+      {
+        "key": "customer",
+        "prefix": "CUS",
+        "date_token": "",
+        "padding": 6,
+        "reset_policy": "never"
+      },
+      {
+        "key": "supplier",
+        "prefix": "SUP",
+        "date_token": "",
+        "padding": 5,
+        "reset_policy": "never"
+      }
+    ],
+    "vehicleMakesStarter": [
+      "Toyota",
+      "Honda",
+      "Nissan",
+      "Mitsubishi",
+      "Suzuki",
+      "Hyundai",
+      "Kia",
+      "Mazda",
+      "Subaru",
+      "Daihatsu",
+      "Ford",
+      "Isuzu",
+      "Tata",
+      "Mahindra",
+      "BMW",
+      "Mercedes-Benz",
+      "Audi",
+      "Lexus",
+      "MG",
+      "Proton"
+    ],
+    "vehicleModelsStarter": {
+      "Toyota": [
+        "Axio",
+        "Allion",
+        "Premio",
+        "Corolla",
+        "Noah",
+        "Voxy",
+        "Hiace",
+        "Probox",
+        "Aqua",
+        "Prius",
+        "Harrier",
+        "Land Cruiser",
+        "Hilux",
+        "Vitz",
+        "Passo",
+        "CH-R"
+      ],
+      "Honda": [
+        "Civic",
+        "Vezel",
+        "Fit",
+        "Grace",
+        "CR-V",
+        "Freed",
+        "Insight",
+        "City",
+        "Accord"
+      ],
+      "Nissan": [
+        "X-Trail",
+        "Sylphy",
+        "Note",
+        "March",
+        "Juke",
+        "Serena"
+      ],
+      "Mitsubishi": [
+        "Pajero",
+        "Outlander",
+        "Lancer",
+        "L200",
+        "Eclipse Cross"
+      ],
+      "Suzuki": [
+        "Swift",
+        "Alto",
+        "Wagon R",
+        "Vitara",
+        "Every"
+      ],
+      "Hyundai": [
+        "Tucson",
+        "Santa Fe",
+        "Elantra"
+      ],
+      "Kia": [
+        "Sportage",
+        "Sorento",
+        "Picanto"
+      ]
+    },
+    "demoData": "In P6 provide an optional demo seed: 30 mirror products with 3-6 variants each, 5 suppliers, 20 customers, 60 days of sales. Must be removable by one script."
+  },
+  "buildPhases": [
+    {
+      "id": "P0",
+      "name": "Foundation",
+      "fr": [
+        "FR-101",
+        "FR-102",
+        "FR-103",
+        "FR-104",
+        "FR-105",
+        "FR-106",
+        "FR-107",
+        "FR-108",
+        "FR-109"
+      ],
+      "deliverables": [
+        "monorepo scaffold (backend Laravel + frontend React) with tooling and CI",
+        "hosting check page and, only if the host has no SSH/Terminal, the one-time web installer",
+        "design tokens + tailwind preset + motion presets",
+        "base components with all states and a component gallery page",
+        "app shell (sidebar, topbar, routing, transitions)",
+        "i18n en/bn scaffolding",
+        "Sanctum auth + users + roles + permission middleware and policies + authorization test matrix",
+        "AuditService + model observers",
+        "NumberService (gap-free)",
+        "company profile with logo upload and live invoice preview placeholder",
+        "first deployment to a cPanel staging subdomain following DEPLOY_CPANEL.md"
+      ],
+      "gate": [
+        "login works for every role",
+        "routes and endpoints gated by permission (feature tests)",
+        "no raw hex outside token file (lint rule)",
+        "gallery shows every component state",
+        "company profile persists and logo uploads",
+        "staging subdomain on the owner cPanel serves the app, login works, cron heartbeat visible on health page"
+      ]
+    },
+    {
+      "id": "P1",
+      "name": "Catalog",
+      "fr": [
+        "FR-200",
+        "FR-300"
+      ],
+      "deliverables": [
+        "lookup manager + custom field builder",
+        "vehicle makes/models, brands, categories, units, tax",
+        "product editor stepper + variant matrix generator",
+        "server-side image upload and resize pipeline (PHP GD)",
+        "fitment editor",
+        "cross references",
+        "CSV/XLSX import with dry-run",
+        "barcode generation and label printing"
+      ],
+      "gate": [
+        "create mirror with 6 variants, 4 images, 3 fitments",
+        "import dry-run catches row errors and commit succeeds",
+        "SKU/barcode uniqueness enforced",
+        "labels print on A4 and 50x25mm"
+      ]
+    },
+    {
+      "id": "P2",
+      "name": "Inventory and Purchasing",
+      "fr": [
+        "FR-400",
+        "FR-500"
+      ],
+      "deliverables": [
+        "suppliers",
+        "PO",
+        "GRN with landed cost",
+        "stock_levels and stock_movements maintained only by StockPostingService (no triggers)",
+        "adjustments with approval",
+        "breakage register",
+        "transfers",
+        "counts",
+        "alerts and reorder",
+        "valuation and stock card",
+        "post_* services and endpoints",
+        "integrity:check command and admin integrity page"
+      ],
+      "gate": [
+        "GRN posting updates stock, avg cost and supplier ledger",
+        "negative stock blocked",
+        "invariant test and integrity:check: stock_levels equals sum of movements",
+        "landed cost allocation matches hand calculation tests"
+      ]
+    },
+    {
+      "id": "P3",
+      "name": "POS and Sales",
+      "fr": [
+        "FR-600",
+        "FR-700",
+        "FR-800",
+        "FR-900"
+      ],
+      "deliverables": [
+        "customers + vehicles",
+        "POS terminal with vehicle finder, search, size chips, cart, hold/resume",
+        "discount rules + manager PIN",
+        "payment drawer for Cash, bKash, Nagad, Rocket, Bank Transfer with split payments",
+        "complete_sale service",
+        "invoice PDF with auto download + storage + verify page",
+        "success screen",
+        "sales list/detail, returns, void, quotations",
+        "shifts + Z-report",
+        "warranty claims",
+        "80mm receipt"
+      ],
+      "gate": [
+        "E2E in NFR-040 passes",
+        "invoice has original logo, full company and client details",
+        "NFR-020 Bangla decision recorded",
+        "two concurrent sales of last unit: exactly one succeeds",
+        "auto download works in Chrome, Edge, Firefox, Safari with fallback button"
+      ]
+    },
+    {
+      "id": "P4",
+      "name": "Ledger and Finance",
+      "fr": [
+        "FR-1000"
+      ],
+      "deliverables": [
+        "financial accounts",
+        "party ledgers",
+        "receive/pay with allocation",
+        "expenses",
+        "fund transfers",
+        "day book",
+        "dues and aging",
+        "period lock",
+        "statements PDF"
+      ],
+      "gate": [
+        "POS due appears in customer ledger",
+        "oldest-first allocation correct",
+        "account balances equal day book (invariant test)",
+        "period lock blocks edits"
+      ]
+    },
+    {
+      "id": "P5",
+      "name": "Reports and Dashboard",
+      "fr": [
+        "FR-1100"
+      ],
+      "deliverables": [
+        "report catalog from JSON reports",
+        "exports",
+        "dashboard widgets",
+        "saved presets"
+      ],
+      "gate": [
+        "dashboard sales equals report equals sum of invoices",
+        "profit equals sum(line price - line cost)",
+        "every report exports CSV/XLSX/PDF"
+      ]
+    },
+    {
+      "id": "P6",
+      "name": "Hardening and Launch",
+      "fr": [
+        "NFR-001",
+        "NFR-010",
+        "NFR-040",
+        "NFR-070"
+      ],
+      "deliverables": [
+        "performance pass",
+        "authorization matrix tests per role",
+        "accessibility audit",
+        "demo seed",
+        "user guides EN/BN",
+        "production deployment on the owner cPanel from the release zip",
+        "nightly backup cron and tested restore",
+        "backup/restore and update/rollback runbook",
+        "UAT checklist"
+      ],
+      "gate": [
+        "Lighthouse >= 85 performance and >= 95 accessibility on POS",
+        "authorization matrix green",
+        "fresh deployment from DEPLOY_CPANEL.md works",
+        "backup restore tested into a scratch database",
+        "UAT sign-off"
+      ]
+    }
+  ],
+  "acceptanceTests": [
+    {
+      "id": "AT-001",
+      "given": "Logged in cashier with open shift",
+      "when": "selects Toyota > Axio > 2015 > Right",
+      "then": "only fitting variants show, ordered by availability then price, within 300 ms"
+    },
+    {
+      "id": "AT-002",
+      "given": "Product card with sizes 7x4 and 8x5",
+      "when": "cashier taps each size chip once",
+      "then": "two distinct variant lines are in the cart with correct prices and stock counts decrement visually only after completion"
+    },
+    {
+      "id": "AT-003",
+      "given": "Cart total 12500",
+      "when": "cashier pays 5000 cash + 7500 bKash with sender and TrxID and presses Complete Sale",
+      "then": "one invoice is created, stock decremented, two sale_payments, two account_transactions, PDF downloaded automatically"
+    },
+    {
+      "id": "AT-004",
+      "given": "Downloaded invoice PDF",
+      "when": "parsed",
+      "then": "original logo present, company details present, client details present, items and totals equal the sale, amount in words correct, QR resolves to verify page"
+    },
+    {
+      "id": "AT-005",
+      "given": "Payment bKash without TrxID",
+      "when": "Complete Sale pressed",
+      "then": "blocked with field-level error"
+    },
+    {
+      "id": "AT-006",
+      "given": "TrxID already used on bKash within 30 days",
+      "when": "reused",
+      "then": "blocked; manager PIN override allowed and audited"
+    },
+    {
+      "id": "AT-007",
+      "given": "Walk-in customer",
+      "when": "payment less than total",
+      "then": "Complete Sale disabled with message to choose a customer"
+    },
+    {
+      "id": "AT-008",
+      "given": "Cashier discount 12% with limit 5%",
+      "when": "applies",
+      "then": "manager PIN dialog appears; wrong PIN rejected; correct PIN accepted and audited"
+    },
+    {
+      "id": "AT-009",
+      "given": "Last unit in stock",
+      "when": "two cashiers complete sales at the same time",
+      "then": "exactly one succeeds; the other receives INSUFFICIENT_STOCK and keeps the cart"
+    },
+    {
+      "id": "AT-010",
+      "given": "Network error during completion",
+      "when": "retry with the same idempotency key",
+      "then": "exactly one invoice exists"
+    },
+    {
+      "id": "AT-011",
+      "given": "GRN with freight 3000 and customs 12000 allocated by value",
+      "when": "posted",
+      "then": "landed unit costs match hand calculation and weighted average updates"
+    },
+    {
+      "id": "AT-012",
+      "given": "Posted invoice",
+      "when": "voided same day by manager",
+      "then": "stock, payments, account transactions and ledger reversed; invoice shows VOID watermark"
+    },
+    {
+      "id": "AT-013",
+      "given": "Invoice with returned resellable and broken items",
+      "when": "return posted",
+      "then": "resellable returns to stock; broken becomes breakage; credit note PDF generated; refund or ledger credit correct"
+    },
+    {
+      "id": "AT-014",
+      "given": "Customer with three open invoices",
+      "when": "pays an amount covering two and half invoices",
+      "then": "oldest-first allocation, third partially paid, statuses updated"
+    },
+    {
+      "id": "AT-015",
+      "given": "Admin adds a new lookup value, custom field and vehicle model",
+      "when": "creating a variant",
+      "then": "they are selectable and saved without code changes"
+    },
+    {
+      "id": "AT-016",
+      "given": "Shift with float 2000, cash sales 10000, refund 500, cash out 300",
+      "when": "closed with counted 11200",
+      "then": "expected 11200, variance 0, Z-report matches"
+    },
+    {
+      "id": "AT-017",
+      "given": "All data in one period",
+      "when": "dashboard, sales report and invoice list totals compared",
+      "then": "equal"
+    },
+    {
+      "id": "AT-018",
+      "given": "Locked period",
+      "when": "any create/edit/void dated within it",
+      "then": "rejected with PERIOD_LOCKED"
+    },
+    {
+      "id": "AT-019",
+      "given": "Each role",
+      "when": "accessing routes and data outside permissions",
+      "then": "UI hides and the API returns 403; no data leaks in responses (cost columns omitted without products.view_cost)"
+    },
+    {
+      "id": "AT-020",
+      "given": "prefers-reduced-motion enabled",
+      "when": "using the app",
+      "then": "no Mirror Shine, no transforms; instant transitions"
+    },
+    {
+      "id": "AT-021",
+      "given": "Fresh cPanel account with PHP/MySQL set up per DEPLOY_CPANEL.md",
+      "when": "release zip is uploaded and installed",
+      "then": "login works, migrations complete, seed loaded, health page is green, cron heartbeat updates within 2 minutes"
+    },
+    {
+      "id": "AT-022",
+      "given": "Nightly backup file",
+      "when": "restored into a scratch database",
+      "then": "integrity:check passes and row counts match"
+    },
+    {
+      "id": "AT-023",
+      "given": "Two requests try to create a duplicate variant, duplicate bKash TrxID, or a second open shift",
+      "when": "processed concurrently",
+      "then": "exactly one succeeds; the unique key columns block the rest"
+    }
+  ],
+  "nonFunctional": {
+    "performance": {
+      "posSearchP95Ms": 300,
+      "firstLoadSeconds4G": 2.5,
+      "invoicePdfSeconds": 3,
+      "variantsScale": 10000,
+      "note": "Targets are for typical shared hosting; use query indexes, eager loading, response caching of master data, gzip/brotli via .htaccess, and long-lived cache headers for hashed assets"
+    },
+    "security": [
+      "authorization on every endpoint (Policy + permission middleware) with a role x endpoint test matrix",
+      "Sanctum cookie auth: httpOnly, Secure, SameSite=Lax, CSRF protection",
+      "login and PIN throttling (5 attempts then lock)",
+      "passwords hashed with Laravel Hash; no plaintext secrets anywhere",
+      "validation via Form Requests (server) and Zod (client)",
+      "prepared statements only (Eloquent/query builder); no raw string-built SQL",
+      "upload MIME sniffing, extension allow-list, no PHP execution in uploads",
+      "append-only audit logs",
+      "no PII on verify page",
+      "HTTPS forced, HSTS, security headers (CSP, X-Frame-Options, X-Content-Type-Options, Referrer-Policy)",
+      "APP_DEBUG=false, .env and storage not web reachable",
+      "file permissions 644 files / 755 dirs, storage and bootstrap/cache writable only"
+    ],
+    "reliability": [
+      "atomic idempotent services; no partial sales",
+      "invariant tests and nightly integrity:check for stock and account balances",
+      "deadlock retry",
+      "nightly DB backup with tested restore"
+    ],
+    "i18n": [
+      "en",
+      "bn",
+      "no hard-coded strings",
+      "localized numbers/dates"
+    ],
+    "browsers": "latest 2 versions Chrome, Edge, Firefox, Safari; Chrome on Android tablets",
+    "banglaPdfGate": "NFR-020 (mPDF is the primary engine; verify conjuncts render correctly)",
+    "testing": [
+      "unit: money, VAT, discount allocation, avg cost, landed cost, BdtToWords, posting logic",
+      "feature: every service and endpoint, authorization matrix per role, invariants, concurrency (signature, trx_key, open_key, last-unit sale)",
+      "E2E: Playwright flows AT-001 to AT-023 where UI-testable"
+    ],
+    "hosting": {
+      "minPhp": "8.2 (8.1 allowed with Laravel 10 and a decision note)",
+      "phpExtensions": [
+        "pdo_mysql",
+        "mbstring",
+        "intl",
+        "gd",
+        "zip",
+        "fileinfo",
+        "bcmath",
+        "ctype",
+        "json",
+        "openssl",
+        "tokenizer",
+        "xml",
+        "curl"
+      ],
+      "phpIni": {
+        "memory_limit": ">= 256M",
+        "max_execution_time": ">= 60",
+        "upload_max_filesize": ">= 16M",
+        "post_max_size": ">= 24M"
+      },
+      "database": "MySQL 8.0+ or MariaDB 10.5+, InnoDB",
+      "cron": "one entry every minute for the Laravel scheduler",
+      "noDaemons": true,
+      "ssh": "preferred; installer wizard covers hosts without it"
+    }
+  },
+  "assumptions": [
+    "Laser means Ledger.",
+    "Single shop at launch, multi-branch ready.",
+    "VAT configurable, default 0%; commercial invoice only, not NBR Mushak or EFD.",
+    "Invoice English by default; Bangla labels gated by NFR-020.",
+    "Payments are manual-entry in Phase 1; no gateway APIs.",
+    "Payment methods exactly Cash, bKash, Nagad, Rocket, Bank Transfer.",
+    "Original logo is the only logo source; never redrawn.",
+    "Backend is Laravel (PHP) with MySQL/MariaDB created in the owner cPanel; no third-party database or backend service is used.",
+    "The owner confirms the hosting capabilities listed in hosting.owner_must_confirm before P0; fallbacks exist for no SSH, no server Composer, PHP 8.1 only, and low memory.",
+    "Real-time updates are replaced by polling (30-60 s) for stock badges and notifications."
+  ],
+  "phase2Backlog": [
+    "offline PWA POS",
+    "live bKash/Nagad/Rocket verification",
+    "SMS (sms.net.bd) and WhatsApp notifications",
+    "courier integration (Steadfast, Pathao)",
+    "double-entry accounting",
+    "NBR Mushak/EFD",
+    "serial/batch tracking",
+    "made-to-order custom glass cutting jobs",
+    "loyalty and campaigns",
+    "e-commerce sync",
+    "dark theme",
+    "storekeeper mobile app",
+    "ESC/POS direct printing",
+    "multi-branch consolidated reports",
+    "recurring expenses",
+    "supplier claim workflow for breakage"
+  ]
+}
