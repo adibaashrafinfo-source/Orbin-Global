@@ -34,7 +34,7 @@ export function DashboardPage() {
                     <ArrowRight className="h-4 w-4 text-ink-subtle transition-transform duration-base group-hover:translate-x-1 motion-reduce:transform-none" aria-hidden="true" />
                   </div>
                   <span className="font-heading text-base font-bold text-navy-900">{l.label}</span>
-                  {l.badge && <Badge tone={l.ok ? 'success' : 'orange'}>{l.badge}</Badge>}
+                  {l.badge && <Badge tone={l.ok ? 'success' : 'orange'} className="self-start whitespace-normal rounded-input text-left leading-snug">{l.badge}</Badge>}
                 </CardBody>
               </Card>
             </Link>
