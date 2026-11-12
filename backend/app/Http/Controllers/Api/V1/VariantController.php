@@ -11,6 +11,7 @@ use App\Http\Resources\VariantResource;
 use App\Models\Product;
 use App\Models\ProductVariant;
 use App\Models\User;
+use App\Models\VariantBundleItem;
 use App\Services\Catalog\MatrixService;
 use App\Services\Catalog\PriceService;
 use App\Services\Catalog\VariantService;
@@ -18,11 +19,12 @@ use App\Services\PermissionService;
 use App\Support\Money;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 /** FR-302..306: variants, matrix generator, clone, barcode, bulk price. Price columns need pricing.manage. */
 class VariantController extends Controller
 {
-    private const RELATIONS = ['glassType', 'tint', 'colorFinish', 'crossReferences', 'fitments.vehicleModel.make', 'images'];
+    private const RELATIONS = ['glassType', 'tint', 'colorFinish', 'crossReferences', 'fitments.vehicleModel.make', 'images', 'bundleItems.component'];
 
     public function __construct(
         private readonly VariantService $variants,
@@ -77,6 +79,22 @@ class VariantController extends Controller
     public function generateBarcode(ProductVariant $variant): VariantResource
     {
         return new VariantResource($this->variants->generateBarcode($variant)->load(self::RELATIONS));
+    }
+
+    public function addBundleItem(Request $request, ProductVariant $variant): JsonResponse
+    {
+        $d = $request->validate(['component_variant_id' => ['required', 'integer', Rule::exists('product_variants', 'id')->whereNull('deleted_at')], 'qty' => ['required', 'numeric', 'gt:0', 'max:9999']]);
+        $this->variants->addBundleItem($variant, (int) $d['component_variant_id'], (string) $d['qty']);
+
+        return (new VariantResource($variant->refresh()->load(self::RELATIONS)))->response()->setStatusCode(201);
+    }
+
+    public function removeBundleItem(VariantBundleItem $item): JsonResponse
+    {
+        $variantId = $item->bundle_variant_id;
+        $item->delete();
+
+        return (new VariantResource(ProductVariant::query()->findOrFail($variantId)->load(self::RELATIONS)))->response();
     }
 
     /** POST /products/{product}/variants/matrix  (dry_run=true returns the plan without writing) */

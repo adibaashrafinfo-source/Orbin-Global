@@ -142,6 +142,8 @@ Route::middleware(['auth:sanctum', 'active'])->group(function (): void {
         Route::delete('variants/{variant}', [VariantController::class, 'destroy'])->name('variants.destroy');
         Route::post('variants/{variant}/clone', [VariantController::class, 'clone'])->name('variants.clone');
         Route::post('variants/{variant}/barcode', [VariantController::class, 'generateBarcode'])->name('variants.barcode');
+        Route::post('variants/{variant}/bundle-items', [VariantController::class, 'addBundleItem'])->name('bundle-items.store');
+        Route::delete('bundle-items/{item}', [VariantController::class, 'removeBundleItem'])->name('bundle-items.destroy');
 
         Route::post('products/{product}/images', [ImageController::class, 'store'])->name('images.store');
         Route::put('products/{product}/images/reorder', [ImageController::class, 'reorder'])->name('images.reorder');

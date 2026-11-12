@@ -181,4 +181,33 @@ class ProductVariantTest extends CatalogTestCase
         $this->assertSame(1, ProductVariant::onlyTrashed()->count());
         $this->getJson("/api/v1/products/{$pid}")->assertStatus(404);
     }
+
+    public function test_bundles_hold_components_without_nesting_or_self_reference(): void
+    {
+        $this->actingAsRole('manager');
+        $pid = $this->makeProduct();
+        $left = $this->makeVariant($pid, ['position' => 'left']);
+        $right = $this->makeVariant($pid, ['position' => 'right']);
+        $pair = $this->makeVariant($pid, ['position' => 'pair', 'is_bundle' => true]);
+        $other = $this->makeVariant($pid, ['position' => 'universal']);
+
+        $this->postJson("/api/v1/variants/{$left['id']}/bundle-items", ['component_variant_id' => $right['id'], 'qty' => 1])->assertStatus(422)->assertJsonPath('code', 'BUNDLE_NOT_ENABLED');
+        $res = $this->postJson("/api/v1/variants/{$pair['id']}/bundle-items", ['component_variant_id' => $left['id'], 'qty' => 1])->assertCreated();
+        $this->postJson("/api/v1/variants/{$pair['id']}/bundle-items", ['component_variant_id' => $right['id'], 'qty' => '2.5'])->assertCreated();
+        $this->assertCount(2, $res->json('data') ? $this->getJson("/api/v1/variants/{$pair['id']}")->json('data.bundle_items') : []);
+        $this->postJson("/api/v1/variants/{$pair['id']}/bundle-items", ['component_variant_id' => $left['id'], 'qty' => 1])->assertStatus(409);
+        $this->postJson("/api/v1/variants/{$pair['id']}/bundle-items", ['component_variant_id' => $pair['id'], 'qty' => 1])->assertStatus(422)->assertJsonPath('code', 'BUNDLE_SELF');
+        $this->postJson("/api/v1/variants/{$pair['id']}/bundle-items", ['component_variant_id' => $left['id'], 'qty' => 0])->assertStatus(422);
+
+        // no nesting: a bundle cannot be a component, and a component cannot become a bundle
+        $second = $this->makeVariant($pid, ['position' => 'interior', 'is_bundle' => true]);
+        $this->postJson("/api/v1/variants/{$second['id']}/bundle-items", ['component_variant_id' => $pair['id'], 'qty' => 1])->assertStatus(422)->assertJsonPath('code', 'NESTED_BUNDLE');
+        $this->putJson("/api/v1/variants/{$left['id']}", ['is_bundle' => true])->assertStatus(422)->assertJsonPath('code', 'NESTED_BUNDLE');
+        $this->putJson("/api/v1/variants/{$pair['id']}", ['is_bundle' => false])->assertStatus(422)->assertJsonPath('code', 'BUNDLE_HAS_ITEMS');
+        $this->putJson("/api/v1/variants/{$other['id']}", ['is_bundle' => true])->assertOk();
+
+        $items = $this->getJson("/api/v1/variants/{$pair['id']}")->json('data.bundle_items');
+        $this->assertSame('SM-TOY-AXIO-L-180X110', $items[0]['sku']);
+        $this->deleteJson("/api/v1/bundle-items/{$items[0]['id']}")->assertOk()->assertJsonCount(1, 'data.bundle_items');
+    }
 }

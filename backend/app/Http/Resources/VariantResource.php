@@ -42,6 +42,9 @@ class VariantResource extends JsonResource
                 'make' => $f->vehicleModel?->make?->name, 'model' => $f->vehicleModel?->name, 'generation_code' => $f->vehicleModel?->generation_code,
             ])->values()),
             'images' => $this->whenLoaded('images', fn () => ImageResource::collection($this->images)),
+            'bundle_items' => $this->whenLoaded('bundleItems', fn () => $this->bundleItems->map(fn ($b) => [
+                'id' => $b->id, 'component_variant_id' => $b->component_variant_id, 'qty' => $b->qty, 'sku' => $b->component?->sku, 'variant_name' => $b->component?->variant_name,
+            ])->values()),
         ];
         if ($canCost) {
             $data['last_cost'] = $this->last_cost;

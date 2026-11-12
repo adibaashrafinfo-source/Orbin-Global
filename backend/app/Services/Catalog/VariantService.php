@@ -7,6 +7,7 @@ use App\Models\LookupValue;
 use App\Models\OemCrossReference;
 use App\Models\Product;
 use App\Models\ProductVariant;
+use App\Models\VariantBundleItem;
 use App\Models\VehicleFitment;
 use App\Services\AuditService;
 use App\Services\CustomFieldService;
@@ -62,6 +63,9 @@ class VariantService
             $before = $variant->only(ProductVariant::PRICE_COLUMNS);
             $attrs = $this->prepare($variant->product, $data, $variant);
             $this->assertUnique($attrs, $variant->id);
+            if (array_key_exists('is_bundle', $attrs)) {
+                $this->assertBundleToggle($variant, (bool) $attrs['is_bundle']);
+            }
             try {
                 $variant->fill($attrs)->save();
             } catch (QueryException $e) {
@@ -185,6 +189,33 @@ class VariantService
         }
     }
 
+    /**
+     * Bundle components (spec 4.2): the bundle must have is_bundle = true, a component may not be a bundle itself (no nesting) or the bundle.
+     */
+    public function addBundleItem(ProductVariant $bundle, int $componentId, string $qty): VariantBundleItem
+    {
+        if (! $bundle->is_bundle) {
+            throw new ApiException('BUNDLE_NOT_ENABLED', 422);
+        }
+        $component = ProductVariant::query()->findOrFail($componentId);
+        if ($component->id === $bundle->id) {
+            throw new ApiException('BUNDLE_SELF', 422);
+        }
+        if ($component->is_bundle) {
+            throw new ApiException('NESTED_BUNDLE', 422);
+        }
+        $existing = VariantBundleItem::withTrashed()->where(['bundle_variant_id' => $bundle->id, 'component_variant_id' => $component->id])->first();
+        if ($existing && ! $existing->trashed()) {
+            throw new ApiException('CONFLICT', 409);
+        }
+        $item = $existing ?? new VariantBundleItem;
+        $item->fill(['bundle_variant_id' => $bundle->id, 'component_variant_id' => $component->id, 'qty' => $qty]);
+        $item->deleted_at = null;
+        $item->save();
+
+        return $item;
+    }
+
     /** Rebuilds variant_name and search_text (after any change to the variant, its product or its cross references). */
     public function refreshDerived(ProductVariant $variant): void
     {
@@ -193,6 +224,16 @@ class VariantService
         $variant->variant_name = VariantSupport::variantName($variant->getAttributes() + [], $labels[$variant->glass_type_id] ?? null, $labels[$variant->tint_id] ?? null, $labels[$variant->color_finish_id] ?? null);
         $variant->search_text = SearchText::variant($variant);
         $variant->saveQuietly();
+    }
+
+    private function assertBundleToggle(ProductVariant $variant, bool $becomesBundle): void
+    {
+        if (! $becomesBundle && VariantBundleItem::query()->where('bundle_variant_id', $variant->id)->exists()) {
+            throw new ApiException('BUNDLE_HAS_ITEMS', 422);
+        }
+        if ($becomesBundle && VariantBundleItem::query()->where('component_variant_id', $variant->id)->exists()) {
+            throw new ApiException('NESTED_BUNDLE', 422); // already a component of another bundle
+        }
     }
 
     private function assignGeneratedBarcode(ProductVariant $variant): void

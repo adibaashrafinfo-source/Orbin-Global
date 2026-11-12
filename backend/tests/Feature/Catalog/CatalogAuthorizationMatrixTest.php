@@ -7,6 +7,7 @@ use App\Models\LookupType;
 use App\Models\LookupValue;
 use App\Models\OemCrossReference;
 use App\Models\ProductImage;
+use App\Models\VariantBundleItem;
 use App\Models\VehicleFitment;
 use App\Models\VehicleMake;
 use App\Models\VehicleModel;
@@ -86,6 +87,8 @@ class CatalogAuthorizationMatrixTest extends CatalogTestCase
             'POST variants/{variant}/fitments' => ['POST', 'variants/{variant}/fitments', $edit, ['vehicle_model_id' => '{model}', 'year_from' => 2001]],
             'POST variants/{variant}/fitments/copy' => ['POST', 'variants/{variant}/fitments/copy', $edit, ['target_variant_ids' => ['{variant}']]],
             'DELETE fitments/{fitment}' => ['DELETE', 'fitments/{fitment}', $edit, []],
+            'POST variants/{variant}/bundle-items' => ['POST', 'variants/{variant}/bundle-items', $edit, ['component_variant_id' => '{variant}', 'qty' => 1]],
+            'DELETE bundle-items/{bundle_item}' => ['DELETE', 'bundle-items/{bundle_item}', $edit, []],
             'POST variants/{variant}/cross-references' => ['POST', 'variants/{variant}/cross-references', $edit, ['number' => 'MX-1']],
             'DELETE cross-references/{xref}' => ['DELETE', 'cross-references/{xref}', $edit, []],
             // pricing, import and export
@@ -111,6 +114,8 @@ class CatalogAuthorizationMatrixTest extends CatalogTestCase
         $lookupType = LookupType::query()->where('key', 'glass_type')->value('id');
         $lookupValue = LookupValue::query()->where('type_id', $lookupType)->value('id');
         $field = CustomFieldDef::query()->create(['entity' => 'variant', 'key' => 'fx', 'label_en' => 'Fx', 'field_type' => 'text']);
+        $bundleVariant = $this->makeVariant($pid, ['position' => 'pair', 'is_bundle' => true]);
+        $bundleItem = VariantBundleItem::query()->create(['bundle_variant_id' => $bundleVariant['id'], 'component_variant_id' => $variant['id'], 'qty' => 1]);
         $make = VehicleMake::query()->where('name', 'Toyota')->value('id');
         $unusedMake = VehicleMake::query()->create(['name' => 'Unused Make'])->id;
         $this->app['auth']->forgetGuards();
@@ -118,7 +123,7 @@ class CatalogAuthorizationMatrixTest extends CatalogTestCase
         $swap = fn (string $s): string => strtr($s, [
             '{product}' => (string) $pid, '{variant}' => (string) $variant['id'], '{image}' => (string) $image->id, '{fitment}' => (string) $fitment->id,
             '{xref}' => (string) $xref->id, '{lookup_type}' => (string) $lookupType, '{lookup_value}' => (string) $lookupValue,
-            '{custom_field}' => (string) $field->id, '{make}' => (string) $make, '{unused_make}' => (string) $unusedMake, '{model}' => (string) $model,
+            '{custom_field}' => (string) $field->id, '{bundle_item}' => (string) $bundleItem->id, '{make}' => (string) $make, '{unused_make}' => (string) $unusedMake, '{model}' => (string) $model,
         ]);
         $resolve = function ($v) use (&$resolve, $swap) {
             return is_array($v) ? array_map($resolve, $v) : (is_string($v) ? $swap($v) : $v);

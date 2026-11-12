@@ -81,7 +81,7 @@ class ProductController extends Controller
 
     private function detail(Product $product): Product
     {
-        return $product->load(['category', 'brand', 'qualityGrade', 'unit', 'images', 'variants.glassType', 'variants.tint', 'variants.colorFinish', 'variants.crossReferences', 'variants.fitments.vehicleModel.make', 'variants.images']);
+        return $product->load(['category', 'brand', 'qualityGrade', 'unit', 'images', 'variants.glassType', 'variants.tint', 'variants.colorFinish', 'variants.crossReferences', 'variants.fitments.vehicleModel.make', 'variants.images', 'variants.bundleItems.component']);
     }
 
     /** @param Builder<Product> $query */
