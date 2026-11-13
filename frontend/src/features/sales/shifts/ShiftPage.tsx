@@ -39,7 +39,7 @@ export function ShiftPage() {
         <Card><CardBody>
           <h3 className="mb-2 text-sm font-semibold text-navy-900">{t('shifts.cashDrawer')} <Badge tone={s.status === 'open' ? 'orange' : 'neutral'}>{t(`shifts.status.${s.status}`)}</Badge></h3>
           <dl className="space-y-1 text-sm">
-            {([['openingFloat', tot?.opening_float], ['cashSales', tot?.cash_sales], ['cashRefunds', tot?.cash_refunds], ['cashInLabel', tot?.cash_in], ['cashOutLabel', tot?.cash_out], ['expected', s.expected_cash ?? tot?.expected_cash], ['counted', s.counted_cash]] as const).map(([k, v]) => <div key={k} className="flex justify-between"><dt className="text-ink-muted">{t(`shifts.${k}`)}</dt><dd className="tabular font-medium">{v ? formatMoney(v) : '—'}</dd></div>)}
+            {([['openingFloat', tot?.opening_float], ['cashSales', tot?.cash_sales], ['cashCollections', tot?.cash_collections], ['cashRefunds', tot?.cash_refunds], ['cashInLabel', tot?.cash_in], ['cashOutLabel', tot?.cash_out], ['cashPaidOut', tot?.cash_paid_out], ['expected', s.expected_cash ?? tot?.expected_cash], ['counted', s.counted_cash]] as const).map(([k, v]) => <div key={k} className="flex justify-between"><dt className="text-ink-muted">{t(`shifts.${k}`)}</dt><dd className="tabular font-medium">{v ? formatMoney(v) : '—'}</dd></div>)}
           </dl>
           {s.note && <p className="mt-3 text-sm text-ink-muted">{s.note}</p>}
         </CardBody></Card>

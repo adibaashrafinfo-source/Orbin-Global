@@ -6,7 +6,7 @@ import { ApiError } from '@/lib/api';
 import { useUnsavedChangesGuard } from '@/app/useUnsavedChangesGuard';
 import { appSettingsApi, APP_SETTINGS_KEY, type SettingValue } from './api';
 
-const GROUPS = ['sales', 'stock', 'session', 'invoice', 'alerts'] as const;
+const GROUPS = ['sales', 'stock', 'finance', 'session', 'invoice', 'alerts'] as const;
 
 /** FR-107 App settings grouped by domain; validated server-side against SettingsService::SCHEMA. */
 export function PosRulesPage() {

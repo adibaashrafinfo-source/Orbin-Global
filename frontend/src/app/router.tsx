@@ -56,6 +56,15 @@ const ShiftPage = lazy(() => import('@/features/sales/shifts/ShiftPage').then((m
 const QuotationsPage = lazy(() => import('@/features/sales/quotations/QuotationsPage').then((m) => ({ default: m.QuotationsPage })));
 const QuotationPage = lazy(() => import('@/features/sales/quotations/QuotationPage').then((m) => ({ default: m.QuotationPage })));
 const WarrantyPage = lazy(() => import('@/features/sales/warranty/WarrantyPage').then((m) => ({ default: m.WarrantyPage })));
+const LedgerIndex = lazy(() => import('@/features/ledger/LedgerIndex').then((m) => ({ default: m.LedgerIndex })));
+const PartyLedgerPage = lazy(() => import('@/features/ledger/PartyLedgerPage').then((m) => ({ default: m.PartyLedgerPage })));
+const FinanceAccountsPage = lazy(() => import('@/features/ledger/AccountsPage').then((m) => ({ default: m.AccountsPage })));
+const ReceivePayPage = lazy(() => import('@/features/ledger/ReceivePayPage').then((m) => ({ default: m.ReceivePayPage })));
+const FinanceExpensesPage = lazy(() => import('@/features/ledger/ExpensesPage').then((m) => ({ default: m.ExpensesPage })));
+const FundTransfersPage = lazy(() => import('@/features/ledger/TransfersPage').then((m) => ({ default: m.TransfersPage })));
+const DayBookPage = lazy(() => import('@/features/ledger/DayBookPage').then((m) => ({ default: m.DayBookPage })));
+const DuesPage = lazy(() => import('@/features/ledger/DuesPage').then((m) => ({ default: m.DuesPage })));
+const PeriodLockPage = lazy(() => import('@/features/settings/period-lock/PeriodLockPage').then((m) => ({ default: m.PeriodLockPage })));
 const IntegrityPage = lazy(() => import('@/features/admin/IntegrityPage').then((m) => ({ default: m.IntegrityPage })));
 const HealthPage = lazy(() => import('@/features/admin/HealthPage').then((m) => ({ default: m.HealthPage })));
 
@@ -93,6 +102,7 @@ export const router = createBrowserRouter([
                   { path: 'roles', element: gate('roles.manage', <RolesPage />) },
                   { path: 'numbering', element: gate('settings.system.manage', <NumberingPage />) },
                   { path: 'pos', element: gate('settings.system.manage', <PosRulesPage />) },
+                  { path: 'period-lock', element: gate('periods.lock', <PeriodLockPage />) },
                   { path: 'master', element: <Navigate to="/settings/master/vehicle-makes" replace /> },
                   { path: 'master/lookups', element: gate(['masterdata.view', 'masterdata.manage'], <LookupsPage />) },
                   { path: 'master/custom-fields', element: gate(['masterdata.view', 'masterdata.manage'], <CustomFieldsPage />) },
@@ -144,6 +154,14 @@ export const router = createBrowserRouter([
               { path: '/shifts', element: gate(['shifts.open_close_own', 'shifts.close_any', 'shifts.view_all'], <ShiftsPage />) },
               { path: '/shifts/:id', element: gate(['shifts.open_close_own', 'shifts.close_any', 'shifts.view_all'], <ShiftPage />) },
               { path: '/warranty', element: gate('sales.view_all', <WarrantyPage />) },
+              { path: '/ledger', element: <LedgerIndex /> },
+              { path: '/ledger/parties', element: gate('ledger.view', <PartyLedgerPage />) },
+              { path: '/ledger/accounts', element: gate(['ledger.view', 'accounts.manage'], <FinanceAccountsPage />) },
+              { path: '/ledger/receive', element: gate(['ledger.receive_payment', 'ledger.pay_supplier'], <ReceivePayPage />) },
+              { path: '/ledger/expenses', element: gate('expenses.manage', <FinanceExpensesPage />) },
+              { path: '/ledger/transfers', element: gate('fund_transfers.manage', <FundTransfersPage />) },
+              { path: '/ledger/day-book', element: gate('ledger.view', <DayBookPage />) },
+              { path: '/ledger/dues', element: gate('ledger.view', <DuesPage />) },
               { path: '/admin/integrity', element: gate('settings.system.manage', <IntegrityPage />) },
               { path: '/admin/health', element: gate('settings.system.manage', <HealthPage />) },
               { path: '*', element: <Navigate to="/dashboard" replace /> },

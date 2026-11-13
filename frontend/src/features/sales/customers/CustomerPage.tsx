@@ -1,9 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
-import { Pencil, Trash2 } from 'lucide-react';
+import { HandCoins, Pencil, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { Badge, Button, Card, CardBody, ConfirmDialog, EmptyState, ErrorState, IconButton, Input, KpiCard, PageHeader, PageSkeleton, toast } from '@/design/components';
 import { useSession } from '@/features/auth/useSession';
 import { useMaster } from '@/features/catalog/hooks';
@@ -11,11 +11,12 @@ import { serverFieldError, useApiError } from '@/features/catalog/useApiError';
 import { str } from '@/features/catalog/util';
 import { cn } from '@/lib/cn';
 import { formatMoney } from '@/lib/money';
+import { RecentPayments } from '@/features/ledger/RecentPayments';
 import { customerApi, SALES_KEYS } from '../api';
 import { fmtDateTime, SALE_TONE } from '../format';
 import { CustomerDialog } from './CustomerDialog';
 
-const TABS = ['overview', 'invoices', 'ledger', 'vehicles', 'notes'] as const;
+const TABS = ['overview', 'invoices', 'payments', 'ledger', 'vehicles', 'notes'] as const;
 type Tab = (typeof TABS)[number];
 
 /** FR-604, PRD §8.8: one customer at a glance, with the invoices, the ledger and the vehicles behind it. */
@@ -24,6 +25,7 @@ export function CustomerPage() {
   const { id = '' } = useParams();
   const { can } = useSession();
   const reduced = useReducedMotion();
+  const navigate = useNavigate();
   const [tab, setTab] = useState<Tab>('overview');
   const [edit, setEdit] = useState(false);
   const query = useQuery({ queryKey: [...SALES_KEYS.customers, 'overview', id], queryFn: () => customerApi.overview(id) });
@@ -35,7 +37,10 @@ export function CustomerPage() {
   return (
     <>
       <PageHeader title={c.name} description={`${c.code}${c.company_name ? ` · ${c.company_name}` : ''}`} crumbs={[{ label: t('nav.customers'), to: '/customers' }, { label: c.code }]}
-        actions={canManage && !c.is_walk_in ? <Button variant="secondary" leftIcon={<Pencil className="h-4 w-4" aria-hidden="true" />} onClick={() => setEdit(true)}>{t('common.edit')}</Button> : undefined} />
+        actions={!c.is_walk_in ? <>
+          {can(['ledger.receive_payment']) && <Button variant="primary" leftIcon={<HandCoins className="h-4 w-4" aria-hidden="true" />} onClick={() => navigate(`/ledger/receive?type=customer&id=${c.id}&code=${encodeURIComponent(c.code)}&name=${encodeURIComponent(c.name)}`)} data-testid="receive-payment">{t('ledger.receivePayment')}</Button>}
+          {canManage && <Button variant="secondary" leftIcon={<Pencil className="h-4 w-4" aria-hidden="true" />} onClick={() => setEdit(true)}>{t('common.edit')}</Button>}
+        </> : undefined} />
       <div className="mb-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <KpiCard label={t('customers.due')} value={formatMoney(o.due)} />
         <KpiCard label={t('customers.advance')} value={formatMoney(o.advance)} />
@@ -69,6 +74,7 @@ export function CustomerPage() {
             <Card><table className="w-full text-sm"><caption className="sr-only">{t('customers.tabs.invoices')}</caption><thead><tr className="text-start text-xs text-ink-muted"><th scope="col" className="px-4 py-2 text-start font-medium">{t('sales.invoice')}</th><th scope="col" className="text-start font-medium">{t('sales.date')}</th><th scope="col" className="text-start font-medium">{t('common.status')}</th><th scope="col" className="text-end font-medium">{t('sales.total')}</th><th scope="col" className="px-4 text-end font-medium">{t('sales.due')}</th></tr></thead>
               <tbody>{o.invoices.map((i) => <tr key={i.id} className="border-t border-navy-100"><td className="px-4 py-2"><Link className="font-semibold text-navy-800 hover:underline" to={`/sales/${i.id}`}>{i.invoice_no}</Link></td><td>{fmtDateTime(i.sale_date, i18n.language)}</td><td><Badge tone={SALE_TONE[i.status] ?? 'neutral'}>{t(`sales.status.${i.status}`)}</Badge></td><td className="tabular text-end">{formatMoney(i.grand_total)}</td><td className="tabular px-4 text-end">{Number(i.due_total) > 0 ? formatMoney(i.due_total) : '—'}</td></tr>)}</tbody></table></Card>
           ))}
+          {tab === 'payments' && (can(['ledger.view']) ? <RecentPayments partyType="customer" partyId={c.id} /> : <EmptyState body={t('customers.paymentsHidden')} />)}
           {tab === 'ledger' && (o.ledger.length === 0 ? <EmptyState body={t('customers.noLedger')} /> : (
             <Card><table className="w-full text-sm"><caption className="sr-only">{t('customers.tabs.ledger')}</caption><thead><tr className="text-xs text-ink-muted"><th scope="col" className="px-4 py-2 text-start font-medium">{t('sales.date')}</th><th scope="col" className="text-start font-medium">{t('customers.entry')}</th><th scope="col" className="text-start font-medium">{t('customers.reference')}</th><th scope="col" className="text-end font-medium">{t('customers.debit')}</th><th scope="col" className="px-4 text-end font-medium">{t('customers.credit')}</th></tr></thead>
               <tbody>{o.ledger.map((l) => <tr key={l.id} className="border-t border-navy-100"><td className="px-4 py-2">{l.entry_date}</td><td>{t(`customers.entryTypes.${l.entry_type}`, { defaultValue: l.entry_type })}</td><td className="text-ink-muted">{l.ref_no ?? ''}</td><td className="tabular text-end">{Number(l.debit) > 0 ? formatMoney(l.debit) : ''}</td><td className="tabular px-4 text-end">{Number(l.credit) > 0 ? formatMoney(l.credit) : ''}</td></tr>)}</tbody></table></Card>

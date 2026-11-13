@@ -1,8 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { ColumnDef } from '@tanstack/react-table';
-import { Plus, Trash2 } from 'lucide-react';
+import { FileText, HandCoins, Plus, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 import { useDebouncedValue } from '@/app/useDebouncedValue';
 import { Badge, Button, ConfirmDialog, DataTable, EmptyState, IconButton, Input, PageHeader, Pagination, Select, toast } from '@/design/components';
 import { useSession } from '@/features/auth/useSession';
@@ -24,6 +25,9 @@ export function SuppliersPage() {
   const client = useQueryClient();
   const onError = useApiError();
   const canManage = can(['suppliers.manage']);
+  const navigate = useNavigate();
+  const canPay = can(['ledger.pay_supplier']);
+  const canLedger = can(['ledger.view']);
   const [page, setPage] = useState(1);
   const [perPage, setPerPage] = useState(25);
   const [search, setSearch] = useState('');
@@ -45,9 +49,14 @@ export function SuppliersPage() {
       { id: 'balance', header: t('purchasing.fields.balance'), cell: ({ row }) => <span className={`tabular whitespace-nowrap font-semibold ${Number(row.original.balance) > 0 ? 'text-ink' : 'text-ink-muted'}`}>{formatMoney(row.original.balance)}</span> },
       { id: 'status', header: t('common.status'), cell: ({ row }) => <Badge tone={row.original.is_active ? 'success' : 'neutral'}>{row.original.is_active ? t('common.active') : t('common.inactive')}</Badge> },
     ];
-    if (canManage) cols.push({ id: 'actions', header: () => <span className="sr-only">{t('common.actions')}</span>, cell: ({ row }) => <StopClick className="flex justify-end"><IconButton label={t('common.delete')} onClick={() => setDel(row.original)}><Trash2 className="h-4 w-4" aria-hidden="true" /></IconButton></StopClick> });
+    if (canManage || canPay || canLedger) cols.push({ id: 'actions', header: () => <span className="sr-only">{t('common.actions')}</span>, cell: ({ row }) => (
+      <StopClick className="flex justify-end gap-1">
+        {canPay && <IconButton label={t('ledger.makePayment')} onClick={() => navigate(`/ledger/receive?type=supplier&id=${row.original.id}&code=${encodeURIComponent(row.original.code)}&name=${encodeURIComponent(row.original.name)}`)}><HandCoins className="h-4 w-4" aria-hidden="true" /></IconButton>}
+        {canLedger && <IconButton label={t('ledger.tabs.parties')} onClick={() => navigate(`/ledger/parties?type=supplier&id=${row.original.id}&code=${encodeURIComponent(row.original.code)}&name=${encodeURIComponent(row.original.name)}`)}><FileText className="h-4 w-4" aria-hidden="true" /></IconButton>}
+        {canManage && <IconButton label={t('common.delete')} onClick={() => setDel(row.original)}><Trash2 className="h-4 w-4" aria-hidden="true" /></IconButton>}
+      </StopClick>) });
     return cols;
-  }, [t, canManage]);
+  }, [t, canManage, canPay, canLedger, navigate]);
 
   const add = canManage ? <Button leftIcon={<Plus className="h-4 w-4" aria-hidden="true" />} onClick={() => setEdit('new')}>{t('purchasing.addSupplier')}</Button> : null;
   const err = query.error ? { message: query.error instanceof ApiError ? t(`errors.${query.error.code}`, { defaultValue: t('errors.unknown') }) : t('errors.unknown'), requestId: undefined } : null;

@@ -74,6 +74,8 @@ export interface ShiftTotals {
   cash_refunds: string;
   cash_in: string;
   cash_out: string;
+  cash_collections: string;
+  cash_paid_out: string;
   expected_cash: string;
 }
 
