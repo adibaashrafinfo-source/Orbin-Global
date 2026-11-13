@@ -159,14 +159,20 @@ class GoodsReceiptService
                     $lines[] = $common + ['type' => 'damage', 'qty' => Dec::fmt(-$l['damaged'], Dec::QTY), 'unit_cost' => Dec::fmt($l['landed4'], Dec::COST), 'reason' => StockPostingService::ARRIVAL_DAMAGE];
                 }
             }
+            // The variant rows are locked and updated before any stock row (the order StockPostingService expects), last cost first.
+            $variantIds = array_values(array_unique(array_column($calc['lines'], 'variant_id')));
+            sort($variantIds);
+            DB::table('product_variants')->whereIn('id', $variantIds)->orderBy('id')->lockForUpdate()->pluck('id');
+            foreach ($calc['lines'] as $l) {
+                if ($l['good'] > 0) {
+                    ProductVariant::query()->whereKey($l['variant_id'])->update(['last_cost' => Dec::fmt(Dec::rescale($l['landed4'], Dec::COST, Dec::MONEY), Dec::MONEY)]);
+                }
+            }
             $this->stock->postMany($lines);
 
             foreach ($items as $i => $item) {
                 $l = $calc['lines'][$i];
                 $item->update(['allocated_extra' => Dec::fmt($l['allocated'], Dec::MONEY), 'landed_unit_cost' => Dec::fmt($l['landed4'], Dec::COST), 'line_total' => Dec::fmt($l['line'], Dec::MONEY)]);
-                if ($l['good'] > 0) {
-                    ProductVariant::query()->whereKey($l['variant_id'])->update(['last_cost' => Dec::fmt(Dec::rescale($l['landed4'], Dec::COST, Dec::MONEY), Dec::MONEY)]);
-                }
                 if ($po && $item->po_item_id) {
                     PurchaseOrderItem::query()->whereKey($item->po_item_id)->update(['qty_received' => DB::raw('qty_received + '.Dec::fmt($l['received'], Dec::QTY))]);
                 }

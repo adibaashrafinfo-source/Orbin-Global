@@ -85,6 +85,10 @@ class PurchaseReturnService
     {
         return DB::transaction(function () use ($return): PurchaseReturn {
             $r = PurchaseReturn::query()->whereKey($return->id)->lockForUpdate()->firstOrFail();
+            if ($r->grn_id) {
+                // Returns against one receipt queue up here, before any plain read, so each sees the earlier ones' totals.
+                GoodsReceipt::query()->whereKey($r->grn_id)->lockForUpdate()->firstOrFail();
+            }
             $this->assertDraft($r);
             $this->period->assertOpen($r->return_date);
             $items = $r->items()->orderBy('id')->get();

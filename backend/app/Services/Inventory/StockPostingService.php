@@ -67,11 +67,16 @@ class StockPostingService
             $pairs[$line['variant_id'].'-'.$line['warehouse_id']] = [(int) $line['variant_id'], (int) $line['warehouse_id']];
         }
         uasort($pairs, fn ($a, $b) => $a <=> $b);
+        // Lock order is always variant first, then stock rows. Inserting a movement takes a shared lock on its variant (foreign
+        // key), and a goods receipt updates the variant's last cost, so taking the variant up front keeps those two from deadlocking.
+        DB::table('product_variants')->whereIn('id', array_values(array_unique(array_column($pairs, 0))))->orderBy('id')->sharedLock()->pluck('id');
         foreach ($pairs as [$variantId, $warehouseId]) {
-            // Create first (ignoring a racing insert), then lock, so we never hold a gap lock on a missing row.
-            DB::table('stock_levels')->insertOrIgnore(['variant_id' => $variantId, 'warehouse_id' => $warehouseId, 'qty_on_hand' => 0, 'qty_reserved' => 0, 'avg_cost' => 0]);
-        }
-        foreach ($pairs as [$variantId, $warehouseId]) {
+            // One statement creates a missing row or takes the exclusive lock on the existing one. INSERT IGNORE would take a
+            // shared lock on a duplicate and then fight other sessions to upgrade it, which deadlocks under load.
+            DB::statement(
+                'INSERT INTO stock_levels (variant_id, warehouse_id, qty_on_hand, qty_reserved, avg_cost, created_at, updated_at) VALUES (?, ?, 0, 0, 0, CURRENT_TIMESTAMP(3), CURRENT_TIMESTAMP(3)) ON DUPLICATE KEY UPDATE id = id',
+                [$variantId, $warehouseId],
+            );
             DB::table('stock_levels')->where(['variant_id' => $variantId, 'warehouse_id' => $warehouseId])->lockForUpdate()->first();
         }
     }
@@ -96,7 +101,9 @@ class StockPostingService
         }
         $warehouse = Warehouse::query()->findOrFail($warehouseId);
         /** @var StockLevel $level */
-        $level = StockLevel::query()->where(['variant_id' => $variantId, 'warehouse_id' => $warehouseId])->firstOrFail();
+        // A locking read, never a plain one: under REPEATABLE READ a plain read inside a long transaction returns the snapshot taken
+        // earlier, which can predate another session's committed posting and would silently lose it.
+        $level = StockLevel::query()->where(['variant_id' => $variantId, 'warehouse_id' => $warehouseId])->lockForUpdate()->firstOrFail();
         $onHand = Dec::parse((string) $level->qty_on_hand, Dec::QTY);
         $avg = Dec::parse((string) $level->avg_cost, Dec::COST);
         $after = $onHand + $delta;
