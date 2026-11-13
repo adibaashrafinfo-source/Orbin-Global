@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Support\Facades\DB;
 
 /** FR-301..302, 304, 308: product list with filters, editor save, publish, clone. */
 class ProductController extends Controller
@@ -26,7 +27,8 @@ class ProductController extends Controller
             'per_page' => ['sometimes', 'integer', 'min:1', 'max:100'], 'page' => ['sometimes', 'integer', 'min:1'],
             'sort' => ['sometimes', 'string', 'max:30'], 'search' => ['sometimes', 'nullable', 'string', 'max:100'],
         ]);
-        $query = Product::query()->with(['category', 'brand', 'qualityGrade', 'unit'])->withCount('variants')->withMin('variants', 'retail_price')->withMax('variants', 'retail_price');
+        $query = Product::query()->with(['category', 'brand', 'qualityGrade', 'unit'])->withCount('variants')->withMin('variants', 'retail_price')->withMax('variants', 'retail_price')
+            ->addSelect(['stock_total' => DB::table('stock_levels as l')->join('product_variants as v', 'v.id', '=', 'l.variant_id')->whereColumn('v.product_id', 'products.id')->whereNull('v.deleted_at')->selectRaw('COALESCE(SUM(l.qty_on_hand), 0)')]);
         $this->applyFilters($query, $request);
         $sort = (string) $request->input('sort', 'name');
         $desc = str_starts_with($sort, '-');
@@ -66,9 +68,9 @@ class ProductController extends Controller
         return new ProductResource($this->detail($this->products->publish($product)));
     }
 
-    public function deactivate(Product $product): ProductResource
+    public function deactivate(Request $request, Product $product): ProductResource
     {
-        return new ProductResource($this->detail($this->products->deactivate($product)));
+        return new ProductResource($this->detail($this->products->deactivate($product, $request->boolean('confirm'))));
     }
 
     public function clone(Request $request, Product $product): JsonResponse
@@ -81,7 +83,7 @@ class ProductController extends Controller
 
     private function detail(Product $product): Product
     {
-        return $product->load(['category', 'brand', 'qualityGrade', 'unit', 'images', 'variants.glassType', 'variants.tint', 'variants.colorFinish', 'variants.crossReferences', 'variants.fitments.vehicleModel.make', 'variants.images', 'variants.bundleItems.component']);
+        return $product->load(['variants' => fn ($q) => $q->withSum('stockLevels as stock_on_hand', 'qty_on_hand'), 'category', 'brand', 'qualityGrade', 'unit', 'images', 'variants.glassType', 'variants.tint', 'variants.colorFinish', 'variants.crossReferences', 'variants.fitments.vehicleModel.make', 'variants.images', 'variants.bundleItems.component']);
     }
 
     /** @param Builder<Product> $query */
@@ -98,6 +100,10 @@ class ProductController extends Controller
         }
         if ($request->filled('filter.category_id')) {
             $query->whereIn('category_id', $this->prices->categoryTree((int) $request->input('filter.category_id')));
+        }
+        if (in_array($request->input('filter.stock'), ['in', 'out'], true)) {
+            $has = fn ($v) => $v->whereHas('stockLevels', fn ($l) => $l->where('qty_on_hand', '>', 0));
+            $request->input('filter.stock') === 'in' ? $query->whereHas('variants', $has) : $query->whereDoesntHave('variants', $has);
         }
         if ($request->has('filter.is_active') && $request->input('filter.is_active') !== '') {
             $query->where('is_active', filter_var($request->input('filter.is_active'), FILTER_VALIDATE_BOOL));

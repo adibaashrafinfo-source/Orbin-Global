@@ -61,9 +61,14 @@ class ProductService
         return $product->refresh();
     }
 
-    public function deactivate(Product $product): Product
+    /** FR-308: a product that still has stock is only deactivated once the caller has confirmed it. */
+    public function deactivate(Product $product, bool $confirmed = false): Product
     {
-        // FR-308: deactivating a product that still has stock needs confirmation; stock levels arrive with inventory in Phase 2.
+        $units = (string) DB::table('stock_levels as l')->join('product_variants as v', 'v.id', '=', 'l.variant_id')->where('v.product_id', $product->id)->whereNull('v.deleted_at')
+            ->where('l.qty_on_hand', '>', 0)->selectRaw('COALESCE(SUM(l.qty_on_hand), 0) as q')->value('q');
+        if (! $confirmed && (float) $units > 0) {
+            throw new ApiException('HAS_STOCK', 409, '', [], ['units' => $units]);
+        }
         $product->update(['is_active' => false]);
 
         return $product->refresh();

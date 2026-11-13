@@ -32,7 +32,7 @@ class VariantResource extends JsonResource
             'tax_rate_id' => $this->tax_rate_id, 'reorder_level' => $this->reorder_level, 'reorder_qty' => $this->reorder_qty, 'max_stock' => $this->max_stock,
             'default_location_id' => $this->default_location_id, 'track_serial' => $this->track_serial, 'is_bundle' => $this->is_bundle,
             'is_discontinued' => $this->is_discontinued, 'is_active' => $this->is_active, 'internal_note' => $this->internal_note, 'custom' => $this->custom ?? (object) [],
-            'stock_on_hand' => null, // stock levels arrive with inventory in Phase 2
+            'stock_on_hand' => isset($this->stock_on_hand) ? number_format((float) $this->stock_on_hand, 3, '.', '') : (array_key_exists('stock_on_hand', $this->resource->getAttributes()) ? '0.000' : null),
             'glass_type' => $this->whenLoaded('glassType', fn () => $this->glassType?->label_en),
             'tint' => $this->whenLoaded('tint', fn () => $this->tint?->label_en),
             'color_finish' => $this->whenLoaded('colorFinish', fn () => $this->colorFinish?->label_en),

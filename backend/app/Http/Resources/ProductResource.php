@@ -24,7 +24,7 @@ class ProductResource extends JsonResource
             'variants_count' => $this->whenCounted('variants'),
             'min_price' => $this->variants_min_retail_price ?? null,
             'max_price' => $this->variants_max_retail_price ?? null,
-            'stock_total' => null, // arrives with inventory in Phase 2
+            'stock_total' => isset($this->stock_total) ? number_format((float) $this->stock_total, 3, '.', '') : null,
             'variants' => $this->whenLoaded('variants', fn () => VariantResource::collection($this->variants)),
             'images' => $this->whenLoaded('images', fn () => ImageResource::collection($this->images)),
             'created_at' => $this->created_at?->toIso8601String(), 'updated_at' => $this->updated_at?->toIso8601String(),

@@ -44,7 +44,7 @@ class VariantController extends Controller
 
     public function show(ProductVariant $variant): VariantResource
     {
-        return new VariantResource($variant->load(self::RELATIONS));
+        return new VariantResource($variant->loadSum('stockLevels as stock_on_hand', 'qty_on_hand')->load(self::RELATIONS));
     }
 
     public function update(VariantRequest $request, ProductVariant $variant): VariantResource

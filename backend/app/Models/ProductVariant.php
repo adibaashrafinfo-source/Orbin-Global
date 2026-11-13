@@ -74,6 +74,11 @@ class ProductVariant extends Model
         return $this->belongsTo(TaxRate::class);
     }
 
+    public function stockLevels(): HasMany
+    {
+        return $this->hasMany(StockLevel::class, 'variant_id');
+    }
+
     public function crossReferences(): HasMany
     {
         return $this->hasMany(OemCrossReference::class, 'variant_id')->orderBy('id');
