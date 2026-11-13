@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\V1\BranchController;
 use App\Http\Controllers\Api\V1\CompanyProfileController;
 use App\Http\Controllers\Api\V1\CustomerController;
 use App\Http\Controllers\Api\V1\CustomFieldController;
+use App\Http\Controllers\Api\V1\DashboardController;
 use App\Http\Controllers\Api\V1\DayBookController;
 use App\Http\Controllers\Api\V1\DuesController;
 use App\Http\Controllers\Api\V1\ExpenseCategoryController;
@@ -33,6 +34,8 @@ use App\Http\Controllers\Api\V1\ProductController;
 use App\Http\Controllers\Api\V1\PurchaseOrderController;
 use App\Http\Controllers\Api\V1\PurchaseReturnController;
 use App\Http\Controllers\Api\V1\QuotationController;
+use App\Http\Controllers\Api\V1\ReportController;
+use App\Http\Controllers\Api\V1\ReportPresetController;
 use App\Http\Controllers\Api\V1\RolePermissionController;
 use App\Http\Controllers\Api\V1\SaleController;
 use App\Http\Controllers\Api\V1\SaleReturnController;
@@ -341,6 +344,17 @@ Route::middleware(['auth:sanctum', 'active'])->group(function (): void {
         Route::post('shifts/{shift}/cash', [ShiftController::class, 'cash'])->whereNumber('shift')->name('shifts.cash');
         Route::post('shifts/{shift}/close', [ShiftController::class, 'close'])->whereNumber('shift')->name('shifts.close');
     });
+    // Reports and dashboard (FR-1100)
+    Route::get('dashboard', [DashboardController::class, 'show'])->name('dashboard.show');
+    Route::middleware('permission:reports.view_all|reports.view_own|reports.view_stock|reports.view_profit|audit.view')->group(function (): void {
+        Route::get('reports', [ReportController::class, 'index'])->name('reports.index');
+        Route::get('reports/{report}', [ReportController::class, 'show'])->where('report', '[a-z0-9-]+')->name('reports.show');
+        Route::get('report-presets', [ReportPresetController::class, 'index'])->name('report-presets.index');
+        Route::post('report-presets', [ReportPresetController::class, 'store'])->name('report-presets.store');
+        Route::delete('report-presets/{preset}', [ReportPresetController::class, 'destroy'])->whereNumber('preset')->name('report-presets.destroy');
+    });
+    Route::get('reports/{report}/export', [ReportController::class, 'export'])->where('report', '[a-z0-9-]+')->middleware('permission:reports.export')->name('reports.export');
+
     // Ledger and finance (FR-1000)
     Route::get('financial-accounts', [FinancialAccountController::class, 'index'])->middleware('permission:ledger.view|accounts.manage|pos.sell|ledger.receive_payment|ledger.pay_supplier')->name('financial-accounts.index');
     Route::middleware('permission:ledger.view|accounts.manage')->group(function (): void {
