@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\V1\Admin\HealthController;
+use App\Http\Controllers\Api\V1\Admin\IntegrityController;
 use App\Http\Controllers\Api\V1\AppSettingsController;
 use App\Http\Controllers\Api\V1\AuditLogController;
 use App\Http\Controllers\Api\V1\AuthController;
@@ -11,6 +12,7 @@ use App\Http\Controllers\Api\V1\FitmentController;
 use App\Http\Controllers\Api\V1\GoodsReceiptController;
 use App\Http\Controllers\Api\V1\ImageController;
 use App\Http\Controllers\Api\V1\ImportExportController;
+use App\Http\Controllers\Api\V1\InventoryController;
 use App\Http\Controllers\Api\V1\LabelController;
 use App\Http\Controllers\Api\V1\LookupController;
 use App\Http\Controllers\Api\V1\MasterDataController;
@@ -20,6 +22,9 @@ use App\Http\Controllers\Api\V1\ProductController;
 use App\Http\Controllers\Api\V1\PurchaseOrderController;
 use App\Http\Controllers\Api\V1\PurchaseReturnController;
 use App\Http\Controllers\Api\V1\RolePermissionController;
+use App\Http\Controllers\Api\V1\StockAdjustmentController;
+use App\Http\Controllers\Api\V1\StockCountController;
+use App\Http\Controllers\Api\V1\StockTransferController;
 use App\Http\Controllers\Api\V1\StorageLocationController;
 use App\Http\Controllers\Api\V1\SupplierController;
 use App\Http\Controllers\Api\V1\UserController;
@@ -215,9 +220,59 @@ Route::middleware(['auth:sanctum', 'active'])->group(function (): void {
         Route::delete('goods-receipts/{goodsReceipt}', [GoodsReceiptController::class, 'destroy'])->whereNumber('goodsReceipt')->name('goods-receipts.destroy');
     });
 
+    // Inventory (Phase 2)
+    Route::middleware('permission:inventory.view')->group(function (): void {
+        Route::get('inventory/overview', [InventoryController::class, 'overview'])->name('inventory.overview');
+        Route::get('inventory/movements', [InventoryController::class, 'movements'])->name('inventory.movements');
+        Route::get('inventory/stock-card/{variant}', [InventoryController::class, 'card'])->whereNumber('variant')->name('inventory.card');
+        Route::get('inventory/breakage', [InventoryController::class, 'breakage'])->name('inventory.breakage');
+        Route::get('inventory/reorder', [InventoryController::class, 'reorder'])->name('inventory.reorder');
+        Route::get('stock-adjustments', [StockAdjustmentController::class, 'index'])->name('stock-adjustments.index');
+        Route::get('stock-adjustments/{stockAdjustment}', [StockAdjustmentController::class, 'show'])->whereNumber('stockAdjustment')->name('stock-adjustments.show');
+        Route::get('adjustment-photos/{attachment}', [StockAdjustmentController::class, 'attachment'])->whereNumber('attachment')->name('stock-adjustments.photo.show');
+        Route::get('stock-transfers', [StockTransferController::class, 'index'])->name('stock-transfers.index');
+        Route::get('stock-transfers/{stockTransfer}', [StockTransferController::class, 'show'])->whereNumber('stockTransfer')->name('stock-transfers.show');
+        Route::get('stock-counts', [StockCountController::class, 'index'])->name('stock-counts.index');
+        Route::get('stock-counts/{stockCount}', [StockCountController::class, 'show'])->whereNumber('stockCount')->name('stock-counts.show');
+    });
+    Route::middleware('permission:inventory.reports')->group(function (): void {
+        Route::get('inventory/valuation', [InventoryController::class, 'valuation'])->name('inventory.valuation');
+        Route::get('inventory/aging', [InventoryController::class, 'aging'])->name('inventory.aging');
+    });
+    Route::post('inventory/reorder/purchase-orders', [InventoryController::class, 'createPurchaseOrders'])->middleware('permission:purchases.manage')->name('inventory.reorder.purchase-orders');
+    Route::middleware('permission:inventory.adjust')->group(function (): void {
+        Route::post('stock-adjustments', [StockAdjustmentController::class, 'store'])->name('stock-adjustments.store');
+        Route::put('stock-adjustments/{stockAdjustment}', [StockAdjustmentController::class, 'update'])->whereNumber('stockAdjustment')->name('stock-adjustments.update');
+        Route::post('stock-adjustments/{stockAdjustment}/photos', [StockAdjustmentController::class, 'photo'])->whereNumber('stockAdjustment')->name('stock-adjustments.photo');
+        Route::post('stock-adjustments/{stockAdjustment}/submit', [StockAdjustmentController::class, 'submit'])->whereNumber('stockAdjustment')->name('stock-adjustments.submit');
+        Route::post('stock-adjustments/{stockAdjustment}/post', [StockAdjustmentController::class, 'post'])->whereNumber('stockAdjustment')->name('stock-adjustments.post');
+        Route::delete('stock-adjustments/{stockAdjustment}', [StockAdjustmentController::class, 'destroy'])->whereNumber('stockAdjustment')->name('stock-adjustments.destroy');
+    });
+    Route::post('stock-adjustments/{stockAdjustment}/reject', [StockAdjustmentController::class, 'reject'])->middleware('permission:inventory.adjust.approve')->whereNumber('stockAdjustment')->name('stock-adjustments.reject');
+    Route::middleware('permission:inventory.transfer')->group(function (): void {
+        Route::post('stock-transfers', [StockTransferController::class, 'store'])->name('stock-transfers.store');
+        Route::put('stock-transfers/{stockTransfer}', [StockTransferController::class, 'update'])->whereNumber('stockTransfer')->name('stock-transfers.update');
+        Route::post('stock-transfers/{stockTransfer}/send', [StockTransferController::class, 'send'])->whereNumber('stockTransfer')->name('stock-transfers.send');
+        Route::post('stock-transfers/{stockTransfer}/receive', [StockTransferController::class, 'receive'])->whereNumber('stockTransfer')->name('stock-transfers.receive');
+        Route::post('stock-transfers/{stockTransfer}/cancel', [StockTransferController::class, 'cancel'])->whereNumber('stockTransfer')->name('stock-transfers.cancel');
+        Route::delete('stock-transfers/{stockTransfer}', [StockTransferController::class, 'destroy'])->whereNumber('stockTransfer')->name('stock-transfers.destroy');
+    });
+    Route::middleware('permission:inventory.count')->group(function (): void {
+        Route::post('stock-counts', [StockCountController::class, 'store'])->name('stock-counts.store');
+        Route::post('stock-counts/{stockCount}/start', [StockCountController::class, 'start'])->whereNumber('stockCount')->name('stock-counts.start');
+        Route::post('stock-counts/{stockCount}/items', [StockCountController::class, 'addItem'])->whereNumber('stockCount')->name('stock-counts.add-item');
+        Route::put('stock-counts/{stockCount}/items', [StockCountController::class, 'enter'])->whereNumber('stockCount')->name('stock-counts.enter');
+        Route::post('stock-counts/{stockCount}/review', [StockCountController::class, 'review'])->whereNumber('stockCount')->name('stock-counts.review');
+        Route::post('stock-counts/{stockCount}/post', [StockCountController::class, 'post'])->whereNumber('stockCount')->name('stock-counts.post');
+        Route::post('stock-counts/{stockCount}/cancel', [StockCountController::class, 'cancel'])->whereNumber('stockCount')->name('stock-counts.cancel');
+        Route::delete('stock-counts/{stockCount}', [StockCountController::class, 'destroy'])->whereNumber('stockCount')->name('stock-counts.destroy');
+    });
+
     // Admin → Health (super_admin only via settings.system.manage)
     Route::prefix('admin/health')->middleware('permission:settings.system.manage')->group(function (): void {
         Route::get('/', [HealthController::class, 'show'])->name('admin.health.show');
+        Route::get('integrity', [IntegrityController::class, 'show'])->name('admin.integrity.show');
+        Route::post('integrity/run', [IntegrityController::class, 'run'])->name('admin.integrity.run');
         Route::post('clear-caches', [HealthController::class, 'clearCaches'])->name('admin.health.clear-caches');
         Route::post('maintenance', [HealthController::class, 'maintenance'])->name('admin.health.maintenance');
         Route::post('run-migrations', [HealthController::class, 'runMigrations'])->name('admin.health.run-migrations');
