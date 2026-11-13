@@ -138,3 +138,35 @@ A new vehicle make or category is placed after its siblings instead of at the to
 
 ### D-034 Scheduler heartbeat is not versioned
 `backend/storage/framework/scheduler-heartbeat` is runtime state written by cron. It was tracked by mistake in Phase 0 and is now ignored.
+
+### D-035 Decimal math without bcmath
+The host check may not offer bcmath, and floats are forbidden for money. All quantity, cost and money arithmetic goes through `App\Support\Dec`, which works on scaled integers: quantity 3 decimals, money 2, unit cost 4. Rounding is half away from zero, an overflow guard refuses numbers that would not fit, and `allocate` splits an amount in proportion to weights using largest remainder so the parts always add up to the whole to the paisa.
+
+### D-036 One writer for stock
+`StockPostingService` is the only code that changes `stock_levels` and appends `stock_movements`. It refuses to run outside a transaction. Locks are taken in a fixed order (variant rows shared, then stock levels in ascending variant and warehouse order) so two postings cannot deadlock each other. Stock on file is also rebuilt from the movements by the same code for valuation as of a past date and for the integrity check.
+
+### D-037 Average cost rules
+Only stock coming in at a known cost changes the average: opening stock, purchase receipt and transfer in (which carries the source cost). Sales, returns to supplier, adjustments and counts leave the average alone. Goods that arrive broken are posted at the average that was already on file, so a damaged delivery does not lower the average of good stock.
+
+### D-038 Landed cost
+Extra costs (freight, duty, clearing, local transport, other) are spread over the lines that have good units, by value or by quantity as chosen on the receipt, split to the paisa. Landed unit cost = (good units × invoice unit cost + that line's share) ÷ good units, kept at 4 decimals. A hand-worked example is a test (AT-011).
+The supplier is credited for the goods plus the extra costs that have no named payee. An extra cost with a payee (a freight company, say) is not added to the supplier balance.
+
+### D-039 Negative stock and adjustments needing approval
+A posting that would take stock below zero fails with a clear message unless the setting `allow_negative_stock` is on. An adjustment over the quantity or value threshold cannot be posted by someone without the approve permission: they submit it, managers are notified, and it waits in pending approval until a user with the approve permission posts it.
+
+### D-040 A short transfer
+When a transfer arrives with fewer units than were sent, the received quantity is posted at the destination and the missing units stay at the source as a draft adjustment for a manager to resolve, instead of vanishing in transit.
+
+### D-041 Purchase returns are serialized per receipt
+Two returns against the same receipt are processed one after the other (the receipt row is locked first), so together they can never return more than was received. Found by a concurrency test.
+
+### D-042 Valuation and cost permission
+Valuation, and any cost column, need the cost permission as well as the inventory reports permission. The API refuses the request (403) and the screen refuses the route, not only the tab.
+
+### D-043 Integrity check
+`integrity:check` runs every night at 03:00 Dhaka time and from Settings, System, Integrity. It checks that stock on file equals the sum of movements, that each movement's running balance follows the one before, that the stored average cost equals a replay of the movements, that nothing is negative (a warning when the setting allows it), that receipt totals add up, that the supplier ledger matches the receipts and returns behind it, and that purchase order progress matches what was received. Any difference is listed. A test alters a figure by hand and confirms the check reports it. `stock:alerts` runs hourly for low, out, dead and negative stock.
+
+### D-044 Left for later in Phase 2 scope
+- FR-505 and FR-506 (supplier payments, statements, aging) wait for Phase 4 with the ledger and payment accounts. The supplier balance is already correct from receipts, returns and opening balance.
+- Printing a count sheet, and the overstock alert (needs a maximum stock level the catalogue does not hold), are not built. Say if you want them.
