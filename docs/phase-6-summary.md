@@ -13,7 +13,7 @@
 - **User guides** in English (`docs/user-guide-en.md`) and Bangla (`docs/user-guide-bn.md`).
 - **UAT checklist** (`docs/uat-checklist.md`) for every acceptance test AT-001 to AT-023, with what is automated and what the owner should check.
 - **Performance and accessibility results** (`docs/accessibility-performance.md`).
-- Release `orbin-pos-release-0.7.0.zip` built. It does not yet include the health version fix; a rebuild is needed before deploy (see section 4).
+- Release `orbin-pos-release-0.7.1.zip` built from this branch (66 MB). It contains every Phase 6 change, including the version fix. Earlier 0.7.0 was built before the fix and is superseded.
 
 ## 2. Traceability
 
@@ -63,7 +63,7 @@ Not tested: a cPanel host; Apache and its `.htaccess` deny rules (the local chec
 
 **Production: not done, and not started.** The brief asks to wait for your explicit go-ahead before deploying to production.
 
-Before the next release is uploaded, rebuild it so that the version fix (D-090) is in the zip: `bash deploy/build-release.sh 0.7.1`. The 0.7.0 zip on disk still reports 0.1.0 in health.
+Upload `orbin-pos-release-0.7.1.zip` for staging. Its health page reports version 0.7.1 (D-090).
 
 ## 5. Decisions and deviations
 
@@ -109,4 +109,4 @@ See `docs/decisions.md` D-084 to D-097. The ones that matter most:
 
 **Not yet.** Local gates pass: Lighthouse POS (90 and 100 against 85 and 95), the authorization matrix (122 tests), a fresh install from the release zip, and a backup restore rehearsal. Three gate items cannot be closed without your hosting and sign-off: the fresh deployment on cPanel from `DEPLOY_CPANEL.md`, the restore on the host, and UAT. Production deployment has not been started and waits for your go-ahead.
 
-Please send the hosting check answers, and answer questions 2 to 6 above. Then I will build 0.7.1, deploy to staging (when the account exists), and run the UAT checklist with you.
+Please send the hosting check answers, and answer questions 2 to 6 above. Then I will deploy 0.7.1 to staging (when the account exists) and run the UAT checklist with you.
