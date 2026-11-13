@@ -225,3 +225,47 @@ On `/pos` the sidebar shrinks to its icon rail and the page margins tighten, wit
 - Payment receipt, customer statement and supplier statement PDFs: Phase 4. A4 invoice, 80 mm receipt, credit note, quotation, purchase order and Z-report are done.
 - WhatsApp sharing is a link that opens WhatsApp with the message; nothing is sent from the server.
 - The auto-download, print and keyboard behaviour was tested in Chromium only.
+
+### D-060 What Phase 4 adds to the data model beyond the JSON
+All small, all needed by a PRD line the JSON had no column for. `customers` and `suppliers` get `promise_date` and `promise_note` (FR-1007). `sales` and `goods_receipts` get `written_off_total` (FR-1008). `party_payments` also keeps `idempotency_key`, `trx_key` (a unique key like the sale payments have, so one TrxID cannot be taken twice at the same moment), and `status`, `void_reason`, `voided_by`. `expenses` and `fund_transfers` get the same void fields, and `expense_status` gains `void` and `decided_at`/`decision_note`. `expense_categories` gets a `code` that is set only on the category the system itself posts transfer charges to. `purchase_extra_costs.account_id` gets its foreign key at last (its comment promised it for Phase 4). Two settings are new: `allow_negative_account_balance` and `expense_approval_threshold`.
+
+### D-061 How a payment is allocated, and what "due" means
+Oldest first (BR-062): the opening balance (it is the oldest debt there is), then invoices (or goods receipts) by date. The user may split it by hand; each line is capped at what its document still owes, and the lines at the payment. The rest is kept as an advance, a ledger credit that is not applied to a later invoice by itself. A return's credit that was not refunded in cash settles that same invoice first, so what an invoice still owes is `due_total` minus those credits (worked out when needed, not stored). Aging (FR-1007) always adds up to the ledger balance: the balance is laid over the party's open documents newest first, because advances and credits settle the oldest first. A balance no document explains, such as an adjustment, counts as current. One quirk to know: after a return on a due invoice the invoice row can keep a small `due_total` equal to that return credit even though the customer owes nothing on it; the ledger and the dues screen are right, the invoice list shows the old figure.
+
+### D-062 Write-off and discount
+A write-off (bad debt) or discount takes the amount off the oldest dues, writes one ledger entry per document with the reason, lowers the document's due and raises its `written_off_total`. The invoice identity is now `grand_total = paid_total + due_total + written_off_total` (the database check was changed to match). A supplier's discount works the same way on goods receipts. A separate "adjustment" entry corrects a party's balance itself (for instance a wrong opening balance) without touching any document. Both need `ledger.writeoff` (the accountant and the owner), a reason, and an open period.
+
+### D-063 Accounts cannot be overdrawn unless the owner allows it
+A supplier payment, an expense, a transfer, an outgoing adjustment and the void of a receipt or a transfer are refused with INSUFFICIENT_FUNDS when the account would go below zero. The setting `allow_negative_account_balance` (default off) lifts this. The check and the write share one lock on the account. It does not apply to the Phase 3 till refunds and shift cash-out, which keep their own rule. This means the owner must enter opening balances (or book an account adjustment) before spending from an account.
+
+### D-064 Expenses
+An expense at or above `expense_approval_threshold` (whole taka, 0 = never) is saved as waiting for approval and touches no account until approved. Whoever entered it cannot approve it, except the owner (super_admin). A posted expense is never edited: it is voided, which puts the money back as an adjustment entry, and entered again. The charge on a fund transfer is an expense in the system category and cannot be voided alone; void the transfer.
+
+### D-065 Voiding a payment, an expense or a transfer
+A payment is voided with `payments.verify` (manager, accountant, owner) and a reason. The invoices or receipts it settled become due again, the money leaves the account, the ledger gets a reversing entry, the TrxID becomes free to use again, and the receipt is made again with a VOID mark. The reversal is dated today; the period lock is checked against the original date. A void that would overdraw an account is refused (D-063).
+
+### D-066 The period lock
+It is set only through `POST /settings/period-lock` with `periods.lock`, which only the owner holds by default. The general settings form can no longer change it (it could before, without that permission). Moving the lock earlier or removing it reopens closed books, so only the owner may; a lock date in the future is refused. Every create, edit and void checks the document's own date against it (BR-080); the Phase 2 and 3 services already did, and every Phase 4 service now does.
+
+### D-067 The shift drawer counts collections and payments out
+Expected cash now also adds what the cashier collected from customers and moved in by transfer, and takes off what they paid out for expenses, suppliers and transfers, all from the cash drawer during their shift. A voided payment, expense or transfer drops out whole. The Z-report shows both lines.
+
+### D-068 One TrxID rule at the till and later
+The checks for payment references and for a TrxID used before now live in one class used by the POS and by receipts and supplier payments, and the duplicate check reads both tables, so a TrxID taken at the till is also refused as a later receipt and the other way round (BR-061). This also fixed a gap: before, the POS looked only at POS payments.
+
+### D-069 Who pays whom
+A customer can only pay us (a receipt) and a supplier can only be paid by us. Paying a customer back out of an advance, or a supplier refunding us, is not in the spec and is not offered; a customer's refund goes through a return (Phase 3).
+
+### D-070 Reminders and promises
+A promise-to-pay is a date and a note kept on the customer (or, for a supplier, the date we plan to pay). The "reminder" button copies a short message with the amount and the shop's name to the clipboard for WhatsApp or SMS; nothing is sent from the server (FR-1007 says manual).
+
+### D-071 Left out of Phase 4 (small, none blocking the gate)
+- Attaching a slip or file to an expense or a payment: the API accepts an `attachment_id`, but there is no upload control on these screens yet.
+- Rejecting a payment from the verification step (only "confirm" and "void" exist), as in Phase 3.
+- Recurring expense templates: the PRD itself puts them in Phase 2 of the product.
+- CSV, Excel or PDF export of the day book and dues lists: these are the report pages of Phase 5; for now they are screens, and each party has a statement PDF.
+- A payment receipt in 80 mm roll size: the A4 receipt is made; roll receipts exist for sales.
+- Browser testing was Chromium only.
+
+### D-072 Long statements are written in slices
+A statement PDF is written 200 rows at a time instead of as one big page of HTML. Measured here with 2,000 ledger rows: 3.8 seconds and 78 MB peak memory under a 128 MB limit, against 162 MB when it was one piece (which would not fit a 128 MB host). A test keeps rows from being lost or reordered where two slices join. The figures must still be checked on your real hosting account.
