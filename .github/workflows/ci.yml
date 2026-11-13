@@ -35,6 +35,8 @@ jobs:
           php-version: '8.2'
           extensions: pdo_mysql, mbstring, intl, gd, zip, fileinfo, bcmath, pcntl, posix
           coverage: none
+      # The PDF tests read invoices back with pdftotext, pdfinfo and pdftoppm.
+      - run: sudo apt-get update && sudo apt-get install -y poppler-utils
       - run: composer install --no-interaction --prefer-dist
       - run: cp .env.example .env && php artisan key:generate
       - run: vendor/bin/pint --test

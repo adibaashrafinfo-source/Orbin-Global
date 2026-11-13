@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\V1\AuditLogController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\BranchController;
 use App\Http\Controllers\Api\V1\CompanyProfileController;
+use App\Http\Controllers\Api\V1\CustomerController;
 use App\Http\Controllers\Api\V1\CustomFieldController;
 use App\Http\Controllers\Api\V1\FitmentController;
 use App\Http\Controllers\Api\V1\GoodsReceiptController;
@@ -18,10 +19,15 @@ use App\Http\Controllers\Api\V1\LookupController;
 use App\Http\Controllers\Api\V1\MasterDataController;
 use App\Http\Controllers\Api\V1\NotificationController;
 use App\Http\Controllers\Api\V1\NumberingController;
+use App\Http\Controllers\Api\V1\PosController;
 use App\Http\Controllers\Api\V1\ProductController;
 use App\Http\Controllers\Api\V1\PurchaseOrderController;
 use App\Http\Controllers\Api\V1\PurchaseReturnController;
+use App\Http\Controllers\Api\V1\QuotationController;
 use App\Http\Controllers\Api\V1\RolePermissionController;
+use App\Http\Controllers\Api\V1\SaleController;
+use App\Http\Controllers\Api\V1\SaleReturnController;
+use App\Http\Controllers\Api\V1\ShiftController;
 use App\Http\Controllers\Api\V1\StockAdjustmentController;
 use App\Http\Controllers\Api\V1\StockCountController;
 use App\Http\Controllers\Api\V1\StockTransferController;
@@ -31,6 +37,7 @@ use App\Http\Controllers\Api\V1\UserController;
 use App\Http\Controllers\Api\V1\VariantController;
 use App\Http\Controllers\Api\V1\VariantSearchController;
 use App\Http\Controllers\Api\V1\WarehouseController;
+use App\Http\Controllers\Api\V1\WarrantyClaimController;
 use Illuminate\Support\Facades\Route;
 
 // Prefix /api/v1 is set in bootstrap/app.php. Every route below is authorized by auth + permission middleware
@@ -267,6 +274,67 @@ Route::middleware(['auth:sanctum', 'active'])->group(function (): void {
         Route::post('stock-counts/{stockCount}/cancel', [StockCountController::class, 'cancel'])->whereNumber('stockCount')->name('stock-counts.cancel');
         Route::delete('stock-counts/{stockCount}', [StockCountController::class, 'destroy'])->whereNumber('stockCount')->name('stock-counts.destroy');
     });
+
+    // Customers, POS and sales (Phase 3)
+    Route::middleware('permission:customers.view')->group(function (): void {
+        Route::get('customers', [CustomerController::class, 'index'])->name('customers.index');
+        Route::get('customers/{customer}', [CustomerController::class, 'show'])->whereNumber('customer')->name('customers.show');
+        Route::get('customers/{customer}/overview', [CustomerController::class, 'overview'])->whereNumber('customer')->name('customers.overview');
+    });
+    Route::middleware('permission:customers.manage')->group(function (): void {
+        Route::post('customers', [CustomerController::class, 'store'])->name('customers.store');
+        Route::put('customers/{customer}', [CustomerController::class, 'update'])->whereNumber('customer')->name('customers.update');
+        Route::delete('customers/{customer}', [CustomerController::class, 'destroy'])->whereNumber('customer')->name('customers.destroy');
+        Route::post('customers/{customer}/vehicles', [CustomerController::class, 'storeVehicle'])->whereNumber('customer')->name('customer-vehicles.store');
+        Route::put('customer-vehicles/{vehicle}', [CustomerController::class, 'updateVehicle'])->whereNumber('vehicle')->name('customer-vehicles.update');
+        Route::delete('customer-vehicles/{vehicle}', [CustomerController::class, 'destroyVehicle'])->whereNumber('vehicle')->name('customer-vehicles.destroy');
+    });
+    Route::middleware('permission:pos.sell')->group(function (): void {
+        Route::get('pos/config', [PosController::class, 'config'])->name('pos.config');
+        Route::get('pos/variants', [PosController::class, 'variants'])->name('pos.variants');
+        Route::get('pos/scan', [PosController::class, 'scan'])->name('pos.scan');
+        Route::post('sales/checkout', [SaleController::class, 'checkout'])->middleware('throttle:60,1')->name('sales.checkout');
+        Route::post('sales/hold', [SaleController::class, 'hold'])->name('sales.hold');
+        Route::get('sales/held', [SaleController::class, 'held'])->name('sales.held');
+        Route::post('sales/{sale}/resume', [SaleController::class, 'resume'])->whereNumber('sale')->name('sales.resume');
+        Route::delete('sales/{sale}/held', [SaleController::class, 'discardHeld'])->whereNumber('sale')->name('sales.held.discard');
+    });
+    Route::middleware('permission:sales.view_all|sales.view_own')->group(function (): void {
+        Route::get('sales', [SaleController::class, 'index'])->name('sales.index');
+        Route::get('sales/{sale}', [SaleController::class, 'show'])->whereNumber('sale')->name('sales.show');
+        Route::get('sales/{sale}/pdf', [SaleController::class, 'pdf'])->whereNumber('sale')->name('sales.pdf');
+        Route::get('sales/{sale}/receipt', [SaleController::class, 'receipt'])->whereNumber('sale')->name('sales.receipt');
+        Route::get('sale-returns', [SaleReturnController::class, 'index'])->name('sale-returns.index');
+        Route::get('sale-returns/{saleReturn}', [SaleReturnController::class, 'show'])->whereNumber('saleReturn')->name('sale-returns.show');
+        Route::get('sale-returns/{saleReturn}/pdf', [SaleReturnController::class, 'pdf'])->whereNumber('saleReturn')->name('sale-returns.pdf');
+    });
+    Route::post('sales/{sale}/void', [SaleController::class, 'void'])->middleware('permission:sales.void')->whereNumber('sale')->name('sales.void');
+    Route::post('sale-payments/{payment}/confirm', [SaleController::class, 'confirmPayment'])->middleware('permission:payments.verify')->whereNumber('payment')->name('sale-payments.confirm');
+    Route::post('sale-returns', [SaleReturnController::class, 'store'])->middleware('permission:sales.return.create')->name('sale-returns.store');
+    Route::post('sale-returns/{saleReturn}/cancel', [SaleReturnController::class, 'cancel'])->middleware('permission:sales.return.create|sales.return.approve')->whereNumber('saleReturn')->name('sale-returns.cancel');
+    Route::post('sale-returns/{saleReturn}/approve', [SaleReturnController::class, 'approve'])->middleware('permission:sales.return.approve')->whereNumber('saleReturn')->name('sale-returns.approve');
+    Route::middleware('permission:quotations.manage')->group(function (): void {
+        Route::get('quotations', [QuotationController::class, 'index'])->name('quotations.index');
+        Route::post('quotations', [QuotationController::class, 'store'])->name('quotations.store');
+        Route::get('quotations/{quotation}', [QuotationController::class, 'show'])->whereNumber('quotation')->name('quotations.show');
+        Route::post('quotations/{quotation}/status', [QuotationController::class, 'status'])->whereNumber('quotation')->name('quotations.status');
+        Route::post('quotations/{quotation}/convert', [QuotationController::class, 'convert'])->whereNumber('quotation')->name('quotations.convert');
+        Route::get('quotations/{quotation}/pdf', [QuotationController::class, 'pdf'])->whereNumber('quotation')->name('quotations.pdf');
+    });
+    Route::middleware('permission:shifts.open_close_own|shifts.close_any|shifts.view_all')->group(function (): void {
+        Route::get('shifts/current', [ShiftController::class, 'current'])->name('shifts.current');
+        Route::get('shifts', [ShiftController::class, 'index'])->name('shifts.index');
+        Route::get('shifts/{shift}', [ShiftController::class, 'show'])->whereNumber('shift')->name('shifts.show');
+        Route::get('shifts/{shift}/z-report', [ShiftController::class, 'zReport'])->whereNumber('shift')->name('shifts.z-report');
+    });
+    Route::middleware('permission:shifts.open_close_own|shifts.close_any')->group(function (): void {
+        Route::post('shifts/open', [ShiftController::class, 'open'])->name('shifts.open');
+        Route::post('shifts/{shift}/cash', [ShiftController::class, 'cash'])->whereNumber('shift')->name('shifts.cash');
+        Route::post('shifts/{shift}/close', [ShiftController::class, 'close'])->whereNumber('shift')->name('shifts.close');
+    });
+    Route::get('warranty-claims', [WarrantyClaimController::class, 'index'])->middleware('permission:sales.view_all')->name('warranty-claims.index');
+    Route::post('warranty-claims', [WarrantyClaimController::class, 'store'])->middleware('permission:sales.return.create')->name('warranty-claims.store');
+    Route::put('warranty-claims/{warrantyClaim}', [WarrantyClaimController::class, 'update'])->middleware('permission:sales.return.approve')->whereNumber('warrantyClaim')->name('warranty-claims.update');
 
     // Admin → Health (super_admin only via settings.system.manage)
     Route::prefix('admin/health')->middleware('permission:settings.system.manage')->group(function (): void {

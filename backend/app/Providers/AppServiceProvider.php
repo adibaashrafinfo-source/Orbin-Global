@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -22,6 +23,7 @@ class AppServiceProvider extends ServiceProvider
         Date::use(CarbonImmutable::class);
         Model::shouldBeStrict(! $this->app->isProduction());
         Model::unguard(false);
+        View::addNamespace('pdf', app_path('Pdf'));
 
         RateLimiter::for('login', fn (Request $request) => Limit::perMinute((int) config('orbin.login_route_per_minute'))->by($request->ip()));
     }
