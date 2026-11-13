@@ -60,7 +60,7 @@ export const productApi = {
   update: (id: number, body: Partial<Product>) => http.put<Envelope<Product>>(`/products/${id}`, body).then((r) => r.data.data),
   remove: (id: number) => http.delete(`/products/${id}`).then(() => undefined),
   publish: (id: number) => http.post<Envelope<Product>>(`/products/${id}/publish`).then((r) => r.data.data),
-  deactivate: (id: number) => http.post<Envelope<Product>>(`/products/${id}/deactivate`).then((r) => r.data.data),
+  deactivate: (id: number, confirm = false) => http.post<Envelope<Product>>(`/products/${id}/deactivate`, { confirm }).then((r) => r.data.data),
   clone: (id: number) => http.post<Envelope<Product>>(`/products/${id}/clone`, {}).then((r) => r.data.data),
 };
 

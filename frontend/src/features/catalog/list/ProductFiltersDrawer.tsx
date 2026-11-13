@@ -48,6 +48,7 @@ export function ProductFiltersDrawer({ open, onOpenChange, value, onChange }: Pr
         {field('position', t('products.fields.position'), POSITIONS.map((p) => ({ value: p, label: t(`products.positions.${p}`) })))}
         {field('make_id', t('products.fields.fitsMake'), makes)}
         {field('model_id', t('products.fields.fitsModel'), modelOptions)}
+        {field('stock', t('products.fields.onHand'), [{ value: 'in', label: t('inventory.stockStatus.in') }, { value: 'out', label: t('inventory.stockStatus.out') }])}
         {field('is_active', t('common.status'), [{ value: '1', label: t('products.published') }, { value: '0', label: t('products.draft') }])}
       </div>
     </Drawer>

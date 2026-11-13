@@ -25,6 +25,7 @@ export function ProductCard({ product }: { product: Product }) {
       <div className="flex flex-1 flex-col gap-1 p-3">
         <p className="truncate font-heading text-sm font-bold text-navy-900">{product.name_en}</p>
         <p className="truncate text-xs text-ink-muted">{product.code} · {product.category ?? '—'}</p>
+        {product.stock_total !== null && <p className={`text-xs font-medium ${Number(product.stock_total) > 0 ? 'text-success' : 'text-danger'}`}>{Number(product.stock_total) > 0 ? t('products.inStock', { qty: String(Number(product.stock_total)) }) : t('inventory.stockStatus.out')}</p>}
         <div className="mt-auto flex items-end justify-between pt-2">
           <span className="tabular text-sm font-semibold text-ink">{priceRange(product)}</span>
           <span className="text-xs text-ink-subtle">{t('products.variantsCount', { count: product.variants_count ?? 0 })}</span>

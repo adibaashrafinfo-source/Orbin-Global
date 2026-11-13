@@ -44,6 +44,7 @@ export function ProductsPage() {
     { accessorKey: 'brand', header: t('products.fields.brand'), cell: ({ getValue }) => getValue<string | null>() ?? '—' },
     { id: 'type', header: t('products.fields.mirrorType'), cell: ({ row }) => t(`products.mirrorTypes.${row.original.mirror_type}`) },
     { id: 'variants', header: t('products.variants'), cell: ({ row }) => row.original.variants_count ?? 0 },
+    { id: 'stock', header: t('products.fields.onHand'), cell: ({ row }) => (row.original.stock_total === null ? '—' : <span className={`tabular ${Number(row.original.stock_total) > 0 ? '' : 'text-danger'}`}>{String(Number(row.original.stock_total))}</span>) },
     { id: 'price', header: t('products.fields.retail_price'), cell: ({ row }) => <span className="tabular whitespace-nowrap">{priceRange(row.original)}</span> },
     { id: 'status', header: t('common.status'), cell: ({ row }) => <Badge tone={row.original.is_active ? 'success' : 'warning'}>{row.original.is_active ? t('products.published') : t('products.draft')}</Badge> },
   ], [t]);

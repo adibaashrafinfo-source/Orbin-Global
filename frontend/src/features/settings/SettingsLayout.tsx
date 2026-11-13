@@ -24,6 +24,7 @@ const ITEMS: SubItem[] = [
   { key: 'notifications', to: '/settings/notifications', permissions: ['settings.system.manage'], available: false },
   { key: 'importExport', to: '/settings/import-export', permissions: ['products.import'], available: false },
   { key: 'auditLog', to: '/settings/audit-log', permissions: ['audit.view'], available: true },
+  { key: 'integrity', to: '/admin/integrity', permissions: ['settings.system.manage'], available: true },
   { key: 'system', to: '/admin/health', permissions: ['settings.system.manage'], available: true },
 ];
 

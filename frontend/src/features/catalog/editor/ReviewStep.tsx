@@ -1,12 +1,15 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useState } from 'react';
 import { AlertTriangle, CheckCircle2, ImageOff } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { Badge, Button, Card, CardBody, toast } from '@/design/components';
+import { Badge, Button, Card, CardBody, ConfirmDialog, toast } from '@/design/components';
+import { ApiError } from '@/lib/api';
 import { formatMoney } from '@/lib/money';
 import { KEYS, productApi } from '../api';
 import { useCustomFields } from '../hooks';
 import type { Product } from '../types';
 import { useApiError } from '../useApiError';
+import { str } from '../util';
 import type { StepKey, StepProps } from './steps';
 
 interface Check { key: string; ok: boolean; blocking: boolean; step: StepKey }
@@ -57,7 +60,12 @@ export function ReviewStep({ product, canManage, onGoto }: StepProps & { onGoto:
 
   const done = (p: Product, msg: string) => { client.setQueryData(KEYS.product(p.id), p); void client.invalidateQueries({ queryKey: KEYS.products }); toast.success(msg); };
   const publish = useMutation({ mutationFn: () => productApi.publish(product.id), onSuccess: (p) => done(p, t('products.review.published')), onError });
-  const deactivate = useMutation({ mutationFn: () => productApi.deactivate(product.id), onSuccess: (p) => done(p, t('products.review.deactivated')), onError });
+  const [stockWarning, setStockWarning] = useState<string | null>(null);
+  const deactivate = useMutation({
+    mutationFn: (confirm: boolean) => productApi.deactivate(product.id, confirm),
+    onSuccess: (p) => { setStockWarning(null); done(p, t('products.review.deactivated')); },
+    onError: (e) => { if (e instanceof ApiError && e.code === 'HAS_STOCK') setStockWarning(str(e.context.units)); else onError(e); },
+  });
 
   return (
     <section aria-labelledby="review-h" className="grid gap-6 lg:grid-cols-[1fr_auto]">
@@ -78,12 +86,13 @@ export function ReviewStep({ product, canManage, onGoto }: StepProps & { onGoto:
         {canManage && (
           <div className="mt-5 flex items-center justify-end gap-3 border-t border-navy-100 pt-4">
             {product.is_active
-              ? <Button variant="secondary" loading={deactivate.isPending} onClick={() => deactivate.mutate()}>{t('products.review.deactivate')}</Button>
+              ? <Button variant="secondary" loading={deactivate.isPending} onClick={() => deactivate.mutate(false)}>{t('products.review.deactivate')}</Button>
               : <Button variant="accent" disabled={blocked} loading={publish.isPending} onClick={() => publish.mutate()}>{t('products.review.publish')}</Button>}
           </div>
         )}
       </CardBody></Card>
       <PosPreview product={product} />
+      <ConfirmDialog open={stockWarning !== null} onOpenChange={(o) => !o && setStockWarning(null)} danger title={t('products.review.deactivateTitle')} body={t('products.review.hasStock', { units: stockWarning ?? '' })} confirmLabel={t('products.review.deactivateAnyway')} loading={deactivate.isPending} onConfirm={() => deactivate.mutate(true)} />
     </section>
   );
 }

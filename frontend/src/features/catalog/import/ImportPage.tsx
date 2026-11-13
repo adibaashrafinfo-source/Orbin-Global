@@ -10,7 +10,7 @@ import { importApi, KEYS, type ImportSummary } from '../api';
 import { useApiError } from '../useApiError';
 import { ImportErrors } from './ImportErrors';
 
-const KINDS = ['vehicle-makes', 'vehicle-models', 'products', 'fitments'] as const;
+const KINDS = ['vehicle-makes', 'vehicle-models', 'products', 'fitments', 'opening-stock'] as const;
 type Kind = (typeof KINDS)[number];
 
 /** FR-309 Import: choose a kind, download the template, check the file (dry run), then commit. Nothing is written unless every row is valid. */
@@ -20,7 +20,7 @@ export function ImportPage() {
   const client = useQueryClient();
   const onError = useApiError();
   const input = useRef<HTMLInputElement>(null);
-  const allowed = KINDS.filter((k) => (k === 'vehicle-makes' || k === 'vehicle-models' ? can(['masterdata.manage']) : k === 'products' ? can(['products.import']) && can(['pricing.manage']) : can(['products.import'])));
+  const allowed = KINDS.filter((k) => (k === 'vehicle-makes' || k === 'vehicle-models' ? can(['masterdata.manage']) : k === 'products' ? can(['products.import']) && can(['pricing.manage']) : k === 'opening-stock' ? can(['inventory.adjust.approve']) && can(['products.view_cost']) : can(['products.import'])));
   const [kind, setKind] = useState<Kind>(allowed[0] ?? 'products');
   const [file, setFile] = useState<File | null>(null);
   const [token, setToken] = useState<string | null>(null);
