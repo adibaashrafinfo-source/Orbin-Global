@@ -56,6 +56,19 @@ class DuesService
         ];
     }
 
+    /**
+     * Every party with a balance, unpaged and with the numbers as money strings (used by the aging reports).
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public function everyone(string $type): array
+    {
+        $rows = $this->rows($type);
+        usort($rows, fn ($a, $b) => $b['balance'] <=> $a['balance']);
+
+        return array_map(fn ($r) => $this->present($r), $rows);
+    }
+
     /** Promise-to-pay for a customer, or the date we plan to pay a supplier. An empty date clears both fields. */
     public function setPromise(string $type, int $partyId, ?string $date, ?string $note): void
     {
