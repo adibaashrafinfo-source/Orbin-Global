@@ -20,6 +20,10 @@ const AuditLogPage = lazy(() => import('@/features/settings/audit/AuditLogPage')
 const MasterDataPage = lazy(() => import('@/features/masterdata/MasterDataPage').then((m) => ({ default: m.MasterDataPage })));
 const LookupsPage = lazy(() => import('@/features/masterdata/LookupsPage').then((m) => ({ default: m.LookupsPage })));
 const CustomFieldsPage = lazy(() => import('@/features/masterdata/CustomFieldsPage').then((m) => ({ default: m.CustomFieldsPage })));
+const ProductsPage = lazy(() => import('@/features/catalog/list/ProductsPage').then((m) => ({ default: m.ProductsPage })));
+const ProductEditorPage = lazy(() => import('@/features/catalog/editor/ProductEditorPage').then((m) => ({ default: m.ProductEditorPage })));
+const LabelsPage = lazy(() => import('@/features/catalog/labels/LabelsPage').then((m) => ({ default: m.LabelsPage })));
+const ImportPage = lazy(() => import('@/features/catalog/import/ImportPage').then((m) => ({ default: m.ImportPage })));
 const HealthPage = lazy(() => import('@/features/admin/HealthPage').then((m) => ({ default: m.HealthPage })));
 
 const Lazy = () => (
@@ -63,6 +67,11 @@ export const router = createBrowserRouter([
                   { path: 'audit-log', element: gate('audit.view', <AuditLogPage />) },
                 ],
               },
+              { path: '/products', element: gate('products.view', <ProductsPage />) },
+              { path: '/products/new', element: gate('products.manage', <ProductEditorPage />) },
+              { path: '/products/labels', element: gate('products.view', <LabelsPage />) },
+              { path: '/products/import', element: gate(['products.import', 'masterdata.manage'], <ImportPage />) },
+              { path: '/products/:id', element: gate('products.view', <ProductEditorPage />) },
               { path: '/admin/health', element: gate('settings.system.manage', <HealthPage />) },
               { path: '*', element: <Navigate to="/dashboard" replace /> },
             ],

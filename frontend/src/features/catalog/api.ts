@@ -133,6 +133,8 @@ export interface ImportSummary {
   preview: Record<string, string>[];
   file_name: string;
   committed?: boolean;
+  created?: number;
+  updated?: number;
 }
 
 export const importApi = {

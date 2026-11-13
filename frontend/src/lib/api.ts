@@ -5,6 +5,7 @@ export interface ApiErrorBody {
   code: string;
   message: string;
   fields?: Record<string, string[]>;
+  context?: Record<string, unknown>;
   request_id?: string;
 }
 
@@ -12,6 +13,7 @@ export class ApiError extends Error {
   readonly status: number;
   readonly code: string;
   readonly fields: Record<string, string[]>;
+  readonly context: Record<string, unknown>;
   readonly requestId: string | undefined;
 
   constructor(status: number, body: Partial<ApiErrorBody> | undefined) {
@@ -19,6 +21,7 @@ export class ApiError extends Error {
     this.status = status;
     this.code = body?.code ?? (status === 0 ? 'NETWORK' : 'HTTP_' + String(status));
     this.fields = body?.fields ?? {};
+    this.context = body?.context ?? {};
     this.requestId = body?.request_id;
   }
 }
