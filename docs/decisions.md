@@ -123,3 +123,18 @@ A dry run validates every row and returns row-level errors without writing; the 
 - FR-308 (warning when deactivating a product that has stock) needs stock levels, which arrive in Phase 2.
 - Product "total stock" and stock-status filters show nothing until Phase 2.
 - Reordering uses up/down controls instead of drag and drop, which also works from the keyboard.
+
+### D-030 Product editor saves
+A draft product autosaves 1.2 s after the last keystroke in step 1, because nothing live can change. A published product saves only when you press Save, so a half-typed edit never reaches the POS. Other steps save per action or per row.
+
+### D-031 Drag and drop only for images
+Images can be reordered by dragging, with left and right buttons for keyboard users. Master-data lists and custom fields use up and down buttons only (see D-029).
+
+### D-032 Bulk price scope
+A bulk price change applies to the products that match the filters currently set on the product list (category, brand, mirror type), not to hand-picked rows. A preview showing how many variants change, with before and after samples, is required before Apply.
+
+### D-033 New rows go to the end
+A new vehicle make or category is placed after its siblings instead of at the top, so the order you set is not disturbed.
+
+### D-034 Scheduler heartbeat is not versioned
+`backend/storage/framework/scheduler-heartbeat` is runtime state written by cron. It was tracked by mistake in Phase 0 and is now ignored.

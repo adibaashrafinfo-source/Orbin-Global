@@ -75,6 +75,19 @@ class ImportExportTest extends CatalogTestCase
         $this->get('/api/v1/imports/templates/nothing')->assertStatus(404);
     }
 
+    public function test_downloaded_csv_templates_have_a_single_bom_and_can_be_uploaded_unchanged(): void
+    {
+        $this->actingAsRole('manager');
+        foreach (['vehicle-makes', 'vehicle-models', 'fitments'] as $kind) {
+            $content = $this->get("/api/v1/imports/templates/{$kind}")->assertOk()->getContent();
+            $this->assertStringStartsWith("\xEF\xBB\xBF", $content);
+            $this->assertStringNotContainsString("\xEF\xBB\xBF\xEF\xBB\xBF", $content, 'only one byte-order mark');
+            $file = UploadedFile::fake()->createWithContent('template.csv', $content);
+            $res = $this->dry($kind, $file)->assertOk();
+            $this->assertSame(1, $res->json('data.summary.total_rows'), "{$kind} template parses with its headers intact");
+        }
+    }
+
     public function test_makes_and_models_import_with_row_errors_then_commit(): void
     {
         $this->actingAsRole('manager');

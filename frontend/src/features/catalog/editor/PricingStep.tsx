@@ -15,12 +15,12 @@ export function PricingStep({ product, canPrice, canCost, canManage }: StepProps
   const cols: GridCol[] = COLS.map((c) => ({ key: c, label: t(`products.fields.${c}`), kind: 'money', nullable: c !== 'retail_price' }));
   const extra = [];
   if (canCost) {
-    extra.push({ label: t('products.fields.lastCost'), render: (v: (typeof variants)[number]) => (v.last_cost ? formatMoney(v.last_cost) : '—') });
+    extra.push({ label: t('products.fields.lastCost'), render: (v: (typeof variants)[number]) => (v.last_cost && toPaisa(v.last_cost) > 0n ? formatMoney(v.last_cost) : '—') });
     extra.push({
       label: t('products.fields.margin'),
       render: (v: (typeof variants)[number], values: Record<string, string | boolean>) => {
         const retail = toPaisa(String(values.retail_price || '0'));
-        if (!v.last_cost || retail <= 0n) return '—';
+        if (!v.last_cost || toPaisa(v.last_cost) <= 0n || retail <= 0n) return '—';
         const margin = Number(((retail - toPaisa(v.last_cost)) * 1000n) / retail) / 10;
         return `${margin.toFixed(1)}%`;
       },

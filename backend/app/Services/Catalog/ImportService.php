@@ -81,9 +81,6 @@ class ImportService
         $writer->close();
         $content = (string) file_get_contents($path);
         @unlink($path);
-        if ($format !== 'xlsx') {
-            $content = "\xEF\xBB\xBF".$content;
-        }
 
         return [$content, "orbin-{$kind}-template.".($format === 'xlsx' ? 'xlsx' : 'csv')];
     }
@@ -684,7 +681,7 @@ class ImportService
      */
     private function normaliseHeaders(array $cells): array
     {
-        return array_map(fn ($c) => Str::snake(mb_strtolower(trim(preg_replace('/^\xEF\xBB\xBF/', '', (string) $c) ?? ''))), $cells);
+        return array_map(fn ($c) => Str::snake(mb_strtolower(trim(preg_replace('/^(\xEF\xBB\xBF)+/', '', (string) $c) ?? ''))), $cells);
     }
 
     /** @return \Generator<int, array<int, mixed>> row number => cells (1-based, header is row 1) */

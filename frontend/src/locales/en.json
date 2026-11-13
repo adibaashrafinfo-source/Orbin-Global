@@ -555,7 +555,7 @@
       "deactivated": "Product deactivated",
       "checks": {
         "variant": "At least one active variant",
-        "required": "Required custom fields are filled ({{count}} missing)",
+        "required": "Required custom fields are filled", "requiredMissing": "{{count}} required custom fields are still empty",
         "prices": "Every active variant has a retail price",
         "image": "At least one image",
         "fitment": "Vehicle fitment recorded",

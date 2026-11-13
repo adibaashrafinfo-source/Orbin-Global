@@ -38,3 +38,6 @@ frontend/coverage/
 .vscode/
 .DS_Store
 *.tsbuildinfo
+
+# runtime state written by the scheduler
+/backend/storage/framework/scheduler-heartbeat

@@ -68,7 +68,7 @@ export function ReviewStep({ product, canManage, onGoto }: StepProps & { onGoto:
             <li key={c.key} className="flex items-center justify-between gap-3 rounded-input px-2 py-1.5 text-sm">
               <span className="flex items-center gap-2">
                 {c.ok ? <CheckCircle2 className="h-4 w-4 text-success" aria-hidden="true" /> : <AlertTriangle className={c.blocking ? 'h-4 w-4 text-danger' : 'h-4 w-4 text-warning'} aria-hidden="true" />}
-                <span>{t(`products.review.checks.${c.key}`, { count: missing })}</span>
+                <span>{t(`products.review.checks.${c.key === 'required' && !c.ok ? 'requiredMissing' : c.key}`, { count: missing })}</span>
                 {!c.ok && <Badge tone={c.blocking ? 'danger' : 'warning'}>{c.blocking ? t('products.review.required') : t('products.review.advice')}</Badge>}
               </span>
               {!c.ok && <Button variant="ghost" size="sm" onClick={() => onGoto(c.step)}>{t('products.review.fix')}</Button>}
