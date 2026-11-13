@@ -24,9 +24,11 @@
 <table class="totals">
   <tr><td>Opening float</td><td class="right">{!! T::money($t['opening_float'] ?? '0') !!}</td></tr>
   <tr><td>Cash sales</td><td class="right">{!! T::money($t['cash_sales'] ?? '0') !!}</td></tr>
+  <tr><td>Due collections and transfers in</td><td class="right">{!! T::money($t['cash_collections'] ?? '0') !!}</td></tr>
   <tr><td>Cash refunds</td><td class="right">− {!! T::money($t['cash_refunds'] ?? '0') !!}</td></tr>
   <tr><td>Cash in</td><td class="right">{!! T::money($t['cash_in'] ?? '0') !!}</td></tr>
   <tr><td>Cash out</td><td class="right">− {!! T::money($t['cash_out'] ?? '0') !!}</td></tr>
+  <tr><td>Expenses, supplier payments and transfers out</td><td class="right">− {!! T::money($t['cash_paid_out'] ?? '0') !!}</td></tr>
   <tr class="grand"><td>EXPECTED CASH</td><td class="right">{!! T::money($shift->expected_cash) !!}</td></tr>
   <tr><td>Counted cash</td><td class="right">{!! T::money($shift->counted_cash) !!}</td></tr>
   <tr class="due"><td>VARIANCE</td><td class="right">{!! T::money($shift->variance) !!}</td></tr>

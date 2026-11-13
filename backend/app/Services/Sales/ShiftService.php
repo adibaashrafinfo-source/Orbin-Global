@@ -115,7 +115,7 @@ class ShiftService
         });
     }
 
-    /** Cash expected in the drawer now, in paisa: float + cash sales − cash refunds + cash in − cash out. */
+    /** Cash expected in the drawer now, in paisa: float + cash sales + collections − cash refunds + cash in − cash out − payments out. */
     public function expectedCash(CashShift $shift): int
     {
         $t = $this->totals($shift);
@@ -150,6 +150,12 @@ class ShiftService
             ->where('ref_type', $refType)->where('direction', $direction)->where('created_by', $shift->cashier_id)
             ->whereBetween('occurred_at', [$shift->opened_at, $until])->sum('amount'), Dec::MONEY);
         $cashRefunds = $drawer('sale_refund', 'out');
+        // Money a later receipt, supplier payment, expense or fund transfer moved through this drawer by this person; a voided one drops out whole.
+        $drawerDoc = fn (string $refType, string $docTable, string $direction) => Dec::parse((string) DB::table('account_transactions as t')->join($docTable.' as d', 'd.id', '=', 't.ref_id')
+            ->where('t.account_id', $shift->cash_account_id)->where('t.ref_type', $refType)->where('t.direction', $direction)->where('t.created_by', $shift->cashier_id)
+            ->where('d.status', 'posted')->whereBetween('t.occurred_at', [$shift->opened_at, $until])->sum('t.amount'), Dec::MONEY);
+        $collections = $drawerDoc('party_payment', 'party_payments', 'in') + $drawerDoc('fund_transfer', 'fund_transfers', 'in');
+        $paidOut = $drawerDoc('party_payment', 'party_payments', 'out') + $drawerDoc('expense', 'expenses', 'out') + $drawerDoc('fund_transfer', 'fund_transfers', 'out');
         // The opening float is booked as a cash movement in; keep it out of "cash in" so it is not counted twice.
         $cashIn = $drawer('shift_cash_movement', 'in') - $float;
         $cashOut = $drawer('shift_cash_movement', 'out');
@@ -161,7 +167,8 @@ class ShiftService
             'opening_float' => Dec::fmt($float, Dec::MONEY),
             'cash_sales' => Dec::fmt($cashSales, Dec::MONEY), 'cash_refunds' => Dec::fmt($cashRefunds, Dec::MONEY),
             'cash_in' => Dec::fmt($cashIn, Dec::MONEY), 'cash_out' => Dec::fmt($cashOut, Dec::MONEY),
-            'expected_cash' => Dec::fmt($float + $cashSales - $cashRefunds + $cashIn - $cashOut, Dec::MONEY),
+            'cash_collections' => Dec::fmt($collections, Dec::MONEY), 'cash_paid_out' => Dec::fmt($paidOut, Dec::MONEY),
+            'expected_cash' => Dec::fmt($float + $cashSales + $collections - $cashRefunds + $cashIn - $cashOut - $paidOut, Dec::MONEY),
         ];
     }
 

@@ -45,6 +45,8 @@ class SettingsService
         'dead_stock_days' => ['default' => 90, 'type' => 'int', 'group' => 'alerts', 'min' => 1, 'max' => 3650],
         'low_stock_notify' => ['default' => true, 'type' => 'bool', 'group' => 'alerts'],
         'void_same_day_manager_only' => ['default' => true, 'type' => 'bool', 'group' => 'sales'],
+        'allow_negative_account_balance' => ['default' => false, 'type' => 'bool', 'group' => 'finance'],
+        'expense_approval_threshold' => ['default' => 0, 'type' => 'int', 'group' => 'finance', 'min' => 0, 'max' => 1000000000],
     ];
 
     /** @return array<string, mixed> every key with its current (or default) value */
@@ -114,6 +116,8 @@ class SettingsService
             }
             $rules[$key] = $rule;
         }
+        // The lock date has its own permission and rules (PeriodLockService::lock); the general form must never change it.
+        unset($rules['period_lock_date']);
 
         return $rules;
     }

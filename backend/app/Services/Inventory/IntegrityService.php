@@ -32,6 +32,9 @@ class IntegrityService
             $this->check('receipt_totals', $this->receiptTotals()),
             $this->check('supplier_ledger_matches_documents', $this->ledgerVsDocuments()),
             $this->check('order_progress_matches_receipts', $this->orderProgress()),
+            $this->check('payment_allocations_match', $this->paymentAllocations()),
+            $this->check('payment_postings_match', $this->paymentPostings()),
+            $this->check('document_paid_totals_match', $this->documentPaidTotals()),
         ];
         $status = collect($checks)->contains('status', 'fail') ? 'fail' : (collect($checks)->contains('status', 'warn') ? 'warn' : 'ok');
         $result = ['status' => $status, 'ran_at' => CarbonImmutable::now()->toIso8601String(), 'checks' => $checks];
@@ -124,14 +127,14 @@ class IntegrityService
         $bad = [];
         $receipts = DB::table('goods_receipts as g')->where('g.status', 'posted')->whereNull('g.deleted_at')
             ->selectRaw("g.id, g.grn_no, g.items_total + COALESCE((SELECT SUM(amount) FROM purchase_extra_costs x WHERE x.grn_id = g.id AND x.deleted_at IS NULL AND (x.paid_to IS NULL OR x.paid_to = '')), 0) as owed,
-                COALESCE((SELECT SUM(credit - debit) FROM party_ledger_entries l WHERE l.ref_table = 'goods_receipts' AND l.ref_id = g.id AND l.party_type = 'supplier'), 0) as booked")->get();
+                COALESCE((SELECT SUM(credit - debit) FROM party_ledger_entries l WHERE l.ref_table = 'goods_receipts' AND l.ref_id = g.id AND l.party_type = 'supplier' AND l.entry_type = 'invoice'), 0) as booked")->get();
         foreach ($receipts as $r) {
             if (Dec::parse((string) $r->owed, Dec::MONEY) !== Dec::parse((string) $r->booked, Dec::MONEY)) {
                 $bad[] = ['document' => $r->grn_no, 'should_owe' => (string) $r->owed, 'ledger' => (string) $r->booked];
             }
         }
         $returns = DB::table('purchase_returns as p')->where('p.status', 'posted')->whereNull('p.deleted_at')
-            ->selectRaw("p.id, p.return_no, p.total as expected, COALESCE((SELECT SUM(debit - credit) FROM party_ledger_entries l WHERE l.ref_table = 'purchase_returns' AND l.ref_id = p.id AND l.party_type = 'supplier'), 0) as booked")->get();
+            ->selectRaw("p.id, p.return_no, p.total as expected, COALESCE((SELECT SUM(debit - credit) FROM party_ledger_entries l WHERE l.ref_table = 'purchase_returns' AND l.ref_id = p.id AND l.party_type = 'supplier' AND l.entry_type = 'return'), 0) as booked")->get();
         foreach ($returns as $r) {
             if (Dec::parse((string) $r->expected, Dec::MONEY) !== Dec::parse((string) $r->booked, Dec::MONEY)) {
                 $bad[] = ['document' => $r->return_no, 'expected' => (string) $r->expected, 'ledger' => (string) $r->booked];
@@ -148,5 +151,60 @@ class IntegrityService
             ->selectRaw("p.id, p.po_id, p.qty_received, COALESCE((SELECT SUM(i.qty_received) FROM goods_receipt_items i JOIN goods_receipts g ON g.id = i.grn_id WHERE i.po_item_id = p.id AND g.status = 'posted' AND i.deleted_at IS NULL AND g.deleted_at IS NULL), 0) as receipts");
 
         return DB::query()->fromSub($inner, 't')->whereColumn('qty_received', '<>', 'receipts')->get()->map(fn ($r) => (array) $r)->all();
+    }
+
+    /** A posted payment's allocated total is the sum of its allocation rows. @return array<int, array<string, mixed>> */
+    private function paymentAllocations(): array
+    {
+        return DB::table('party_payments as p')->leftJoin('party_payment_allocations as a', 'a.payment_id', '=', 'p.id')->whereNull('p.deleted_at')
+            ->groupBy('p.id', 'p.payment_no', 'p.allocated_total')->havingRaw('p.allocated_total <> COALESCE(SUM(a.amount), 0)')
+            ->get(['p.id', 'p.payment_no', 'p.allocated_total', DB::raw('COALESCE(SUM(a.amount), 0) as allocations')])->map(fn ($r) => (array) $r)->all();
+    }
+
+    /**
+     * Every payment is in the account books and in the party ledger once, for its full amount, and a voided one nets to nothing in both.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function paymentPostings(): array
+    {
+        $bad = [];
+        $rows = DB::table('party_payments as p')->whereNull('p.deleted_at')->selectRaw("p.id, p.payment_no, p.amount, p.status, p.direction,
+            COALESCE((SELECT SUM(CASE WHEN t.direction = 'in' THEN t.amount ELSE -t.amount END) FROM account_transactions t WHERE t.ref_id = p.id AND t.ref_type IN ('party_payment', 'adjustment') AND t.ref_no = p.payment_no), 0) as account_net,
+            COALESCE((SELECT SUM(CASE WHEN p.direction = 'receive' THEN l.credit - l.debit ELSE l.debit - l.credit END) FROM party_ledger_entries l WHERE l.ref_table = 'party_payments' AND l.ref_id = p.id), 0) as ledger_net")->get();
+        foreach ($rows as $r) {
+            $amount = Dec::parse((string) $r->amount, Dec::MONEY);
+            $expected = $r->status === 'void' ? 0 : $amount;
+            $account = Dec::parse((string) $r->account_net, Dec::MONEY) * ($r->direction === 'receive' ? 1 : -1);
+            if ($account !== $expected || Dec::parse((string) $r->ledger_net, Dec::MONEY) !== $expected) {
+                $bad[] = ['payment' => $r->payment_no, 'status' => $r->status, 'expected' => Dec::fmt($expected, Dec::MONEY), 'accounts' => Dec::fmt($account, Dec::MONEY), 'ledger' => (string) $r->ledger_net];
+            }
+        }
+
+        return $bad;
+    }
+
+    /** What an invoice or receipt says was paid is what was paid at the till plus what later payments were allocated to it. @return array<int, array<string, mixed>> */
+    private function documentPaidTotals(): array
+    {
+        $bad = [];
+        $sales = DB::table('sales as s')->whereIn('s.status', ['completed', 'partially_returned', 'returned', 'void'])->whereNull('s.deleted_at')->selectRaw("s.id, s.invoice_no, s.paid_total, s.due_total, s.grand_total, s.written_off_total,
+            COALESCE((SELECT SUM(sp.amount) FROM sale_payments sp WHERE sp.sale_id = s.id AND sp.deleted_at IS NULL), 0) as till,
+            COALESCE((SELECT SUM(a.amount) FROM party_payment_allocations a JOIN party_payments p ON p.id = a.payment_id WHERE a.doc_table = 'sales' AND a.doc_id = s.id AND p.status = 'posted'), 0) as later")->get();
+        foreach ($sales as $r) {
+            $paid = Dec::parse((string) $r->paid_total, Dec::MONEY);
+            if ($paid !== Dec::parse((string) $r->till, Dec::MONEY) + Dec::parse((string) $r->later, Dec::MONEY) || Dec::parse((string) $r->grand_total, Dec::MONEY) !== $paid + Dec::parse((string) $r->due_total, Dec::MONEY) + Dec::parse((string) $r->written_off_total, Dec::MONEY)) {
+                $bad[] = ['document' => $r->invoice_no, 'paid_total' => (string) $r->paid_total, 'till' => (string) $r->till, 'later' => (string) $r->later];
+            }
+        }
+        $grns = DB::table('goods_receipts as g')->where('g.status', 'posted')->whereNull('g.deleted_at')->selectRaw("g.id, g.grn_no, g.paid_total,
+            COALESCE((SELECT SUM(a.amount) FROM party_payment_allocations a JOIN party_payments p ON p.id = a.payment_id WHERE a.doc_table = 'goods_receipts' AND a.doc_id = g.id AND p.status = 'posted'), 0) as later")->get();
+        foreach ($grns as $r) {
+            if (Dec::parse((string) $r->paid_total, Dec::MONEY) !== Dec::parse((string) $r->later, Dec::MONEY)) {
+                $bad[] = ['document' => $r->grn_no, 'paid_total' => (string) $r->paid_total, 'allocated' => (string) $r->later];
+            }
+        }
+
+        return $bad;
     }
 }

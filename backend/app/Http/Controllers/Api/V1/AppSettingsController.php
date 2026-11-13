@@ -29,6 +29,9 @@ class AppSettingsController extends Controller
     {
         $out = [];
         foreach (SettingsService::SCHEMA as $key => $def) {
+            if ($key === 'period_lock_date') {
+                continue;
+            }
             unset($def['default']);
             $out[$key] = $def;
         }

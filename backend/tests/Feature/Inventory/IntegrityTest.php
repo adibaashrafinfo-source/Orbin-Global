@@ -45,7 +45,7 @@ class IntegrityTest extends InventoryTestCase
         $this->books();
         $result = app(IntegrityService::class)->run();
         $this->assertSame('ok', $result['status'], json_encode($result['checks']));
-        $this->assertCount(7, $result['checks']);
+        $this->assertCount(10, $result['checks']);
         $this->assertSame(0, $this->artisan('integrity:check')->run());
     }
 
@@ -100,7 +100,7 @@ class IntegrityTest extends InventoryTestCase
         Cache::forget('orbin.integrity.last');
         $this->getJson('/api/v1/admin/health/integrity')->assertOk()->assertJsonPath('data', null);
         $run = $this->postJson('/api/v1/admin/health/integrity/run')->assertOk();
-        $run->assertJsonPath('data.status', 'ok')->assertJsonCount(7, 'data.checks');
+        $run->assertJsonPath('data.status', 'ok')->assertJsonCount(10, 'data.checks');
         $this->getJson('/api/v1/admin/health/integrity')->assertOk()->assertJsonPath('data.status', 'ok');
         foreach (['manager', 'storekeeper', 'accountant', 'cashier'] as $role) {
             $this->actingAsRole($role);

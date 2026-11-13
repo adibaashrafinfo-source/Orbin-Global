@@ -21,6 +21,7 @@ class DatabaseSeeder extends Seeder
             LookupSeeder::class,
             CatalogSeeder::class,
             FinanceSeeder::class,
+            ExpenseCategorySeeder::class,
         ]);
 
         // Demo logins (one per role) only when explicitly enabled; production creates its admin via orbin:make-super-admin.

@@ -9,7 +9,13 @@ use App\Http\Controllers\Api\V1\BranchController;
 use App\Http\Controllers\Api\V1\CompanyProfileController;
 use App\Http\Controllers\Api\V1\CustomerController;
 use App\Http\Controllers\Api\V1\CustomFieldController;
+use App\Http\Controllers\Api\V1\DayBookController;
+use App\Http\Controllers\Api\V1\DuesController;
+use App\Http\Controllers\Api\V1\ExpenseCategoryController;
+use App\Http\Controllers\Api\V1\ExpenseController;
+use App\Http\Controllers\Api\V1\FinancialAccountController;
 use App\Http\Controllers\Api\V1\FitmentController;
+use App\Http\Controllers\Api\V1\FundTransferController;
 use App\Http\Controllers\Api\V1\GoodsReceiptController;
 use App\Http\Controllers\Api\V1\ImageController;
 use App\Http\Controllers\Api\V1\ImportExportController;
@@ -19,6 +25,9 @@ use App\Http\Controllers\Api\V1\LookupController;
 use App\Http\Controllers\Api\V1\MasterDataController;
 use App\Http\Controllers\Api\V1\NotificationController;
 use App\Http\Controllers\Api\V1\NumberingController;
+use App\Http\Controllers\Api\V1\PartyLedgerController;
+use App\Http\Controllers\Api\V1\PartyPaymentController;
+use App\Http\Controllers\Api\V1\PeriodLockController;
 use App\Http\Controllers\Api\V1\PosController;
 use App\Http\Controllers\Api\V1\ProductController;
 use App\Http\Controllers\Api\V1\PurchaseOrderController;
@@ -332,6 +341,62 @@ Route::middleware(['auth:sanctum', 'active'])->group(function (): void {
         Route::post('shifts/{shift}/cash', [ShiftController::class, 'cash'])->whereNumber('shift')->name('shifts.cash');
         Route::post('shifts/{shift}/close', [ShiftController::class, 'close'])->whereNumber('shift')->name('shifts.close');
     });
+    // Ledger and finance (FR-1000)
+    Route::get('financial-accounts', [FinancialAccountController::class, 'index'])->middleware('permission:ledger.view|accounts.manage|pos.sell|ledger.receive_payment|ledger.pay_supplier')->name('financial-accounts.index');
+    Route::middleware('permission:ledger.view|accounts.manage')->group(function (): void {
+        Route::get('financial-accounts/{account}', [FinancialAccountController::class, 'show'])->whereNumber('account')->name('financial-accounts.show');
+        Route::get('financial-accounts/{account}/transactions', [FinancialAccountController::class, 'transactions'])->whereNumber('account')->name('financial-accounts.transactions');
+    });
+    Route::middleware('permission:accounts.manage')->group(function (): void {
+        Route::post('financial-accounts', [FinancialAccountController::class, 'store'])->name('financial-accounts.store');
+        Route::put('financial-accounts/{account}', [FinancialAccountController::class, 'update'])->whereNumber('account')->name('financial-accounts.update');
+        Route::delete('financial-accounts/{account}', [FinancialAccountController::class, 'destroy'])->whereNumber('account')->name('financial-accounts.destroy');
+        Route::post('financial-accounts/{account}/adjust', [FinancialAccountController::class, 'adjust'])->whereNumber('account')->name('financial-accounts.adjust');
+    });
+    Route::get('party-payments', [PartyPaymentController::class, 'index'])->middleware('permission:ledger.view')->name('party-payments.index');
+    Route::middleware('permission:ledger.view|ledger.receive_payment|ledger.pay_supplier')->group(function (): void {
+        Route::get('party-payments/open-documents', [PartyPaymentController::class, 'openDocuments'])->name('party-payments.open-documents');
+        Route::post('party-payments', [PartyPaymentController::class, 'store'])->middleware('throttle:60,1')->name('party-payments.store');
+        Route::get('party-payments/{payment}', [PartyPaymentController::class, 'show'])->whereNumber('payment')->name('party-payments.show');
+        Route::get('party-payments/{payment}/receipt', [PartyPaymentController::class, 'receipt'])->whereNumber('payment')->name('party-payments.receipt');
+    });
+    Route::middleware('permission:payments.verify')->group(function (): void {
+        Route::post('party-payments/{payment}/void', [PartyPaymentController::class, 'void'])->whereNumber('payment')->name('party-payments.void');
+        Route::post('party-payments/{payment}/confirm', [PartyPaymentController::class, 'confirm'])->whereNumber('payment')->name('party-payments.confirm');
+    });
+    Route::middleware('permission:ledger.view')->group(function (): void {
+        Route::get('party-ledger', [PartyLedgerController::class, 'show'])->name('party-ledger.show');
+        Route::get('party-ledger/statement.pdf', [PartyLedgerController::class, 'statementPdf'])->name('party-ledger.statement');
+        Route::get('day-book', [DayBookController::class, 'index'])->name('day-book.index');
+        Route::get('dues', [DuesController::class, 'index'])->name('dues.index');
+    });
+    Route::middleware('permission:ledger.writeoff')->group(function (): void {
+        Route::post('party-ledger/write-offs', [PartyLedgerController::class, 'writeOff'])->name('party-ledger.write-offs');
+        Route::post('party-ledger/adjustments', [PartyLedgerController::class, 'adjust'])->name('party-ledger.adjustments');
+    });
+    Route::put('dues/promise', [DuesController::class, 'promise'])->middleware('permission:ledger.receive_payment|ledger.pay_supplier')->name('dues.promise');
+    Route::get('expense-categories', [ExpenseCategoryController::class, 'index'])->name('expense-categories.index');
+    Route::middleware('permission:expenses.manage|masterdata.manage')->group(function (): void {
+        Route::post('expense-categories', [ExpenseCategoryController::class, 'store'])->name('expense-categories.store');
+        Route::put('expense-categories/{category}', [ExpenseCategoryController::class, 'update'])->whereNumber('category')->name('expense-categories.update');
+        Route::delete('expense-categories/{category}', [ExpenseCategoryController::class, 'destroy'])->whereNumber('category')->name('expense-categories.destroy');
+    });
+    Route::middleware('permission:expenses.manage')->group(function (): void {
+        Route::get('expenses', [ExpenseController::class, 'index'])->name('expenses.index');
+        Route::post('expenses', [ExpenseController::class, 'store'])->name('expenses.store');
+        Route::get('expenses/{expense}', [ExpenseController::class, 'show'])->whereNumber('expense')->name('expenses.show');
+        Route::post('expenses/{expense}/approve', [ExpenseController::class, 'approve'])->whereNumber('expense')->name('expenses.approve');
+        Route::post('expenses/{expense}/reject', [ExpenseController::class, 'reject'])->whereNumber('expense')->name('expenses.reject');
+        Route::post('expenses/{expense}/void', [ExpenseController::class, 'void'])->whereNumber('expense')->name('expenses.void');
+    });
+    Route::middleware('permission:fund_transfers.manage')->group(function (): void {
+        Route::get('fund-transfers', [FundTransferController::class, 'index'])->name('fund-transfers.index');
+        Route::post('fund-transfers', [FundTransferController::class, 'store'])->name('fund-transfers.store');
+        Route::get('fund-transfers/{transfer}', [FundTransferController::class, 'show'])->whereNumber('transfer')->name('fund-transfers.show');
+        Route::post('fund-transfers/{transfer}/void', [FundTransferController::class, 'void'])->whereNumber('transfer')->name('fund-transfers.void');
+    });
+    Route::get('settings/period-lock', [PeriodLockController::class, 'show'])->name('settings.period-lock.show');
+    Route::post('settings/period-lock', [PeriodLockController::class, 'update'])->middleware('permission:periods.lock')->name('settings.period-lock.update');
     Route::get('warranty-claims', [WarrantyClaimController::class, 'index'])->middleware('permission:sales.view_all')->name('warranty-claims.index');
     Route::post('warranty-claims', [WarrantyClaimController::class, 'store'])->middleware('permission:sales.return.create')->name('warranty-claims.store');
     Route::put('warranty-claims/{warrantyClaim}', [WarrantyClaimController::class, 'update'])->middleware('permission:sales.return.approve')->whereNumber('warrantyClaim')->name('warranty-claims.update');
