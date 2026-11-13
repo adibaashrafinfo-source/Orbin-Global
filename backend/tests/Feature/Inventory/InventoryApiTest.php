@@ -3,6 +3,7 @@
 namespace Tests\Feature\Inventory;
 
 use App\Models\Notification;
+use App\Models\ProductVariant;
 use App\Models\StockAdjustment;
 use Illuminate\Http\UploadedFile;
 
@@ -210,5 +211,46 @@ class InventoryApiTest extends InventoryTestCase
         $this->assertCount(3, $added);
         $this->putJson("/api/v1/stock-counts/{$c2['id']}/items", ['items' => [['variant_id' => 99999999, 'counted_qty' => '1']]])->assertStatus(422);
         $this->postJson("/api/v1/stock-counts/{$c2['id']}/cancel")->assertOk()->assertJsonPath('data.status', 'cancelled');
+    }
+
+    /** @param  array<int, array<int, string>>  $rows */
+    private function csv(array $rows): UploadedFile
+    {
+        $out = implode(',', ['sku', 'warehouse', 'qty', 'unit_cost'])."\n";
+        foreach ($rows as $r) {
+            $out .= implode(',', $r)."\n";
+        }
+
+        return UploadedFile::fake()->createWithContent('opening.csv', "\xEF\xBB\xBF".$out);
+    }
+
+    public function test_opening_stock_import_validates_every_row_then_loads_stock_once(): void
+    {
+        [$a, $b] = $this->variants(2);
+        $skuA = ProductVariant::query()->find($a)->sku;
+        $skuB = ProductVariant::query()->find($b)->sku;
+        $this->actingAsRole('manager');
+        $bad = $this->csv([[$skuA, 'SHOW', '10', '250'], [$skuA, 'show', '1', '250'], ['NOPE-1', 'SHOW', '1', '1'], [$skuB, 'MOON', '1', '1'], [$skuB, 'SHOW', '0', '5'], [$skuB, 'SHOW', '3', '0']]);
+        $res = $this->post('/api/v1/imports/dry-run', ['kind' => 'opening-stock', 'file' => $bad], ['Accept' => 'application/json'])->assertOk();
+        $codes = collect($res->json('data.summary.errors'))->map(fn ($e) => $e['row'].':'.$e['code'])->all();
+        $this->assertSame(['3:DUPLICATE_IN_FILE', '4:UNKNOWN_SKU', '5:UNKNOWN_WAREHOUSE', '6:INVALID_NUMBER', '7:COST_REQUIRED', '7:DUPLICATE_IN_FILE'], $codes);
+        $this->postJson('/api/v1/imports/commit', ['kind' => 'opening-stock', 'token' => $res->json('data.token')])->assertStatus(422)->assertJsonPath('code', 'IMPORT_HAS_ERRORS');
+        $this->assertSame('0.000', $this->onHand($a));
+
+        $good = $this->post('/api/v1/imports/dry-run', ['kind' => 'opening-stock', 'file' => $this->csv([[$skuA, 'SHOW', '10', '250.5'], [$skuA, 'GODOWN', '4', '240'], [$skuB, 'SHOW', '2.5', '99']])], ['Accept' => 'application/json'])->assertOk();
+        $this->assertSame(3, $good->json('data.summary.valid_rows'));
+        $this->postJson('/api/v1/imports/commit', ['kind' => 'opening-stock', 'token' => $good->json('data.token')])->assertOk()->assertJsonPath('data.created', 3);
+        $this->assertSame(['10.000', '250.5000'], [$this->onHand($a), $this->avgCost($a)]);
+        $this->assertSame(['4.000', '240.0000'], [$this->onHand($a, $this->godown), $this->avgCost($a, $this->godown)]);
+        $this->assertSame('2.500', $this->onHand($b));
+        $this->assertSame('opening', $this->movements($a)[0]->movement_type);
+
+        // Opening a variant that already has history in that warehouse is refused: use a receipt or an adjustment.
+        $again = $this->post('/api/v1/imports/dry-run', ['kind' => 'opening-stock', 'file' => $this->csv([[$skuA, 'SHOW', '1', '1']])], ['Accept' => 'application/json'])->assertOk();
+        $this->assertSame('ALREADY_STOCKED', $again->json('data.summary.errors.0.code'));
+
+        $this->get('/api/v1/imports/templates/opening-stock')->assertOk();
+        $this->actingAsRole('storekeeper');
+        $this->get('/api/v1/imports/templates/opening-stock')->assertStatus(403);
     }
 }

@@ -9,11 +9,14 @@ use App\Models\LookupValue;
 use App\Models\Product;
 use App\Models\ProductBrand;
 use App\Models\ProductVariant;
+use App\Models\StockMovement;
 use App\Models\TaxRate;
 use App\Models\Unit;
 use App\Models\VehicleFitment;
 use App\Models\VehicleMake;
 use App\Models\VehicleModel;
+use App\Models\Warehouse;
+use App\Services\Inventory\StockPostingService;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
@@ -33,7 +36,7 @@ class ImportService
 {
     public const MAX_ROWS = 5000;
 
-    public const KINDS = ['vehicle-makes', 'vehicle-models', 'products', 'fitments'];
+    public const KINDS = ['vehicle-makes', 'vehicle-models', 'products', 'fitments', 'opening-stock'];
 
     /** @var array<string, array<int, string>> */
     public const HEADERS = [
@@ -46,6 +49,7 @@ class ImportService
             'retail_price', 'wholesale_price', 'dealer_price', 'mrp', 'min_price', 'reorder_level', 'reorder_qty', 'oem_numbers',
         ],
         'fitments' => ['sku', 'make', 'model', 'generation_code', 'year_from', 'year_to', 'trim', 'note'],
+        'opening-stock' => ['sku', 'warehouse', 'qty', 'unit_cost'],
     ];
 
     private const SAMPLES = [
@@ -53,6 +57,7 @@ class ImportService
         'vehicle-models' => [['Toyota', 'Axio', 'NZE141', 'Sedan', '2012', '2018']],
         'products' => [['SM-TOY-AXIO', 'Side Mirror – Toyota Axio', '', 'side_mirror', 'Side Mirrors', '', 'Aftermarket premium', 'Taiwan', 'pcs', 'VAT0', '6', 'wing mirror;side glass', '', '', 'right', '180', '110', '', '', 'Convex', '', 'Black', 'electric', 'yes', '', '', '', '', '', '', '', '', '12500', '11000', '10500', '', '9500', '5', '10', '87910-02B30;87910-02B31']],
         'fitments' => [['SM-TOY-AXIO-R-180X110', 'Toyota', 'Axio', 'NZE141', '2012', '2018', 'Hybrid', 'with BSM only']],
+        'opening-stock' => [['SM-TOY-AXIO-R-180X110', 'SHOW', '12', '9800']],
     ];
 
     private const FLAGS = ['heated', 'auto_fold', 'turn_signal', 'blind_spot_sensor', 'side_camera', 'memory_tilt', 'auto_dimming', 'puddle_light'];
@@ -63,6 +68,7 @@ class ImportService
     public function __construct(
         private readonly ProductService $products,
         private readonly VariantService $variants,
+        private readonly StockPostingService $stock,
     ) {}
 
     // ---------------------------------------------------------------- templates
@@ -164,6 +170,7 @@ class ImportService
             'vehicle-makes' => $this->planMakes($records, $errors),
             'vehicle-models' => $this->planModels($records, $errors),
             'products' => $this->planProducts($records, $errors),
+            'opening-stock' => $this->planOpeningStock($records, $errors),
             default => $this->planFitments($records, $errors),
         };
         $summary = [
@@ -437,6 +444,67 @@ class ImportService
         return ['apply' => $apply, 'create' => $create, 'update' => 0];
     }
 
+    /**
+     * Opening stock (FR-413): one row per variant and warehouse, with its cost. A variant can only be opened once per
+     * warehouse; after that stock changes through receipts, adjustments and counts.
+     *
+     * @param  array<int, array{row: int, raw: array<string, string>}>  $records
+     */
+    private function planOpeningStock(array $records, array &$errors): array
+    {
+        $apply = [];
+        $seen = [];
+        foreach ($records as $rec) {
+            $r = $rec['raw'];
+            $row = $rec['row'];
+            $sku = strtoupper($r['sku'] ?? '');
+            $variant = $sku !== '' ? ProductVariant::query()->where('sku', $sku)->first() : null;
+            if ($sku === '') {
+                $errors[] = $this->err($row, 'sku', 'REQUIRED');
+            } elseif (! $variant) {
+                $errors[] = $this->err($row, 'sku', 'UNKNOWN_SKU', $sku);
+            } elseif ($variant->is_bundle) {
+                $errors[] = $this->err($row, 'sku', 'BUNDLE_NO_STOCK', $sku);
+            }
+            $code = trim((string) ($r['warehouse'] ?? ''));
+            $warehouse = $code !== '' ? Warehouse::query()->whereRaw('LOWER(code) = ?', [mb_strtolower($code)])->first() : null;
+            if ($code === '') {
+                $errors[] = $this->err($row, 'warehouse', 'REQUIRED');
+            } elseif (! $warehouse) {
+                $errors[] = $this->err($row, 'warehouse', 'UNKNOWN_WAREHOUSE', $code);
+            }
+            $qty = $this->num($r['qty'] ?? '', $row, 'qty', $errors, 0, 9999999);
+            if (($r['qty'] ?? '') === '') {
+                $errors[] = $this->err($row, 'qty', 'REQUIRED');
+            } elseif ($qty !== null && $qty <= 0) {
+                $errors[] = $this->err($row, 'qty', 'INVALID_NUMBER', $r['qty']);
+            }
+            $cost = $this->num($r['unit_cost'] ?? '', $row, 'unit_cost', $errors, 0, 99999999);
+            if (($r['unit_cost'] ?? '') === '') {
+                $errors[] = $this->err($row, 'unit_cost', 'REQUIRED');
+            } elseif ($cost !== null && $cost <= 0) {
+                $errors[] = $this->err($row, 'unit_cost', 'COST_REQUIRED', $r['unit_cost']); // BR-094: zero cost is for samples, which are adjusted in
+            }
+            if ($variant && $warehouse) {
+                $key = $variant->id.'-'.$warehouse->id;
+                if (isset($seen[$key])) {
+                    $errors[] = $this->err($row, 'sku', 'DUPLICATE_IN_FILE', $sku);
+                } elseif (StockMovement::query()->where(['variant_id' => $variant->id, 'warehouse_id' => $warehouse->id])->exists()) {
+                    $errors[] = $this->err($row, 'sku', 'ALREADY_STOCKED', $sku);
+                }
+                $seen[$key] = true;
+            }
+            if ($variant && $warehouse && $qty !== null && $cost !== null && $qty > 0 && $cost > 0) {
+                $apply[] = ['row' => $row, 'run' => fn () => $this->stock->post([
+                    'variant_id' => $variant->id, 'warehouse_id' => $warehouse->id, 'type' => 'opening', 'qty' => number_format($qty, 3, '.', ''), 'unit_cost' => number_format($cost, 4, '.', ''),
+                    'ref_table' => 'imports', 'reason' => 'Opening stock import', 'occurred_at' => now(),
+                ])];
+            }
+        }
+
+        return ['apply' => $apply, 'create' => count($apply), 'update' => 0];
+    }
+
     // ---------------------------------------------------------------- row parsing
 
     /**
@@ -671,6 +739,7 @@ class ImportService
             'vehicle-makes' => ['name'],
             'vehicle-models' => ['make', 'name'],
             'products' => ['product_code', 'position', 'retail_price'],
+            'opening-stock' => ['sku', 'warehouse', 'qty', 'unit_cost'],
             default => ['sku', 'make', 'model', 'year_from'],
         };
     }

@@ -171,7 +171,7 @@ Route::middleware(['auth:sanctum', 'active'])->group(function (): void {
         Route::delete('cross-references/{reference}', [FitmentController::class, 'destroyCrossReference'])->name('cross-references.destroy');
     });
     Route::post('labels', LabelController::class)->middleware('permission:products.view')->name('labels.render');
-    Route::middleware('permission:products.import|masterdata.manage')->group(function (): void {
+    Route::middleware('permission:products.import|masterdata.manage|inventory.adjust.approve')->group(function (): void {
         Route::get('imports/templates/{kind}', [ImportExportController::class, 'template'])->name('imports.template');
         Route::post('imports/dry-run', [ImportExportController::class, 'dryRun'])->name('imports.dry-run');
         Route::post('imports/commit', [ImportExportController::class, 'commit'])->name('imports.commit');

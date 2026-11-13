@@ -71,7 +71,7 @@ class ImportExportController extends Controller
         }, $name, ['Content-Type' => $format === 'xlsx' ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' : 'text/csv; charset=UTF-8']);
     }
 
-    /** Makes and models need masterdata.manage; products and fitments need products.import (products also pricing.manage). */
+    /** Makes and models need masterdata.manage; products and fitments need products.import (products also pricing.manage); opening stock sets cost, so it needs the approval and cost permissions. */
     private function authorizeKind(Request $request, string $kind): void
     {
         if (! in_array($kind, ImportService::KINDS, true)) {
@@ -79,7 +79,12 @@ class ImportExportController extends Controller
         }
         /** @var User $user */
         $user = $request->user();
-        $needed = in_array($kind, ['vehicle-makes', 'vehicle-models'], true) ? ['masterdata.manage'] : ($kind === 'products' ? ['products.import', 'pricing.manage'] : ['products.import']);
+        $needed = match ($kind) {
+            'vehicle-makes', 'vehicle-models' => ['masterdata.manage'],
+            'products' => ['products.import', 'pricing.manage'],
+            'opening-stock' => ['inventory.adjust.approve', 'products.view_cost'],
+            default => ['products.import'],
+        };
         foreach ($needed as $permission) {
             if (! $this->permissions->userHas($user, $permission)) {
                 throw ApiException::forbidden();
