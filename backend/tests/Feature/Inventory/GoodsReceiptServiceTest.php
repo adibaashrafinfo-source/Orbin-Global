@@ -6,8 +6,10 @@ use App\Exceptions\ApiException;
 use App\Models\GoodsReceipt;
 use App\Models\PartyLedgerEntry;
 use App\Models\Supplier;
+use App\Services\Inventory\StockPostingService;
 use App\Services\Purchasing\GoodsReceiptService;
 use App\Services\Purchasing\SupplierService;
+use App\Services\SettingsService;
 use Illuminate\Support\Facades\DB;
 
 /** AT-011 and the rest of FR-503, with every figure worked out by hand in the comments. */
@@ -39,7 +41,7 @@ class GoodsReceiptServiceTest extends InventoryTestCase
         // Existing stock: variant B holds 10 units at an average of 900.
         [$a, $b, $c] = $this->variants(3);
         $s = $this->supplier();
-        DB::transaction(fn () => app(\App\Services\Inventory\StockPostingService::class)->post(['variant_id' => $b, 'warehouse_id' => $this->showroom, 'type' => 'opening', 'qty' => '10', 'unit_cost' => '900']));
+        DB::transaction(fn () => app(StockPostingService::class)->post(['variant_id' => $b, 'warehouse_id' => $this->showroom, 'type' => 'opening', 'qty' => '10', 'unit_cost' => '900']));
 
         // Lines: A 100 × 500 = 50,000 · B 50 × 800 = 40,000 · C 20 × 500 = 10,000 → items 100,000.
         // Extras: freight 3,000 + customs 12,000 = 15,000, by value: A 7,500 · B 6,000 · C 1,500.
@@ -95,7 +97,7 @@ class GoodsReceiptServiceTest extends InventoryTestCase
     {
         [$a] = $this->variants();
         $s = $this->supplier();
-        DB::transaction(fn () => app(\App\Services\Inventory\StockPostingService::class)->post(['variant_id' => $a, 'warehouse_id' => $this->showroom, 'type' => 'opening', 'qty' => '10', 'unit_cost' => '90']));
+        DB::transaction(fn () => app(StockPostingService::class)->post(['variant_id' => $a, 'warehouse_id' => $this->showroom, 'type' => 'opening', 'qty' => '10', 'unit_cost' => '90']));
         // 10 arrive, 2 broken: good 8 × 100 = 800 + extra 80 → landed 110. Average: (10 × 90 + 8 × 110) / 18 = 1,780 / 18 = 98.8889.
         $grn = app(GoodsReceiptService::class)->post($this->receipt($s, [$this->line($a, '10', '100', '2')], [['cost_type' => 'freight', 'amount' => '80']]));
         $this->assertSame('110.0000', $grn->items[0]->landed_unit_cost);
@@ -166,7 +168,7 @@ class GoodsReceiptServiceTest extends InventoryTestCase
         }
         // BR-080: nothing dated on or before the lock date.
         DB::table('app_settings')->where('key', 'period_lock_date')->update(['value' => json_encode(now('Asia/Dhaka')->toDateString())]);
-        app(\App\Services\SettingsService::class)->forgetCache();
+        app(SettingsService::class)->forgetCache();
         try {
             $this->receipt($s, [$this->line($a, '1', '1')]);
             $this->fail('expected PERIOD_LOCKED');

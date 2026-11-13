@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\V1\BranchController;
 use App\Http\Controllers\Api\V1\CompanyProfileController;
 use App\Http\Controllers\Api\V1\CustomFieldController;
 use App\Http\Controllers\Api\V1\FitmentController;
+use App\Http\Controllers\Api\V1\GoodsReceiptController;
 use App\Http\Controllers\Api\V1\ImageController;
 use App\Http\Controllers\Api\V1\ImportExportController;
 use App\Http\Controllers\Api\V1\LabelController;
@@ -16,8 +17,11 @@ use App\Http\Controllers\Api\V1\MasterDataController;
 use App\Http\Controllers\Api\V1\NotificationController;
 use App\Http\Controllers\Api\V1\NumberingController;
 use App\Http\Controllers\Api\V1\ProductController;
+use App\Http\Controllers\Api\V1\PurchaseOrderController;
+use App\Http\Controllers\Api\V1\PurchaseReturnController;
 use App\Http\Controllers\Api\V1\RolePermissionController;
 use App\Http\Controllers\Api\V1\StorageLocationController;
+use App\Http\Controllers\Api\V1\SupplierController;
 use App\Http\Controllers\Api\V1\UserController;
 use App\Http\Controllers\Api\V1\VariantController;
 use App\Http\Controllers\Api\V1\VariantSearchController;
@@ -40,6 +44,10 @@ Route::prefix('auth')->group(function (): void {
         Route::put('password', [AuthController::class, 'changePassword'])->name('auth.password');
     });
 });
+
+// Purchase order PDF for the supplier: a signed link that expires, no login needed (FR-502).
+Route::get('shared/purchase-orders/{purchaseOrder}/pdf', [PurchaseOrderController::class, 'sharedPdf'])
+    ->middleware(['signed', 'throttle:30,1'])->whereNumber('purchaseOrder')->name('shared.purchase-orders.pdf');
 
 Route::middleware(['auth:sanctum', 'active'])->group(function (): void {
     // Settings
@@ -165,6 +173,47 @@ Route::middleware(['auth:sanctum', 'active'])->group(function (): void {
     });
     Route::get('products-export', [ImportExportController::class, 'exportProducts'])->middleware('permission:products.import|reports.export')->name('products.export');
     Route::post('variants/bulk-price', [VariantController::class, 'bulkPrice'])->middleware('permission:pricing.manage')->name('variants.bulk-price');
+
+    // Purchasing (Phase 2)
+    Route::middleware('permission:purchases.view')->group(function (): void {
+        Route::get('suppliers', [SupplierController::class, 'index'])->name('suppliers.index');
+        Route::get('suppliers/{supplier}', [SupplierController::class, 'show'])->whereNumber('supplier')->name('suppliers.show');
+        Route::get('purchase-orders', [PurchaseOrderController::class, 'index'])->name('purchase-orders.index');
+        Route::get('purchase-orders/{purchaseOrder}', [PurchaseOrderController::class, 'show'])->whereNumber('purchaseOrder')->name('purchase-orders.show');
+        Route::get('purchase-orders/{purchaseOrder}/pdf', [PurchaseOrderController::class, 'pdf'])->whereNumber('purchaseOrder')->name('purchase-orders.pdf');
+        Route::get('variants/{variant}/purchase-history', [PurchaseOrderController::class, 'priceHistory'])->whereNumber('variant')->name('variants.purchase-history');
+        Route::get('goods-receipts', [GoodsReceiptController::class, 'index'])->name('goods-receipts.index');
+        Route::get('goods-receipts/{goodsReceipt}', [GoodsReceiptController::class, 'show'])->whereNumber('goodsReceipt')->name('goods-receipts.show');
+        Route::get('purchase-returns', [PurchaseReturnController::class, 'index'])->name('purchase-returns.index');
+        Route::get('purchase-returns/{purchaseReturn}', [PurchaseReturnController::class, 'show'])->whereNumber('purchaseReturn')->name('purchase-returns.show');
+    });
+    Route::middleware('permission:suppliers.manage')->group(function (): void {
+        Route::post('suppliers', [SupplierController::class, 'store'])->name('suppliers.store');
+        Route::put('suppliers/{supplier}', [SupplierController::class, 'update'])->whereNumber('supplier')->name('suppliers.update');
+        Route::delete('suppliers/{supplier}', [SupplierController::class, 'destroy'])->whereNumber('supplier')->name('suppliers.destroy');
+    });
+    Route::middleware('permission:purchases.manage')->group(function (): void {
+        Route::post('purchase-orders', [PurchaseOrderController::class, 'store'])->name('purchase-orders.store');
+        Route::put('purchase-orders/{purchaseOrder}', [PurchaseOrderController::class, 'update'])->whereNumber('purchaseOrder')->name('purchase-orders.update');
+        Route::post('purchase-orders/{purchaseOrder}/approve', [PurchaseOrderController::class, 'approve'])->whereNumber('purchaseOrder')->name('purchase-orders.approve');
+        Route::post('purchase-orders/{purchaseOrder}/cancel', [PurchaseOrderController::class, 'cancel'])->whereNumber('purchaseOrder')->name('purchase-orders.cancel');
+        Route::post('purchase-orders/{purchaseOrder}/close', [PurchaseOrderController::class, 'close'])->whereNumber('purchaseOrder')->name('purchase-orders.close');
+        Route::post('purchase-orders/{purchaseOrder}/share-link', [PurchaseOrderController::class, 'shareLink'])->whereNumber('purchaseOrder')->name('purchase-orders.share-link');
+        Route::delete('purchase-orders/{purchaseOrder}', [PurchaseOrderController::class, 'destroy'])->whereNumber('purchaseOrder')->name('purchase-orders.destroy');
+        Route::post('purchase-returns', [PurchaseReturnController::class, 'store'])->name('purchase-returns.store');
+        Route::put('purchase-returns/{purchaseReturn}', [PurchaseReturnController::class, 'update'])->whereNumber('purchaseReturn')->name('purchase-returns.update');
+        Route::post('purchase-returns/{purchaseReturn}/post', [PurchaseReturnController::class, 'post'])->whereNumber('purchaseReturn')->name('purchase-returns.post');
+        Route::post('purchase-returns/{purchaseReturn}/cancel', [PurchaseReturnController::class, 'cancel'])->whereNumber('purchaseReturn')->name('purchase-returns.cancel');
+    });
+    Route::middleware('permission:purchases.grn|purchases.manage')->group(function (): void {
+        Route::get('purchase-orders/{purchaseOrder}/receipt-draft', [GoodsReceiptController::class, 'fromOrder'])->whereNumber('purchaseOrder')->name('goods-receipts.from-order');
+        Route::post('goods-receipts/preview', [GoodsReceiptController::class, 'preview'])->name('goods-receipts.preview');
+        Route::post('goods-receipts', [GoodsReceiptController::class, 'store'])->name('goods-receipts.store');
+        Route::put('goods-receipts/{goodsReceipt}', [GoodsReceiptController::class, 'update'])->whereNumber('goodsReceipt')->name('goods-receipts.update');
+        Route::post('goods-receipts/{goodsReceipt}/post', [GoodsReceiptController::class, 'post'])->whereNumber('goodsReceipt')->name('goods-receipts.post');
+        Route::post('goods-receipts/{goodsReceipt}/cancel', [GoodsReceiptController::class, 'cancel'])->whereNumber('goodsReceipt')->name('goods-receipts.cancel');
+        Route::delete('goods-receipts/{goodsReceipt}', [GoodsReceiptController::class, 'destroy'])->whereNumber('goodsReceipt')->name('goods-receipts.destroy');
+    });
 
     // Admin → Health (super_admin only via settings.system.manage)
     Route::prefix('admin/health')->middleware('permission:settings.system.manage')->group(function (): void {
