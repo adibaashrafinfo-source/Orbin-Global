@@ -7,4 +7,4 @@ Schedule::command('system:heartbeat')->everyMinute();
 Schedule::command('queue:work --stop-when-empty --max-time=50')->everyMinute()->withoutOverlapping(5);
 Schedule::command('integrity:check')->dailyAt('03:00')->timezone('Asia/Dhaka');
 Schedule::command('stock:alerts')->hourly();
-// db:backup (02:30 Asia/Dhaka) is registered in P6 together with its command.
+Schedule::command('db:backup')->dailyAt('02:30')->timezone('Asia/Dhaka')->withoutOverlapping(30);
