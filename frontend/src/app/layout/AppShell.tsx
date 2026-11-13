@@ -26,7 +26,16 @@ export function AppShell() {
       return false;
     }
   });
+  // The POS is a full-screen terminal: the rail is forced to its 72 px icon width there, without touching the saved preference.
+  // A click on the toggle while on the POS widens it for that visit only.
+  const onPos = location.pathname === '/pos';
+  const [override, setOverride] = useState<{ path: string; open: boolean } | null>(null);
+  const railCollapsed = onPos ? !(override?.path === location.pathname && override.open) : collapsed;
   const toggle = () => {
+    if (onPos) {
+      setOverride({ path: location.pathname, open: railCollapsed });
+      return;
+    }
     setCollapsed((c) => {
       try {
         localStorage.setItem(COLLAPSE_KEY, c ? '0' : '1');
@@ -46,12 +55,12 @@ export function AppShell() {
       <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:left-2 focus:top-2 focus:z-50 focus:rounded-button focus:bg-surface focus:px-3 focus:py-2 focus:text-sm focus:shadow-md">
         {t('nav.skipToContent')}
       </a>
-      <Sidebar collapsed={collapsed} onToggle={toggle} logoUrl={company.data?.logo_url} />
-      <div className="flex min-h-screen flex-col transition-[padding] duration-base ease-standard motion-reduce:transition-none" style={{ paddingLeft: collapsed ? 72 : 264 }}>
+      <Sidebar collapsed={railCollapsed} onToggle={toggle} logoUrl={company.data?.logo_url} />
+      <div className="flex min-h-screen flex-col transition-[padding] duration-base ease-standard motion-reduce:transition-none" style={{ paddingLeft: railCollapsed ? 72 : 264 }}>
         <Topbar branchName={branchName} />
-        <main id="main" className="flex-1 px-6 py-6 lg:px-8" tabIndex={-1}>
+        <main id="main" className={onPos ? 'flex-1 px-4 py-3' : 'flex-1 px-6 py-6 lg:px-8'} tabIndex={-1}>
           <AnimatePresence mode="wait" initial={false}>
-            <motion.div key={location.pathname} variants={variants} initial="initial" animate="animate" exit="exit" className="mx-auto w-full max-w-[1400px]">
+            <motion.div key={location.pathname} variants={variants} initial="initial" animate="animate" exit="exit" className={onPos ? 'w-full' : 'mx-auto w-full max-w-[1400px]'}>
               <Outlet />
             </motion.div>
           </AnimatePresence>

@@ -28,17 +28,17 @@ export function VehicleFinder({ value, onChange, driverSide }: { value: Finder; 
   const modelOptions = (models.data ?? []).filter((m) => m.is_active && (!value.make || String(m.make_id) === value.make));
   const clear = (key: keyof Finder) => onChange({ ...value, [key]: '', ...(key === 'make' ? { model: '' } : {}) });
   return (
-    <section aria-label={t('pos.finder')} className="rounded-card border border-navy-100 bg-surface p-3 shadow-sm">
-      <div className="flex flex-wrap items-end gap-3">
-        <div className="w-40">
+    <section aria-label={t('pos.finder')} className="rounded-card border border-navy-100 bg-surface p-2.5 shadow-sm">
+      <div className="flex flex-wrap items-end gap-2">
+        <div className="w-36">
           <Select aria-label={t('pos.make')} label={t('pos.make')} value={value.make || NONE} onChange={(v) => onChange({ ...value, make: v === NONE ? '' : v, model: '' })}
             options={[{ value: NONE, label: t('pos.any') }, ...(makes.data ?? []).filter((m) => m.is_active).map((m) => ({ value: String(m.id), label: str(m.name) }))]} />
         </div>
-        <div className="w-44">
+        <div className="w-40">
           <Select aria-label={t('pos.model')} label={t('pos.model')} value={value.model || NONE} onChange={(v) => onChange({ ...value, model: v === NONE ? '' : v })}
             options={[{ value: NONE, label: t('pos.any') }, ...modelOptions.map((m) => ({ value: String(m.id), label: str(m.name) }))]} />
         </div>
-        <div className="w-28">
+        <div className="w-24">
           <Select aria-label={t('pos.year')} label={t('pos.year')} value={value.year || NONE} onChange={(v) => onChange({ ...value, year: v === NONE ? '' : v })} options={[{ value: NONE, label: t('pos.any') }, ...years.map((y) => ({ value: y, label: y }))]} />
         </div>
         <div>
@@ -46,7 +46,7 @@ export function VehicleFinder({ value, onChange, driverSide }: { value: Finder; 
           <div role="group" aria-label={t('pos.position')} className="flex gap-1">
             {POSITIONS.map((p) => (
               <button key={p} type="button" aria-pressed={value.position === p} onClick={() => onChange({ ...value, position: value.position === p ? '' : p })}
-                className={cn('h-10 rounded-pill border px-3 text-sm font-medium transition-colors duration-fast focus-visible:focus-ring-light', value.position === p ? 'border-navy-900 bg-navy-900 text-surface' : 'border-navy-200 bg-surface text-navy-800 hover:bg-navy-50')}>
+                className={cn('h-10 rounded-pill border px-3 text-sm font-medium whitespace-nowrap transition-colors duration-fast focus-visible:focus-ring-light', value.position === p ? 'border-navy-900 bg-navy-900 text-surface' : 'border-navy-200 bg-surface text-navy-800 hover:bg-navy-50')}>
                 {t(`pos.positions.${p}`)}{p === driverSide ? <span className="ms-1 text-xs opacity-70">{t('pos.driverSide')}</span> : null}
               </button>
             ))}
@@ -55,7 +55,7 @@ export function VehicleFinder({ value, onChange, driverSide }: { value: Finder; 
         {chips.length > 0 && <Button variant="ghost" size="sm" onClick={() => onChange(EMPTY_FINDER)}>{t('pos.clearFinder')}</Button>}
       </div>
       {chips.length > 0 && (
-        <ul className="mt-2 flex flex-wrap gap-1.5" aria-label={t('pos.finderChips')}>
+        <ul className="mt-1.5 flex flex-wrap gap-1.5" aria-label={t('pos.finderChips')}>
           {chips.map((c) => (
             <li key={c.key}>
               <span className="inline-flex items-center gap-1 rounded-pill bg-navy-100 py-0.5 ps-2.5 pe-1 text-xs font-semibold text-navy-900">

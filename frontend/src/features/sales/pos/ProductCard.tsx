@@ -32,7 +32,7 @@ export function ProductCard({ card, onAdd, onOpen }: { card: PosCard; onAdd: (v:
   return (
     <motion.article whileHover={reduced ? undefined : { y: -2 }} className="mirror-shine flex flex-col overflow-hidden rounded-card border border-navy-100 bg-surface shadow-sm" aria-label={card.name}>
       <button type="button" onClick={onOpen} className="group block text-start focus-visible:focus-ring-light" aria-label={t('pos.quickView', { name: card.name })}>
-        <div className="aspect-[4/3] w-full overflow-hidden bg-navy-50">
+        <div className="h-28 w-full overflow-hidden bg-navy-50">
           {card.image ? <img src={card.image} alt="" loading="lazy" className={cn('h-full w-full object-cover transition-transform duration-base', !reduced && 'group-hover:scale-[1.03]')} /> : <div className="flex h-full items-center justify-center text-xs text-ink-subtle">{t('pos.noImage')}</div>}
         </div>
         <div className="flex flex-col gap-1.5 p-3 pb-2">
@@ -59,8 +59,8 @@ export function ProductCard({ card, onAdd, onOpen }: { card: PosCard; onAdd: (v:
           );
         })}
       </ul>
-      <div className="mt-auto flex items-center justify-between gap-2 border-t border-navy-100 px-3 py-2">
-        <span className="tabular text-sm font-bold text-navy-900">{price}</span>
+      <div className="mt-auto flex flex-wrap items-center justify-between gap-x-2 gap-y-1 border-t border-navy-100 px-3 py-2">
+        <span className="tabular whitespace-nowrap text-sm font-bold text-navy-900">{price}</span>
         <StockBadge state={total <= 0 ? 'out' : state(String(total))} label={total <= 0 ? t('pos.out') : t('pos.inStock', { qty: fmtQty(String(total)) })} />
       </div>
     </motion.article>

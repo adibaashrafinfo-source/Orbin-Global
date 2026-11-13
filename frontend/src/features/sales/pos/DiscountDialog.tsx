@@ -7,13 +7,13 @@ import type { DiscountType } from '../types';
 export function DiscountDialog({ open, title, type, value, onClose, onApply }: { open: boolean; title: string; type: DiscountType; value: string; onClose: () => void; onApply: (type: DiscountType, value: string) => void }) {
   const { t } = useTranslation();
   // The key is a string so it only changes when the dialog opens or the stored discount does (an object key would reset the form on every render).
-  const [f, setF] = useDerivedState(`${open}|${type}|${value}`, () => ({ type: type === 'none' ? 'percent' : type, value: value === '0' ? '' : value }));
+  const [f, setF] = useDerivedState<{ type: 'percent' | 'amount'; value: string }>(`${open}|${type}|${value}`, () => ({ type: type === 'none' ? 'percent' : type, value: value === '0' ? '' : value }));
   const apply = () => { onApply(f.value.trim() === '' || Number(f.value) === 0 ? 'none' : f.type, f.value.trim() || '0'); onClose(); };
   return (
     <Modal open={open} onOpenChange={(o) => !o && onClose()} className="max-w-sm" title={title}
       footer={<><Button variant="ghost" onClick={() => { onApply('none', '0'); onClose(); }}>{t('pos.removeDiscount')}</Button><Button variant="secondary" onClick={onClose}>{t('common.cancel')}</Button><Button type="submit" form="discount-form">{t('common.save')}</Button></>}>
       <form id="discount-form" noValidate className="grid grid-cols-2 gap-3" onSubmit={(e) => { e.preventDefault(); apply(); }}>
-        <Select label={t('pos.discountType')} value={f.type} onChange={(v) => setF({ ...f, type: v as DiscountType })} options={[{ value: 'percent', label: t('pos.percent') }, { value: 'amount', label: t('pos.amount') }]} />
+        <Select label={t('pos.discountType')} value={f.type} onChange={(v) => setF({ ...f, type: v === 'amount' ? 'amount' : 'percent' })} options={[{ value: 'percent', label: t('pos.percent') }, { value: 'amount', label: t('pos.amount') }]} />
         <Input label={t('pos.discountValue')} inputMode="decimal" value={f.value} onChange={(e) => setF({ ...f, value: e.target.value })} suffix={f.type === 'percent' ? '%' : '৳'} />
       </form>
     </Modal>

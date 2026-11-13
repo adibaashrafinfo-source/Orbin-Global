@@ -9,7 +9,7 @@ import { paisa } from './payMath';
 const TYPE_OF: Record<PaymentMethod, FinancialAccount['account_type']> = { cash: 'cash', bkash: 'bkash', nagad: 'nagad', rocket: 'rocket', bank_transfer: 'bank' };
 
 /** The fields one payment method needs (FR-802, BR-060): cash gets a keypad and change; mobile money a sender and TrxID; bank a reference. */
-export function PaymentForm({ line, onChange, accounts, remaining, autoFocusRef }: { line: PayLine; onChange: (l: PayLine) => void; accounts: FinancialAccount[]; remaining: bigint; autoFocusRef?: React.RefObject<HTMLInputElement | null> }) {
+export function PaymentForm({ line, onChange, accounts, remaining, autoFocusRef }: { line: PayLine; onChange: (l: PayLine) => void; accounts: FinancialAccount[]; remaining: bigint; autoFocusRef?: React.RefObject<HTMLInputElement> }) {
   const { t } = useTranslation();
   const set = <K extends keyof PayLine>(k: K, v: PayLine[K]) => onChange({ ...line, [k]: v });
   const options = accounts.filter((a) => a.account_type === TYPE_OF[line.method]).map((a) => ({ value: String(a.id), label: a.account_number ? `${a.name} · ${a.account_number}` : a.name }));

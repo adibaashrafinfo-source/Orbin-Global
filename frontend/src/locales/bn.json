@@ -1022,6 +1022,10 @@
     }
   },
   "pos": {
+    "payAmount": "পরিশোধ {{amount}}",
+    "allTypes": "সব ধরন",
+    "allBrands": "সব ব্র্যান্ড",
+    "allQualities": "সব মান",
     "finder": "গাড়ি খুঁজুন",
     "make": "মেক",
     "model": "মডেল",

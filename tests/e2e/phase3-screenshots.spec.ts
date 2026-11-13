@@ -29,7 +29,7 @@ async function till(page: Page): Promise<void> {
 
 for (const { w, h } of SIZES) {
   test(`phase 3 screenshots ${w}x${h}`, async ({ page, context }) => {
-    test.setTimeout(240_000);
+    test.setTimeout(120_000);
     const seed = await sku();
     await page.setViewportSize({ width: w, height: h });
     // Admin: lists and detail pages (a manager has every sales screen).
@@ -39,6 +39,7 @@ for (const { w, h } of SIZES) {
     await pick(page, 'Model', 'Axio');
     await pick(page, 'Year', '2015');
     await page.getByRole('button', { name: /^Right/ }).click();
+    await page.getByTestId('pos-search').fill(seed.name); // many test products fit this car; the search narrows to this run's
     const card = page.getByRole('article', { name: seed.name });
     await expect(card).toBeVisible();
     await card.getByRole('button', { name: /Add size 7x4/ }).click();
@@ -48,6 +49,8 @@ for (const { w, h } of SIZES) {
     // A quotation from the same cart, to have one to show.
     const [popup] = await Promise.all([context.waitForEvent('page'), page.getByRole('button', { name: 'Quotation' }).click()]);
     await popup.close();
+    await page.getByTestId('pos-search').fill(seed.name); // a new sale clears the search
+    await expect(card).toBeVisible();
     await card.getByRole('button', { name: /Add size 7x4/ }).click();
     await card.getByRole('button', { name: /Add size 8x5/ }).click();
     await page.getByTestId('pay-button').click();
@@ -105,4 +108,8 @@ test('phase 3 screenshots bangla 1366x768', async ({ page }) => {
   await page.goto('/shifts');
   await settle(page);
   await page.screenshot({ path: `${OUT}/shifts-bn-1366.png` });
+  // The language choice is saved on the account, so put it back for the next run.
+  const en = page.getByRole('group', { name: /Language|ভাষা/ }).getByRole('button', { name: 'EN' });
+  await en.click();
+  await expect(en).toHaveAttribute('aria-pressed', 'true');
 });

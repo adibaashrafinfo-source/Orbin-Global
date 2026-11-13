@@ -107,7 +107,7 @@ Run locally: `cd backend && php artisan migrate:fresh --seed && php artisan serv
 3. The transparent logo as PNG or SVG.
 4. Label stock: A4 sticker sheets or a roll printer (open since Phase 1).
 5. Over-receipt policy: keep refusing (current), or allow up to a percentage?
-6. Do you want count-sheet printing, an overstock alert (this needs a maximum stock level per variant) and supplier claim links on breakage now, or later?
+6. Do you want count-sheet printing, an overstock alert (variants already carry a maximum stock level, so it is small to add) and supplier claim links on breakage now, or later?
 7. Should supplier payments come in Phase 4 as planned, or sooner?
 
 ## 9. Ready for P3?

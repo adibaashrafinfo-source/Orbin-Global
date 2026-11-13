@@ -1022,6 +1022,10 @@
     }
   },
   "pos": {
+    "payAmount": "Pay {{amount}}",
+    "allTypes": "All types",
+    "allBrands": "All brands",
+    "allQualities": "All qualities",
     "finder": "Vehicle finder",
     "make": "Make",
     "model": "Model",

@@ -75,6 +75,7 @@ test.describe('P3 POS and sales gate', () => {
     await pick(page, 'Model', 'Axio');
     await pick(page, 'Year', '2015');
     await page.getByRole('button', { name: /^Right/ }).click();
+    await page.getByTestId('pos-search').fill(seed.name); // many test products fit this car; the search narrows to this run's
     const card = page.getByRole('article', { name: seed.name });
     await expect(card).toBeVisible();
     await expect(card).toHaveCount(1);
@@ -232,6 +233,40 @@ test.describe('P3 POS and sales gate', () => {
     await page.getByTestId('cart-line').first().getByRole('button', { name: /Remove/ }).click();
     await page.getByRole('button', { name: /Undo remove/ }).click();
     await expect(page.getByTestId('cart-line')).toHaveCount(1);
+  });
+
+  test('AT-007: a walk-in cannot leave a due, so Complete sale stays off with a message', async ({ page }) => {
+    await login(page, 'cashier');
+    await openTill(page);
+    await addBySku(page, seed.skus.R7x4 as string);
+    await page.getByTestId('pay-button').click();
+    await page.getByRole('textbox', { name: 'Amount', exact: true }).fill('300');
+    await expect(page.getByText('A walk-in customer must pay in full')).toBeVisible();
+    await expect(page.getByTestId('complete-sale')).toBeDisabled();
+    await page.getByRole('textbox', { name: 'Amount', exact: true }).fill('1000');
+    await expect(page.getByTestId('complete-sale')).toBeEnabled();
+    await page.keyboard.press('Escape');
+    await page.getByTestId('cart-line').first().getByRole('button', { name: /Remove/ }).click();
+  });
+
+  test('AT-010: a dropped connection during completion saves nothing, and Retry makes exactly one invoice', async ({ page }) => {
+    await login(page, 'cashier');
+    await openTill(page);
+    const count = async () => page.evaluate(async () => ((await (await fetch('/api/v1/sales?per_page=1')).json()) as { summary: { count: number } }).summary.count);
+    const before = await count();
+    await addBySku(page, seed.skus.R7x4 as string);
+    await page.getByTestId('pay-button').click();
+    await page.route('**/api/v1/sales/checkout', (route) => route.abort('connectionfailed'));
+    await page.getByTestId('complete-sale').click();
+    await expect(page.getByTestId('checkout-error')).toContainText('Nothing was saved');
+    await expect(page.getByTestId('cart-line')).toHaveCount(1); // the cart is kept
+    expect(await count()).toBe(before);
+    await page.unroute('**/api/v1/sales/checkout');
+    const [download] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: 'Retry' }).click()]);
+    await expect(page.getByTestId('success-screen')).toBeVisible();
+    expect((await readPdf(download)).text).toContain('GRAND TOTAL');
+    expect(await count()).toBe(before + 1);
+    await page.getByTestId('new-sale').click();
   });
 
   test('closing the shift counts the drawer and keeps a Z-report', async ({ page }) => {

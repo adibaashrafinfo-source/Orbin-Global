@@ -74,6 +74,12 @@ export function PayDrawer({ open, onClose, config, totals, busy, error, onComple
     <Drawer open={open} onOpenChange={(o) => !o && onClose()} title={t('pos.pay.title')} description={t('pos.pay.subtitle')}
       footer={<div className="flex w-full flex-col gap-2"><Button variant="accent" size="xl" block loading={busy} disabled={!canComplete} onClick={complete} data-testid="complete-sale">{t('pos.pay.complete')}<kbd className="ms-2 text-xs font-normal opacity-70">Ctrl+Enter</kbd></Button></div>}>
       <div className="flex flex-col gap-4">
+        <dl className="rounded-card bg-navy-50 p-3 text-sm" aria-live="polite">
+          <Line label={t('pos.pay.toPay')} value={formatMoney(fromPaisa(grand))} strong />
+          <Line label={t('pos.pay.paid')} value={formatMoney(fromPaisa(tot.paid > grand ? grand : tot.paid))} />
+          <Line label={tot.remaining > 0n ? t('pos.pay.remaining') : t('pos.pay.settled')} value={formatMoney(fromPaisa(tot.remaining))} accent={tot.remaining > 0n} testId="remaining" />
+          {tot.change > 0n && <Line label={t('pos.pay.changeDue')} value={formatMoney(fromPaisa(tot.change))} />}
+        </dl>
         <div role="radiogroup" aria-label={t('pos.pay.method')} className="grid grid-cols-5 gap-1.5">
           {METHODS.map((m) => (
             <button key={m.id} type="button" role="radio" aria-checked={draft.method === m.id} onClick={() => choose(m.id)}
@@ -95,12 +101,6 @@ export function PayDrawer({ open, onClose, config, totals, busy, error, onComple
             ))}
           </ul>
         )}
-        <dl className="rounded-card bg-navy-50 p-3 text-sm" aria-live="polite">
-          <Line label={t('pos.pay.toPay')} value={formatMoney(fromPaisa(grand))} strong />
-          <Line label={t('pos.pay.paid')} value={formatMoney(fromPaisa(tot.paid > grand ? grand : tot.paid))} />
-          <Line label={tot.remaining > 0n ? t('pos.pay.remaining') : t('pos.pay.settled')} value={formatMoney(fromPaisa(tot.remaining))} accent={tot.remaining > 0n} testId="remaining" />
-          {tot.change > 0n && <Line label={t('pos.pay.changeDue')} value={formatMoney(fromPaisa(tot.change))} />}
-        </dl>
         {over && <p role="alert" className="text-sm font-medium text-danger">{t('pos.pay.overpay')}</p>}
         {walkInDue && <p role="alert" className="text-sm font-medium text-orange-700">{t('pos.pay.walkInDue')}</p>}
         {partial && named && <p className="text-sm text-ink-muted">{t('pos.pay.dueNote', { amount: formatMoney(fromPaisa(tot.remaining)), name: customer?.name ?? '' })}</p>}

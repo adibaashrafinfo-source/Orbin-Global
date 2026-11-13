@@ -169,4 +169,59 @@ Valuation, and any cost column, need the cost permission as well as the inventor
 
 ### D-044 Left for later in Phase 2 scope
 - FR-505 and FR-506 (supplier payments, statements, aging) wait for Phase 4 with the ledger and payment accounts. The supplier balance is already correct from receipts, returns and opening balance.
-- Printing a count sheet, and the overstock alert (needs a maximum stock level the catalogue does not hold), are not built. Say if you want them.
+- Printing a count sheet and the overstock alert are not built. (Correction made in Phase 3: variants already have a maximum stock field, so the overstock alert needs no new data; it simply was not built.) Say if you want them.
+
+### D-045 Accounts and payment lines arrive with sales
+Every payment posts a row to a financial account (FR-805), so the account tables (`financial_accounts`, `account_transactions`) are created in Phase 3, with the five starter accounts (Cash Drawer, bKash, Nagad, Rocket, Bank). The screens to manage accounts, and everything about balances, stay in Phase 4.
+
+### D-046 Bangla in PDFs (NFR-020): decision recorded
+**Engine and fonts.** mPDF on the server with OpenType shaping. Latin text uses Inter (body) and Plus Jakarta Sans (headings); Bangla text and the taka sign use Hind Siliguri. All three are open-licence fonts shipped in `backend/resources/fonts` with their licence files (1.9 MB; mPDF embeds only the glyphs a document uses).
+**Why Hind Siliguri.** The first choice, Noto Sans Bengali, could not be used: mPDF's font reader stops on it with "GPOS Lookup Type 5, Format 3 not supported". The same happens with Anek Bangla and Noto Serif Bengali, and Tiro Bangla is refused for "MarkGlyphSets". Hind Siliguri loads and shapes স্ক্রিন, ক্ষ, র‍্যাম্প and ৳ as single joined glyphs (checked by eye on a rendering). mPDF's bundled FreeSerif also shapes them but is a serif.
+**How it is kept honest.** A test renders the three conjuncts and the taka sign and compares the picture with an approved reference image (`backend/tests/fixtures/bangla-reference.png`). Text extraction cannot judge Bangla (it returns font glyph codes), so the picture is the check.
+**Default language.** English, as the PRD says. Bangla names and notes print correctly when present.
+**Cost on this machine.** A 60-line invoice: 4 pages, 0.3 s, 171 KB, and it renders inside a 64 MB PHP memory limit. This was measured locally, not on your hosting, so the same test must be repeated on the staging account (memory_limit and max_execution_time there decide).
+The `@react-pdf/renderer` fallback was not needed.
+
+### D-047 Invoice logo
+The invoice embeds the original brand file `assets/brand/orbin-logo.jpg`, byte for byte (a test checks the bytes are inside the PDF). The logo uploaded under Company profile is used in the app, not on paper, until you supply the transparent version.
+
+### D-048 Credit limit
+A credit limit of 0 means no limit is checked. In "warn" mode the screen warns and the server never blocks. In "block" mode a sale that takes the balance past the limit needs a manager PIN.
+
+### D-049 Approvals
+One PIN dialog serves four cases, each needing the right permission in the approver: a price below the floor (`pos.sell_below_floor`), more discount than the cashier's limit (`pos.discount_over_limit`; the limit is all line and cart discount as a share of the subtotal), credit past the limit in block mode (same permission), and a repeated TrxID (`payments.verify`). Wrong PINs count against the person typing, who is locked out after the setting's limit for 15 minutes. The approver and the reason are written to the audit log.
+
+### D-050 TrxID rule
+The same TrxID on the same method is refused for `duplicate_trx_days` (30) unless a manager approves. After 30 days it may be reused. A unique key on method and TrxID is the race guard; rows that were overridden, or that reuse an old TrxID, carry no key.
+
+### D-051 Bundles on an invoice
+A bundle is one priced line plus one zero-priced row per component, and the components carry the cost (BR-033). The bundle row's own cost is 0, so a profit report adding up cost is not counted twice. Returning the bundle returns its components in proportion; a component cannot be returned alone.
+
+### D-052 Returns
+The window is the product's own return window, else the shop setting (7 days); a manager can approve past it. A cashier's return waits for a manager; a manager's posts at once. The refund is limited to what was paid for the lines (less earlier refunds); the rest becomes account credit. A line returned in full takes the exact remainder, so shares always add up to the line to the paisa. Resellable units go back at the cost they left at; broken ones come back and go straight to the breakage register at that cost. A refund paid in cash counts in the shift of the person who made the return, not the approver's.
+
+### D-053 Void
+A manager may void the same day, a super admin any day (setting `void_same_day_manager_only`), never when a return exists or the period is locked. Stock goes back at its original cost, payments are reversed as account entries (type adjustment), the ledger gets reversing entries, and the PDF is rebuilt with a VOID watermark. A sale from an earlier shift that is voided today is not subtracted from today's drawer (known limit, see report).
+
+### D-054 Checkout is one idempotent call
+`Idempotency-Key` is required. The browser keeps the same key for the same cart, so Retry after a dropped connection cannot make a second invoice, and any edit to the cart starts a new key. The PDF is made after the transaction commits; if it fails the sale stands and the PDF is made when someone downloads it.
+
+### D-055 Held bills
+A held bill is a row in `sales` with status `held` and the cart as JSON. It takes no stock, no number and no money. Resuming hands the cart back and removes the parked row.
+
+### D-056 Shifts
+One open shift per cashier. Expected cash = opening float + cash sales that still stand − cash refunds + cash in − cash out; voided sales drop out whole. The float itself is booked as a cash entry stamped with the cashier.
+
+### D-057 Warranty
+Raising a claim needs `sales.return.create` (cashiers can). Resolving one (in review, replaced, refunded, rejected) needs `sales.return.approve`, stricter than the spec's single write permission, because a replacement takes a unit out of stock. A claim must be raised before the line's warranty date.
+
+### D-058 The POS uses the whole screen
+On `/pos` the sidebar shrinks to its icon rail and the page margins tighten, without changing anyone's saved sidebar choice. The cart's Pay button is the one accent button on the screen; while the payment drawer is open Complete sale takes that role and Pay turns secondary.
+
+### D-059 Left out of Phase 3 (all small, none blocking the gate)
+- Keeping change as a customer advance (FR-804, optional), attaching a screenshot or slip to a payment (FR-802, optional), and rejecting a payment from the verification step (only "confirm" is offered).
+- Receive-payment from the customer page and the customer Payments tab (FR-807, FR-1002): Phase 4.
+- Customer photo or file attachment (FR-601).
+- Payment receipt, customer statement and supplier statement PDFs: Phase 4. A4 invoice, 80 mm receipt, credit note, quotation, purchase order and Z-report are done.
+- WhatsApp sharing is a link that opens WhatsApp with the message; nothing is sent from the server.
+- The auto-download, print and keyboard behaviour was tested in Chromium only.

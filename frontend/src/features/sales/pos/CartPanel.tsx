@@ -30,10 +30,10 @@ export function CartPanel({ config, totals, heldCount, drawerOpen, flashKey, act
   const over = overDiscountLimit(totals.subtotal, totals.lineDiscountTotal, totals.cartDiscount, config);
   return (
     <aside aria-label={t('pos.cart')} className="flex h-full min-h-0 flex-col overflow-hidden rounded-card bg-surface shadow-lg">
-      <div className="flex flex-wrap items-center gap-2 border-b border-navy-100 p-3">
-        <button type="button" onClick={actions.onCustomer} aria-label={t('pos.changeCustomer')} className="flex min-w-0 items-center gap-1.5 rounded-pill border border-navy-200 px-3 py-1.5 text-sm font-medium hover:bg-navy-50 focus-visible:focus-ring-light"><User className="h-4 w-4 shrink-0 text-navy-600" aria-hidden="true" /><span className="truncate" data-testid="cart-customer">{customer?.name ?? t('pos.walkIn')}</span>{customer && !customer.is_walk_in && customer.price_tier !== 'retail' && <Badge tone="orange">{t(`customers.tiers.${customer.price_tier}`)}</Badge>}</button>
-        <button type="button" onClick={actions.onVehicle} aria-label={t('pos.changeVehicle')} className="flex min-w-0 items-center gap-1.5 rounded-pill border border-navy-200 px-3 py-1.5 text-sm hover:bg-navy-50 focus-visible:focus-ring-light"><Car className="h-4 w-4 shrink-0 text-navy-600" aria-hidden="true" /><span className="max-w-[10rem] truncate">{vehicleText || t('pos.addVehicle')}</span></button>
-        <button type="button" onClick={actions.onHeld} aria-label={t('pos.heldBills', { count: heldCount })} className="ms-auto flex items-center gap-1.5 rounded-pill px-2.5 py-1.5 text-sm text-navy-700 hover:bg-navy-100 focus-visible:focus-ring-light"><ClipboardList className="h-4 w-4" aria-hidden="true" />{t('pos.held')} <Badge tone={heldCount > 0 ? 'orange' : 'neutral'}>{heldCount}</Badge></button>
+      <div className="flex items-center gap-2 border-b border-navy-100 p-3">
+        <button type="button" onClick={actions.onCustomer} aria-label={t('pos.changeCustomer')} className="flex min-w-0 max-w-[45%] items-center gap-1.5 rounded-pill border border-navy-200 px-3 py-1.5 text-sm font-medium hover:bg-navy-50 focus-visible:focus-ring-light"><User className="h-4 w-4 shrink-0 text-navy-600" aria-hidden="true" /><span className="truncate" data-testid="cart-customer">{customer?.name ?? t('pos.walkIn')}</span>{customer && !customer.is_walk_in && customer.price_tier !== 'retail' && <Badge tone="orange">{t(`customers.tiers.${customer.price_tier}`)}</Badge>}</button>
+        <button type="button" onClick={actions.onVehicle} aria-label={t('pos.changeVehicle')} className="flex min-w-0 max-w-[35%] items-center gap-1.5 rounded-pill border border-navy-200 px-3 py-1.5 text-sm hover:bg-navy-50 focus-visible:focus-ring-light"><Car className="h-4 w-4 shrink-0 text-navy-600" aria-hidden="true" /><span className="truncate">{vehicleText || t('pos.addVehicle')}</span></button>
+        <button type="button" onClick={actions.onHeld} aria-label={t('pos.heldBills', { count: heldCount })} className="ms-auto flex shrink-0 items-center gap-1.5 rounded-pill px-2.5 py-1.5 text-sm text-navy-700 hover:bg-navy-100 focus-visible:focus-ring-light"><ClipboardList className="h-4 w-4" aria-hidden="true" />{t('pos.held')} <Badge tone={heldCount > 0 ? 'orange' : 'neutral'}>{heldCount}</Badge></button>
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto" data-testid="cart-lines">
         {empty ? <div className="p-4"><EmptyState title={t('pos.cartEmptyTitle')} body={t('pos.cartEmptyBody')} /></div> : (
@@ -54,10 +54,12 @@ export function CartPanel({ config, totals, heldCount, drawerOpen, flashKey, act
         <span className="text-sm font-semibold">{t('pos.grandTotal')}</span>
         <AnimatedMoney paisa={totals.grandTotal} className="tabular text-2xl font-extrabold" />
       </div>
-      <div className="flex gap-2 p-3 pt-1">
-        <Button variant="ghost" disabled={empty || busy} leftIcon={<PauseCircle className="h-4 w-4" aria-hidden="true" />} onClick={actions.onHold} title="F10">{t('pos.hold')}</Button>
-        <Button variant="secondary" disabled={empty || busy} onClick={actions.onQuote}>{t('pos.quotation')}</Button>
-        <Button variant={drawerOpen ? 'secondary' : 'accent'} size="xl" className={cn('flex-1', empty && 'opacity-60')} disabled={empty || busy} onClick={actions.onPay} title="F9" data-testid="pay-button">{t('pos.pay', { amount: formatMoney(fromPaisa(totals.grandTotal)) })}</Button>
+      <div className="flex flex-col gap-2 p-3 pt-1">
+        <Button variant={drawerOpen ? 'secondary' : 'accent'} size="xl" block className={cn(empty && 'opacity-60')} disabled={empty || busy} onClick={actions.onPay} title="F9" data-testid="pay-button">{t('pos.payAmount', { amount: formatMoney(fromPaisa(totals.grandTotal)) })}<kbd className="ms-2 text-xs font-normal opacity-70">F9</kbd></Button>
+        <div className="flex gap-2">
+          <Button variant="ghost" className="flex-1" disabled={empty || busy} leftIcon={<PauseCircle className="h-4 w-4" aria-hidden="true" />} onClick={actions.onHold} title="F10">{t('pos.hold')}</Button>
+          <Button variant="secondary" className="flex-1" disabled={empty || busy} onClick={actions.onQuote}>{t('pos.quotation')}</Button>
+        </div>
       </div>
     </aside>
   );

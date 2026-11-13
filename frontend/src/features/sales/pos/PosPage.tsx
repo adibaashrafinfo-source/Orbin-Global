@@ -146,7 +146,7 @@ export function PosPage() {
 
   const approvalError = checkout.error instanceof ApiError && ['PIN_INVALID', 'PIN_LOCKED'].includes(checkout.error.code) ? apiMessage(t, checkout.error) : null;
   return (
-    <div className="grid h-[calc(100vh-7rem)] min-h-[34rem] grid-cols-[62fr_38fr] gap-4" data-testid="pos-terminal">
+    <div className="grid h-[calc(100vh-5.5rem)] min-h-[34rem] grid-cols-[62fr_38fr] gap-3" data-testid="pos-terminal">
       <section aria-label={t('pos.catalog')} className="flex min-h-0 flex-col gap-3">
         <div ref={finderRef}><VehicleFinder value={finder} onChange={setFinder} driverSide={cfg.settings.driver_side} /></div>
         <PosToolbar search={search} onSearch={(v) => { setSearch(v); }} onScan={(c) => scan.mutate(c)} filters={{ ...filters, text: q }} onFilters={setFilters} searchRef={searchRef} />

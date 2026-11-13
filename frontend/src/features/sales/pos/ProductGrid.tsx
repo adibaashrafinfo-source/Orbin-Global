@@ -48,7 +48,7 @@ export function ProductGrid({ finder, filters, warehouseId, onAdd, onOpen }: { f
   if (cards.length === 0) return <EmptyState title={t('pos.noMatchTitle')} body={t('pos.noMatchBody')} />;
   return (
     <>
-      <div className="grid grid-cols-2 gap-3 xl:grid-cols-3 2xl:grid-cols-4" data-testid="pos-grid">
+      <div className="grid grid-cols-2 gap-3 min-[1180px]:grid-cols-3 min-[1700px]:grid-cols-4" data-testid="pos-grid">
         {cards.map((c) => <ProductCard key={c.product_id} card={c} onAdd={(v) => onAdd(c, v)} onOpen={() => onOpen(c)} />)}
       </div>
       <div ref={sentinel} className="h-8" aria-hidden="true" />
