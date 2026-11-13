@@ -34,7 +34,7 @@ export function VariantsStep({ product, canManage, canPrice, canCost }: StepProp
       { id: 'name', header: t('products.fields.variantName'), cell: ({ row }) => row.original.variant_name ?? '—' },
       { id: 'position', header: t('products.fields.position'), cell: ({ row }) => t(`products.positions.${row.original.position}`) },
       { id: 'size', header: t('products.fields.sizeLabel'), cell: ({ row }) => row.original.size_label ?? '—' },
-      { id: 'barcode', header: t('products.fields.barcode'), cell: ({ row }) => row.original.barcode ? <code className="text-xs">{row.original.barcode}</code> : <span className="text-ink-subtle">—</span> },
+      { id: 'barcode', header: t('products.fields.barcode'), cell: ({ row }) => row.original.barcode ? <code className="text-xs">{row.original.barcode}</code> : <span className="text-ink-muted">—</span> },
       { id: 'price', header: t('products.fields.retail_price'), cell: ({ row }) => <span className="tabular whitespace-nowrap">{formatMoney(row.original.retail_price)}</span> },
       { id: 'status', header: t('common.status'), cell: ({ row }) => <Badge tone={row.original.is_discontinued ? 'neutral' : row.original.is_active ? 'success' : 'warning'}>{row.original.is_discontinued ? t('products.fields.discontinued') : row.original.is_active ? t('common.active') : t('common.inactive')}</Badge> },
     ];

@@ -34,7 +34,7 @@ export function AgingPage() {
           <div className="mb-5 grid gap-3 sm:grid-cols-5">
             {BUCKETS.map((b) => (
               <Card key={b}><CardBody>
-                <p className="text-xs font-semibold uppercase tracking-wide text-ink-subtle">{t('inventory.days', { range: b })}</p>
+                <p className="text-xs font-semibold uppercase tracking-wide text-ink-muted">{t('inventory.days', { range: b })}</p>
                 <p className="tabular mt-1 font-heading text-xl font-bold text-navy-900">{fmtQty(data.buckets[b]?.qty)}</p>
                 {data.buckets[b]?.value !== undefined && <p className="tabular text-xs text-ink-muted">{formatMoney(data.buckets[b]?.value ?? '0')}</p>}
                 <div className="mt-2 h-1.5 rounded-pill bg-navy-100" aria-hidden="true"><div className="h-full rounded-pill bg-navy-700" style={{ width: `${(Number(data.buckets[b]?.qty ?? 0) / max) * 100}%` }} /></div>
@@ -46,7 +46,7 @@ export function AgingPage() {
               <table className="w-full min-w-[640px] text-sm">
                 <caption className="sr-only">{t('inventory.tabs.aging')}</caption>
                 <thead className="bg-navy-900 text-xs uppercase tracking-wide text-surface"><tr><th scope="col" className="px-3 py-2 text-start">{t('products.fields.sku')}</th>{BUCKETS.map((b) => <th key={b} scope="col" className="px-3 py-2 text-end">{b}</th>)}</tr></thead>
-                <tbody>{data.rows.map((r) => <tr key={`${r.variant_id}`} className="border-t border-navy-100 odd:bg-navy-50/40"><th scope="row" className="px-3 py-2 text-start font-normal"><code className="text-xs font-semibold">{r.sku}</code><div className="text-xs text-ink-muted">{r.variant_name}</div></th>{BUCKETS.map((b) => <td key={b} className="tabular px-3 py-2 text-end">{Number(r.buckets[b]) > 0 ? fmtQty(r.buckets[b]) : <span className="text-ink-subtle">—</span>}</td>)}</tr>)}</tbody>
+                <tbody>{data.rows.map((r) => <tr key={`${r.variant_id}`} className="border-t border-navy-100 odd:bg-navy-50/40"><th scope="row" className="px-3 py-2 text-start font-normal"><code className="text-xs font-semibold">{r.sku}</code><div className="text-xs text-ink-muted">{r.variant_name}</div></th>{BUCKETS.map((b) => <td key={b} className="tabular px-3 py-2 text-end">{Number(r.buckets[b]) > 0 ? fmtQty(r.buckets[b]) : <span className="text-ink-muted">—</span>}</td>)}</tr>)}</tbody>
               </table>
             </div>
           )}

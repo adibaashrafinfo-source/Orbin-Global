@@ -26,7 +26,7 @@ export class ErrorBoundary extends Component<{ children: ReactNode }, State> {
         <div className="card max-w-md p-8 text-center" role="alert">
           <h1 className="font-heading text-xl font-bold text-navy-900">{t('errors.boundaryTitle')}</h1>
           <p className="mt-2 text-sm text-ink-muted">{t('errors.boundaryBody')}</p>
-          <p className="mt-4 text-xs text-ink-subtle">
+          <p className="mt-4 text-xs text-ink-muted">
             {t('errors.requestId')}: <code className="rounded bg-navy-50 px-1">{this.state.errorId}</code>
           </p>
           <div className="mt-6 flex justify-center gap-2">

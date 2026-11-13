@@ -42,7 +42,7 @@ export function LoginPage() {
   const errorMessage = apiError ? t(`errors.${apiError.code}`, { defaultValue: t('errors.unknown') }) : null;
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <main className="flex min-h-screen bg-background">
       <section className="relative hidden w-[55%] flex-col items-center justify-center overflow-hidden bg-gradient-to-br from-navy-950 to-navy-900 p-12 lg:flex" aria-hidden="true">
         {!reduced && (
           <>
@@ -95,7 +95,7 @@ export function LoginPage() {
                   required
                   error={form.formState.errors.password && t('errors.validation')}
                   suffix={
-                    <button type="button" onClick={() => setShowPassword((s) => !s)} aria-label={showPassword ? t('auth.hidePassword') : t('auth.showPassword')} className="rounded-pill p-1 text-ink-subtle hover:text-ink focus-visible:focus-ring-light">
+                    <button type="button" onClick={() => setShowPassword((s) => !s)} aria-label={showPassword ? t('auth.hidePassword') : t('auth.showPassword')} className="rounded-pill p-1 text-ink-muted hover:text-ink focus-visible:focus-ring-light">
                       {showPassword ? <EyeOff className="h-4 w-4" aria-hidden="true" /> : <Eye className="h-4 w-4" aria-hidden="true" />}
                     </button>
                   }
@@ -119,12 +119,12 @@ export function LoginPage() {
             )}
           </div>
         </div>
-        <footer className="p-4 text-center text-xs text-ink-subtle">
+        <footer className="p-4 text-center text-xs text-ink-muted">
           <Link to="/login" className="hover:text-ink">
             {t('auth.copyright', { year: new Date().getFullYear() })}
           </Link>
         </footer>
       </section>
-    </div>
+    </main>
   );
 }

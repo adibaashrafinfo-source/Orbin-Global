@@ -41,9 +41,9 @@ export function TrendRow({ w }: { w: DashboardData['widgets'] }) {
         <Card data-testid="payment-donut"><CardHeader title={t('dashboard.donut.title')} /><CardBody>
           {slices.length === 0 ? <EmptyState body={t('dashboard.donut.empty')} /> : (
             <>
-              <div role="img" aria-label={t('dashboard.donut.title')} className="h-40">
+              <div aria-hidden="true" className="h-40">
                 <ResponsiveContainer width="100%" height="100%">
-                  <PieChart><Pie data={slices} dataKey="value" nameKey="name" innerRadius={42} outerRadius={64} paddingAngle={2} isAnimationActive={!reduced}>{slices.map((_, i) => <Cell key={i} fill={SLICES[i % SLICES.length]} />)}</Pie><Tooltip formatter={(v: number) => formatMoney(v.toFixed(2))} /></PieChart>
+                  <PieChart accessibilityLayer={false}><Pie data={slices} dataKey="value" nameKey="name" innerRadius={42} outerRadius={64} paddingAngle={2} isAnimationActive={!reduced}>{slices.map((_, i) => <Cell key={i} fill={SLICES[i % SLICES.length]} />)}</Pie><Tooltip formatter={(v: number) => formatMoney(v.toFixed(2))} /></PieChart>
                 </ResponsiveContainer>
               </div>
               <ul className="mt-2 space-y-1 text-sm">

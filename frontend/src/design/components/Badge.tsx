@@ -8,9 +8,9 @@ export const badgeVariants = cva('inline-flex items-center gap-1 rounded-pill px
     tone: {
       navy: 'bg-navy-100 text-navy-800',
       orange: 'bg-orange-100 text-orange-800',
-      success: 'bg-success/10 text-success',
-      warning: 'bg-warning/10 text-warning',
-      danger: 'bg-danger/10 text-danger',
+      success: 'bg-success/10 text-ink',
+      warning: 'bg-warning/10 text-ink',
+      danger: 'bg-danger/10 text-ink',
       neutral: 'bg-navy-50 text-ink-muted',
     },
     pulse: { true: 'animate-pulse-glow shadow-glow-orange', false: '' },

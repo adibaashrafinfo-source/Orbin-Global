@@ -3,7 +3,7 @@ import { cn } from '@/lib/cn';
 import { Label } from './Label';
 
 const base =
-  'w-full rounded-input border border-navy-200 bg-surface px-3 text-sm text-ink placeholder:text-ink-subtle transition-[border-color,box-shadow] duration-fast focus:border-navy-600 focus:outline-none focus:shadow-[0_0_0_3px_theme(colors.navy.600/0.15)] disabled:bg-navy-50 disabled:text-ink-subtle disabled:cursor-not-allowed aria-[invalid=true]:border-danger';
+  'w-full rounded-input border border-navy-200 bg-surface px-3 text-sm text-ink placeholder:text-ink-muted transition-[border-color,box-shadow] duration-fast focus:border-navy-600 focus:outline-none focus:shadow-[0_0_0_3px_theme(colors.navy.600/0.15)] disabled:bg-navy-50 disabled:text-ink-muted disabled:cursor-not-allowed aria-[invalid=true]:border-danger';
 
 export interface InputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'prefix'> {
   label?: ReactNode;
@@ -48,7 +48,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
           {error}
         </p>
       ) : hint ? (
-        <p id={`${inputId}-hint`} className="text-xs text-ink-subtle">
+        <p id={`${inputId}-hint`} className="text-xs text-ink-muted">
           {hint}
         </p>
       ) : null}
@@ -90,7 +90,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(function 
           {error}
         </p>
       ) : hint ? (
-        <p className="text-xs text-ink-subtle">{hint}</p>
+        <p className="text-xs text-ink-muted">{hint}</p>
       ) : null}
     </div>
   );

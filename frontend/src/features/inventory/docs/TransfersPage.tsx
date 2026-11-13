@@ -15,7 +15,7 @@ export function TransfersPage() {
   const { t, i18n } = useTranslation();
   const columns = useMemo<ColumnDef<Doc, unknown>[]>(() => [
     { id: 'no', header: t('stock.number'), cell: ({ row }) => <span className="font-semibold">{String(row.original.transfer_no)}</span> },
-    { id: 'route', header: t('inventory.route'), cell: ({ row }) => <span className="flex items-center gap-1">{row.original.from_warehouse?.name}<ArrowRight className="h-3.5 w-3.5 text-ink-subtle" aria-hidden="true" />{row.original.to_warehouse?.name}</span> },
+    { id: 'route', header: t('inventory.route'), cell: ({ row }) => <span className="flex items-center gap-1">{row.original.from_warehouse?.name}<ArrowRight className="h-3.5 w-3.5 text-ink-muted" aria-hidden="true" />{row.original.to_warehouse?.name}</span> },
     { id: 'sent', header: t('inventory.sentAt'), cell: ({ row }) => (row.original.sent_at ? formatDateTime(str(row.original.sent_at), i18n.language) : '—') },
     { id: 'status', header: t('common.status'), cell: ({ row }) => <StatusBadge status={row.original.status} /> },
   ], [t, i18n.language]);

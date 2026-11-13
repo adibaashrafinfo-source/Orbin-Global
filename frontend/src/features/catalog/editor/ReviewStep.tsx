@@ -35,12 +35,12 @@ function PosPreview({ product }: { product: Product }) {
   const image = (product.images ?? []).find((i) => i.is_primary) ?? (product.images ?? [])[0];
   return (
     <div className="mirror-shine relative w-64 overflow-hidden rounded-card border border-navy-100 bg-surface shadow-md" aria-label={t('products.review.posPreview')}>
-      <div className="flex aspect-[4/3] items-center justify-center bg-navy-50">{image ? <img src={image.thumb_url ?? image.url} alt="" className="h-full w-full object-cover" /> : <ImageOff className="h-8 w-8 text-ink-subtle" aria-hidden="true" />}</div>
+      <div className="flex aspect-[4/3] items-center justify-center bg-navy-50">{image ? <img src={image.thumb_url ?? image.url} alt="" className="h-full w-full object-cover" /> : <ImageOff className="h-8 w-8 text-ink-muted" aria-hidden="true" />}</div>
       <div className="p-3">
         <p className="truncate font-heading text-sm font-bold text-navy-900">{product.name_en}</p>
         <p className="truncate text-xs text-ink-muted">{product.code}</p>
         <p className="tabular mt-2 text-sm font-semibold">{lo === null ? '—' : lo === hi ? formatMoney(lo) : `${formatMoney(lo)} – ${formatMoney(hi ?? 0, { symbol: false })}`}</p>
-        <p className="text-xs text-ink-subtle">{t('products.variantsCount', { count: prices.length })}</p>
+        <p className="text-xs text-ink-muted">{t('products.variantsCount', { count: prices.length })}</p>
       </div>
     </div>
   );

@@ -27,7 +27,7 @@ export function ErrorState({ title, body, requestId, onRetry }: { title?: ReactN
       <h3 className="font-heading text-base font-bold text-navy-900">{title ?? t('errors.unknown')}</h3>
       {body && <p className="max-w-sm text-13 text-ink-muted">{body}</p>}
       {requestId && (
-        <p className="text-xs text-ink-subtle">
+        <p className="text-xs text-ink-muted">
           {t('errors.requestId')}: <code className="rounded bg-navy-50 px-1 py-0.5">{requestId}</code>
         </p>
       )}

@@ -74,7 +74,7 @@ export function HealthPage() {
                     <p className="text-13 text-ink-muted">{c.detail}{extra}</p>
                     {key === 'cron' && c.status !== 'ok' && <p className="mt-1 text-xs text-danger">{report.last_cron_at ? t('health.cronStale') : t('health.cronNever')}</p>}
                     {key === 'limits' && typeof c.values === 'object' && c.values !== null && (
-                      <p className="mt-1 text-xs tabular text-ink-subtle">{Object.entries(c.values as Record<string, string>).map(([k, v]) => `${k}=${v}`).join(' · ')}</p>
+                      <p className="mt-1 text-xs tabular text-ink-muted">{Object.entries(c.values as Record<string, string>).map(([k, v]) => `${k}=${v}`).join(' · ')}</p>
                     )}
                   </div>
                   <Badge tone={tone(c.status)}>{statusLabel(c.status)}</Badge>
@@ -97,7 +97,7 @@ export function HealthPage() {
               <Button variant="secondary" block onClick={() => setConfirm('maintenanceOn')}>{t('health.maintenanceOn')}</Button>
             )}
             <Button variant="secondary" block onClick={() => setConfirm('migrations')}>{t('health.runMigrations')}</Button>
-            <p className="text-xs text-ink-subtle">{t('health.lastCron')}: {report.last_cron_at ? formatDateTime(report.last_cron_at, i18n.language) : t('health.cronNever')}</p>
+            <p className="text-xs text-ink-muted">{t('health.lastCron')}: {report.last_cron_at ? formatDateTime(report.last_cron_at, i18n.language) : t('health.cronNever')}</p>
           </CardBody>
         </Card>
       </div>

@@ -82,7 +82,7 @@ export function Toaster() {
                     </div>
                   )}
                 </div>
-                <RadixToast.Close aria-label={t('common.close')} className="rounded-pill p-1 text-ink-subtle hover:bg-navy-100 hover:text-ink">
+                <RadixToast.Close aria-label={t('common.close')} className="rounded-pill p-1 text-ink-muted hover:bg-navy-100 hover:text-ink">
                   <X className="h-4 w-4" aria-hidden="true" />
                 </RadixToast.Close>
               </motion.div>

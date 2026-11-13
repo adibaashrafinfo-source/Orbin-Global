@@ -18,7 +18,7 @@ export function ProductCard({ product }: { product: Product }) {
         {product.primary_image_url ? (
           <img src={product.primary_image_url} alt="" loading="lazy" className="h-full w-full object-cover" />
         ) : (
-          <ImageOff className="h-8 w-8 text-ink-subtle" aria-hidden="true" />
+          <ImageOff className="h-8 w-8 text-ink-muted" aria-hidden="true" />
         )}
         {!product.is_active && <Badge tone="warning" className="absolute start-2 top-2">{t('products.draft')}</Badge>}
       </div>
@@ -28,7 +28,7 @@ export function ProductCard({ product }: { product: Product }) {
         {product.stock_total !== null && <p className={`text-xs font-medium ${Number(product.stock_total) > 0 ? 'text-success' : 'text-danger'}`}>{Number(product.stock_total) > 0 ? t('products.inStock', { qty: String(Number(product.stock_total)) }) : t('inventory.stockStatus.out')}</p>}
         <div className="mt-auto flex items-end justify-between pt-2">
           <span className="tabular text-sm font-semibold text-ink">{priceRange(product)}</span>
-          <span className="text-xs text-ink-subtle">{t('products.variantsCount', { count: product.variants_count ?? 0 })}</span>
+          <span className="text-xs text-ink-muted">{t('products.variantsCount', { count: product.variants_count ?? 0 })}</span>
         </div>
       </div>
     </Link>

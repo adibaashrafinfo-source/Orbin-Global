@@ -86,12 +86,12 @@ export function CompanyProfilePage() {
                     {t('company.uploadLogo')}
                   </Button>
                 </div>
-                <span className="text-xs text-ink-subtle">{t('company.logoHelp')}</span>
+                <span className="text-xs text-ink-muted">{t('company.logoHelp')}</span>
               </div>
               <div className="flex flex-col gap-2">
                 <span className="text-13 font-medium text-ink-muted">{t('company.signature')}</span>
                 <div className="flex items-center gap-4">
-                  <div className="flex h-20 w-36 shrink-0 items-center justify-center rounded-input border border-dashed border-navy-200 bg-surface p-2 text-xs text-ink-subtle">{profile.signature_url ? <img src={profile.signature_url} alt={t('company.signature')} className="max-h-full max-w-full object-contain" /> : '—'}</div>
+                  <div className="flex h-20 w-36 shrink-0 items-center justify-center rounded-input border border-dashed border-navy-200 bg-surface p-2 text-xs text-ink-muted">{profile.signature_url ? <img src={profile.signature_url} alt={t('company.signature')} className="max-h-full max-w-full object-contain" /> : '—'}</div>
                   <input ref={sigInput} type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" aria-label={t('company.uploadSignature')} onChange={(e) => e.target.files?.[0] && uploadSig.mutate(e.target.files[0])} />
                   <Button type="button" variant="secondary" size="sm" loading={uploadSig.isPending} onClick={() => sigInput.current?.click()}>
                     {t('company.uploadSignature')}

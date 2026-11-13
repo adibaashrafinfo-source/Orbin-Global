@@ -36,7 +36,7 @@ export function GalleryPage() {
           <CardHeader title={t('gallery.buttons')} />
           <CardBody className="overflow-x-auto">
             <table className="text-sm">
-              <thead><tr>{['', t('gallery.default'), t('gallery.hover'), t('gallery.focus'), t('gallery.loading'), t('gallery.disabled')].map((h, i) => <th key={i} className="px-3 pb-2 text-left text-xs font-semibold uppercase text-ink-subtle">{h}</th>)}</tr></thead>
+              <thead><tr>{['', t('gallery.default'), t('gallery.hover'), t('gallery.focus'), t('gallery.loading'), t('gallery.disabled')].map((h, i) => <th key={i} className="px-3 pb-2 text-left text-xs font-semibold uppercase text-ink-muted">{h}</th>)}</tr></thead>
               <tbody>
                 {VARIANTS.map((v) => (
                   <tr key={v}>

@@ -23,7 +23,7 @@ export function Pagination({ page, perPage, total, onPageChange, onPerPageChange
         {onPerPageChange && (
           <div className="flex items-center gap-2">
             <span>{t('common.rowsPerPage')}</span>
-            <Select value={String(perPage)} onChange={(v) => onPerPageChange(Number(v))} options={['10', '25', '50', '100'].map((v) => ({ value: v, label: v }))} className="w-20" />
+            <Select value={String(perPage)} onChange={(v) => onPerPageChange(Number(v))} options={['10', '25', '50', '100'].map((v) => ({ value: v, label: v }))} className="w-20" aria-label={t('common.rowsPerPage')} />
           </div>
         )}
         <span className="tabular">{t('common.page', { page, pages })}</span>

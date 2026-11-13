@@ -64,7 +64,9 @@ export function Sidebar({ collapsed, onToggle, logoUrl }: SidebarProps) {
                       {body}
                     </span>
                   );
-                  return <li key={item.key}>{collapsed ? <Tooltip content={label} side="right">{link}</Tooltip> : link}</li>;
+                  // The tooltip trigger wraps the link in a plain span: Radix merges its props into its child, which would turn the link's
+                  // function className into text and drop the active style and the 40px height.
+                  return <li key={item.key}>{collapsed ? <Tooltip content={label} side="right"><span className="block">{link}</span></Tooltip> : link}</li>;
                 })}
               </ul>
             </div>

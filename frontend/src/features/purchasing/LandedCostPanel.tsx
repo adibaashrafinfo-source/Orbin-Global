@@ -44,7 +44,7 @@ export function LandedCostPanel({ lines, extras, basis, posted }: Props) {
     <Card><CardBody aria-live="polite">
       <div className="mb-2 flex items-center justify-between">
         <h3 className="font-heading text-base font-bold text-navy-900">{t('purchasing.landedCost')}</h3>
-        <span className="text-xs text-ink-subtle">{basis === 'value' ? t('purchasing.byValue') : t('purchasing.byQuantity')}</span>
+        <span className="text-xs text-ink-muted">{basis === 'value' ? t('purchasing.byValue') : t('purchasing.byQuantity')}</span>
       </div>
       {!preview ? <p className="text-sm text-ink-muted">{t('purchasing.landedEmpty')}</p> : (
         <>
@@ -67,7 +67,7 @@ function PanelTable({ rows }: { rows: { sku: string; good: string; unit: string;
     <div className="overflow-x-auto">
       <table className="w-full min-w-[480px] text-sm">
         <caption className="sr-only">{t('purchasing.landedCost')}</caption>
-        <thead className="text-xs uppercase tracking-wide text-ink-subtle"><tr><th scope="col" className="py-1 text-start">{t('products.fields.sku')}</th><th scope="col" className="py-1 text-end">{t('purchasing.goodQty')}</th><th scope="col" className="py-1 text-end">{t('purchasing.unitCost')}</th><th scope="col" className="py-1 text-end">{t('purchasing.allocatedExtra')}</th><th scope="col" className="py-1 text-end">{t('purchasing.landedUnit')}</th></tr></thead>
+        <thead className="text-xs uppercase tracking-wide text-ink-muted"><tr><th scope="col" className="py-1 text-start">{t('products.fields.sku')}</th><th scope="col" className="py-1 text-end">{t('purchasing.goodQty')}</th><th scope="col" className="py-1 text-end">{t('purchasing.unitCost')}</th><th scope="col" className="py-1 text-end">{t('purchasing.allocatedExtra')}</th><th scope="col" className="py-1 text-end">{t('purchasing.landedUnit')}</th></tr></thead>
         <tbody>{rows.map((r, i) => <tr key={i} className="border-t border-navy-100"><th scope="row" className="py-1.5 text-start font-normal"><code className="text-xs font-semibold">{r.sku}</code></th><td className="tabular py-1.5 text-end">{r.good}</td><td className="tabular py-1.5 text-end">{trimCost(r.unit)}</td><td className="tabular py-1.5 text-end">{formatMoney(r.extra)}</td><td className="tabular py-1.5 text-end font-semibold">{trimCost(r.landed)}</td></tr>)}</tbody>
       </table>
     </div>

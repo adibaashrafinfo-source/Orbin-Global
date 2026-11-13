@@ -20,7 +20,7 @@ function SlotPicker({ value, onChange }: { value: number; onChange: (n: number) 
     <div role="radiogroup" aria-label={t('labels.startPosition')} className="grid w-48 grid-cols-3 gap-1">
       {Array.from({ length: A4_SLOTS }, (_, i) => i + 1).map((n) => (
         <button key={n} type="button" role="radio" aria-checked={value === n} aria-label={t('labels.slot', { n })} onClick={() => onChange(n)}
-          className={cn('h-5 rounded-sm border text-[10px] focus-visible:focus-ring-light', n < value ? 'border-navy-100 bg-navy-50 text-ink-subtle' : n === value ? 'border-navy-900 bg-navy-900 text-surface' : 'border-navy-300 bg-surface text-ink-muted')}>{n}</button>
+          className={cn('h-5 rounded-sm border text-[10px] focus-visible:focus-ring-light', n < value ? 'border-navy-100 bg-navy-50 text-ink-muted' : n === value ? 'border-navy-900 bg-navy-900 text-surface' : 'border-navy-300 bg-surface text-ink-muted')}>{n}</button>
       ))}
     </div>
   );

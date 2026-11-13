@@ -47,9 +47,9 @@ export function CustomFieldsPage() {
   };
 
   const columns = useMemo<ColumnDef<CustomFieldDefRow, unknown>[]>(() => {
-    const flag = (v: boolean) => (v ? <Badge tone="navy">{t('common.yes')}</Badge> : <span className="text-ink-subtle">—</span>);
+    const flag = (v: boolean) => (v ? <Badge tone="navy">{t('common.yes')}</Badge> : <span className="text-ink-muted">—</span>);
     const cols: ColumnDef<CustomFieldDefRow, unknown>[] = [
-      { id: 'label', header: t('masterData.fields.nameEn'), cell: ({ row }) => <div><div className="font-medium">{row.original.label_en}</div><code className="text-xs text-ink-subtle">{row.original.key}</code></div> },
+      { id: 'label', header: t('masterData.fields.nameEn'), cell: ({ row }) => <div><div className="font-medium">{row.original.label_en}</div><code className="text-xs text-ink-muted">{row.original.key}</code></div> },
       { id: 'type', header: t('masterData.fields.fieldType'), cell: ({ row }) => t(`masterData.fieldTypes.${row.original.field_type}`) },
       { id: 'required', header: t('masterData.fields.isRequired'), cell: ({ row }) => flag(row.original.is_required) },
       { id: 'pos', header: t('masterData.fields.showOnPos'), cell: ({ row }) => flag(row.original.show_on_pos_card) },

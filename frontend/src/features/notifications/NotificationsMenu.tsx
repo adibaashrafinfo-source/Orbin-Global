@@ -60,7 +60,7 @@ export function NotificationsMenu() {
                     {n.severity !== 'info' && <Badge tone={n.severity === 'critical' ? 'danger' : 'warning'}>{n.severity}</Badge>}
                   </div>
                   {n.body && <span className="text-xs text-ink-muted">{n.body}</span>}
-                  <span className="text-[11px] text-ink-subtle">{formatRelative(n.created_at, i18n.language)}</span>
+                  <span className="text-[11px] text-ink-muted">{formatRelative(n.created_at, i18n.language)}</span>
                 </DropdownMenu.Item>
               </li>
             ))}

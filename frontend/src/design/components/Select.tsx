@@ -41,7 +41,7 @@ export function Select({ value, onChange, options, label, placeholder, error, di
           aria-label={ariaLabel}
           aria-invalid={error ? true : undefined}
           className={cn(
-            'flex h-10 w-full items-center justify-between rounded-input border border-navy-200 bg-surface px-3 text-sm text-ink transition-[border-color,box-shadow] duration-fast focus:border-navy-600 focus:outline-none focus:shadow-[0_0_0_3px_theme(colors.navy.600/0.15)] disabled:bg-navy-50 disabled:text-ink-subtle data-[placeholder]:text-ink-subtle aria-[invalid=true]:border-danger',
+            'flex h-10 w-full items-center justify-between rounded-input border border-navy-200 bg-surface px-3 text-sm text-ink transition-[border-color,box-shadow] duration-fast focus:border-navy-600 focus:outline-none focus:shadow-[0_0_0_3px_theme(colors.navy.600/0.15)] disabled:bg-navy-50 disabled:text-ink-muted data-[placeholder]:text-ink-muted aria-[invalid=true]:border-danger',
           )}
         >
           <RadixSelect.Value placeholder={placeholder} />

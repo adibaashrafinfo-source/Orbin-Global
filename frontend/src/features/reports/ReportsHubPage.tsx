@@ -36,7 +36,7 @@ export function ReportsHubPage() {
                   {items.map((r) => (
                     <li key={r.id}>
                       <Link to={`/reports/${r.id}`} className="group block rounded-card focus-visible:focus-ring-light" data-testid={`report-card-${r.id}`}>
-                        <Card interactive className="mirror-shine h-full"><CardBody className="flex items-center justify-between gap-3"><span className="font-medium text-navy-900">{t(`reports.name.${r.id}`, { defaultValue: r.name })}</span><span className="text-xs text-ink-subtle">{t(`reports.domains.${r.domain}`)}</span></CardBody></Card>
+                        <Card interactive className="mirror-shine h-full"><CardBody className="flex items-center justify-between gap-3"><span className="font-medium text-navy-900">{t(`reports.name.${r.id}`, { defaultValue: r.name })}</span><span className="text-xs text-ink-muted">{t(`reports.domains.${r.domain}`)}</span></CardBody></Card>
                       </Link>
                     </li>
                   ))}

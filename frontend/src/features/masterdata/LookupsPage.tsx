@@ -103,7 +103,7 @@ export function LookupsPage() {
                 <li key={x.id}>
                   <button type="button" onClick={() => setSelectedId(x.id)} aria-current={current?.id === x.id ? 'true' : undefined} className={cn('flex h-9 w-full items-center justify-between rounded-input px-3 text-start text-sm transition-colors duration-fast focus-visible:focus-ring-light', current?.id === x.id ? 'bg-navy-100 font-semibold text-navy-900' : 'text-ink-muted hover:bg-navy-50')}>
                     <span className="truncate">{labelOf({ label_en: x.name_en, label_bn: x.name_bn }, lang)}</span>
-                    <span className="text-xs text-ink-subtle">{x.values.length}</span>
+                    <span className="text-xs text-ink-muted">{x.values.length}</span>
                   </button>
                 </li>
               ))}
@@ -116,7 +116,7 @@ export function LookupsPage() {
                 <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                   <div>
                     <h2 className="font-heading text-lg font-bold text-navy-900">{labelOf({ label_en: current.name_en, label_bn: current.name_bn }, lang)}</h2>
-                    <p className="text-xs text-ink-subtle"><code>{current.key}</code>{current.is_system ? ` · ${t('masterData.systemList')}` : ''}</p>
+                    <p className="text-xs text-ink-muted"><code>{current.key}</code>{current.is_system ? ` · ${t('masterData.systemList')}` : ''}</p>
                   </div>
                   {canManage && (
                     <div className="flex gap-2">

@@ -33,7 +33,7 @@ export function ProductCard({ card, onAdd, onOpen }: { card: PosCard; onAdd: (v:
     <motion.article whileHover={reduced ? undefined : { y: -2 }} className="mirror-shine flex flex-col overflow-hidden rounded-card border border-navy-100 bg-surface shadow-sm" aria-label={card.name}>
       <button type="button" onClick={onOpen} className="group block text-start focus-visible:focus-ring-light" aria-label={t('pos.quickView', { name: card.name })}>
         <div className="h-28 w-full overflow-hidden bg-navy-50">
-          {card.image ? <img src={card.image} alt="" loading="lazy" className={cn('h-full w-full object-cover transition-transform duration-base', !reduced && 'group-hover:scale-[1.03]')} /> : <div className="flex h-full items-center justify-center text-xs text-ink-subtle">{t('pos.noImage')}</div>}
+          {card.image ? <img src={card.image} alt="" loading="lazy" className={cn('h-full w-full object-cover transition-transform duration-base', !reduced && 'group-hover:scale-[1.03]')} /> : <div className="flex h-full items-center justify-center text-xs text-ink-muted">{t('pos.noImage')}</div>}
         </div>
         <div className="flex flex-col gap-1.5 p-3 pb-2">
           <h3 className="line-clamp-2 text-sm font-semibold leading-snug text-navy-900">{card.name}</h3>
@@ -51,7 +51,7 @@ export function ProductCard({ card, onAdd, onOpen }: { card: PosCard; onAdd: (v:
             <li key={v.id}>
               <button type="button" disabled={out} onClick={() => onAdd(v)} title={out ? t('pos.outOfStockHint') : undefined}
                 aria-label={out ? t('pos.chipOut', { size: chipLabel(v) }) : t('pos.chipAdd', { size: chipLabel(v), qty: fmtQty(v.available) })}
-                className={cn('flex flex-col items-center rounded-input border px-2 py-1 text-xs font-semibold leading-tight transition-colors duration-fast focus-visible:focus-ring-light', out ? 'cursor-not-allowed border-navy-100 bg-navy-50 text-ink-subtle line-through' : 'border-navy-200 bg-surface text-navy-900 hover:border-orange-500 hover:bg-orange-50')}>
+                className={cn('flex flex-col items-center rounded-input border px-2 py-1 text-xs font-semibold leading-tight transition-colors duration-fast focus-visible:focus-ring-light', out ? 'cursor-not-allowed border-navy-100 bg-navy-50 text-ink-muted line-through' : 'border-navy-200 bg-surface text-navy-900 hover:border-orange-500 hover:bg-orange-50')}>
                 <span>{chipLabel(v)}</span>
                 <span className={cn('tabular font-normal', out ? 'text-danger no-underline' : Number(v.available) <= 3 ? 'text-orange-700' : 'text-ink-muted')}>{out ? t('pos.out') : fmtQty(v.available)}</span>
               </button>

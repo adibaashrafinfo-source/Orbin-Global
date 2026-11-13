@@ -35,7 +35,7 @@ export function OrderPage() {
 function History({ variantId, supplierId }: { variantId: number; supplierId: number | null }) {
   const { t } = useTranslation();
   const q = useQuery({ queryKey: ['purchase-history', variantId, supplierId], queryFn: () => purchaseApi.history(variantId, supplierId ?? undefined), staleTime: 60_000 });
-  if (!q.data || q.data.length === 0) return <div className="text-xs text-ink-subtle">{t('purchasing.noHistory')}</div>;
+  if (!q.data || q.data.length === 0) return <div className="text-xs text-ink-muted">{t('purchasing.noHistory')}</div>;
   return <div className="text-xs text-ink-muted">{t('purchasing.lastCosts')}: {q.data.map((h) => `${formatMoney(h.unit_cost, { symbol: false })} (${h.supplier}, ${h.date})`).join(' · ')}</div>;
 }
 
@@ -116,7 +116,7 @@ function OrderForm({ doc }: { doc: Doc | null }) {
           <div className="flex justify-between"><span>{t('purchasing.tax')}</span><span className="tabular">{formatMoney(paisaToMoney(tax))}</span></div>
           <div className="flex items-center justify-between gap-3"><span>{t('purchasing.otherCosts')}</span>{editable ? <Input aria-label={t('purchasing.otherCosts')} className="w-32" inputMode="decimal" value={extra} onChange={(e) => setExtra(e.target.value)} /> : <span className="tabular">{formatMoney(str(doc?.extra_total, '0'))}</span>}</div>
           <div className="flex justify-between border-t border-navy-100 pt-1 font-heading text-base font-bold text-navy-900"><span>{t('purchasing.grandTotal')}</span><span className="tabular">{formatMoney(paisaToMoney(subtotal + tax + extraPaisa))}</span></div>
-          <p className="text-xs text-ink-subtle">{t('purchasing.serverTotals')}</p>
+          <p className="text-xs text-ink-muted">{t('purchasing.serverTotals')}</p>
         </CardBody></Card>
         {act.isError ? <p role="alert" className="text-sm text-danger">{apiMessage(t, act.error)}</p> : null}
         {canManage && (

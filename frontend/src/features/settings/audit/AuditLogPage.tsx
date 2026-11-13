@@ -31,7 +31,7 @@ export function AuditLogPage() {
   const columns = useMemo<ColumnDef<AuditEntry, unknown>[]>(
     () => [
       { accessorKey: 'occurred_at', header: t('audit.occurredAt'), cell: ({ getValue }) => <span className="whitespace-nowrap tabular">{formatDateTime(getValue<string>(), i18n.language)}</span> },
-      { id: 'actor', header: t('audit.actor'), cell: ({ row }) => row.original.actor?.full_name ?? <span className="text-ink-subtle">{t('audit.system')}</span> },
+      { id: 'actor', header: t('audit.actor'), cell: ({ row }) => row.original.actor?.full_name ?? <span className="text-ink-muted">{t('audit.system')}</span> },
       { accessorKey: 'action', header: t('audit.action'), cell: ({ getValue }) => <Badge tone={tone(getValue<string>())}>{getValue<string>()}</Badge> },
       { id: 'entity', header: t('audit.entity'), cell: ({ row }) => <code className="text-13">{row.original.entity_table}{row.original.entity_id ? ` #${row.original.entity_id}` : ''}</code> },
       { accessorKey: 'reason', header: t('audit.reason'), cell: ({ getValue }) => getValue<string | null>() ?? '—' },
@@ -66,12 +66,12 @@ export function AuditLogPage() {
       <Drawer open={detail !== null} onOpenChange={(o) => !o && setDetail(null)} title={t('audit.details')} description={detail ? `${detail.action} · ${detail.entity_table}${detail.entity_id ? ` #${detail.entity_id}` : ''}` : undefined}>
         {detail && (
           <dl className="grid gap-4 text-sm">
-            <div><dt className="text-xs font-semibold uppercase text-ink-subtle">{t('audit.occurredAt')}</dt><dd className="tabular">{formatDateTime(detail.occurred_at, i18n.language)}</dd></div>
-            <div><dt className="text-xs font-semibold uppercase text-ink-subtle">{t('audit.actor')}</dt><dd>{detail.actor ? `${detail.actor.full_name} (${t(`users.roles.${detail.actor.role}`)})` : t('audit.system')}</dd></div>
-            {detail.reason && <div><dt className="text-xs font-semibold uppercase text-ink-subtle">{t('audit.reason')}</dt><dd>{detail.reason}</dd></div>}
-            <div><dt className="text-xs font-semibold uppercase text-ink-subtle">{t('audit.before')}</dt><dd><pre className="max-h-64 overflow-auto rounded-input bg-navy-50 p-3 text-xs">{detail.before ? JSON.stringify(detail.before, null, 2) : '—'}</pre></dd></div>
-            <div><dt className="text-xs font-semibold uppercase text-ink-subtle">{t('audit.after')}</dt><dd><pre className="max-h-64 overflow-auto rounded-input bg-navy-50 p-3 text-xs">{detail.after ? JSON.stringify(detail.after, null, 2) : '—'}</pre></dd></div>
-            <div><dt className="text-xs font-semibold uppercase text-ink-subtle">{t('errors.requestId')}</dt><dd><code className="text-xs">{detail.request_id ?? '—'}</code></dd></div>
+            <div><dt className="text-xs font-semibold uppercase text-ink-muted">{t('audit.occurredAt')}</dt><dd className="tabular">{formatDateTime(detail.occurred_at, i18n.language)}</dd></div>
+            <div><dt className="text-xs font-semibold uppercase text-ink-muted">{t('audit.actor')}</dt><dd>{detail.actor ? `${detail.actor.full_name} (${t(`users.roles.${detail.actor.role}`)})` : t('audit.system')}</dd></div>
+            {detail.reason && <div><dt className="text-xs font-semibold uppercase text-ink-muted">{t('audit.reason')}</dt><dd>{detail.reason}</dd></div>}
+            <div><dt className="text-xs font-semibold uppercase text-ink-muted">{t('audit.before')}</dt><dd><pre className="max-h-64 overflow-auto rounded-input bg-navy-50 p-3 text-xs">{detail.before ? JSON.stringify(detail.before, null, 2) : '—'}</pre></dd></div>
+            <div><dt className="text-xs font-semibold uppercase text-ink-muted">{t('audit.after')}</dt><dd><pre className="max-h-64 overflow-auto rounded-input bg-navy-50 p-3 text-xs">{detail.after ? JSON.stringify(detail.after, null, 2) : '—'}</pre></dd></div>
+            <div><dt className="text-xs font-semibold uppercase text-ink-muted">{t('errors.requestId')}</dt><dd><code className="text-xs">{detail.request_id ?? '—'}</code></dd></div>
           </dl>
         )}
       </Drawer>

@@ -60,7 +60,7 @@ export function Switch({ checked, onChange, label, description, disabled, id }: 
               {label}
             </label>
           )}
-          {description && <span className="text-xs text-ink-subtle">{description}</span>}
+          {description && <span className="text-xs text-ink-muted">{description}</span>}
         </div>
       )}
       <RadixSwitch.Root

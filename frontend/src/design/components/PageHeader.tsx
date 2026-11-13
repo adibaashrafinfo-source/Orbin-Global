@@ -13,7 +13,7 @@ export function PageHeader({ title, description, crumbs, actions }: { title: Rea
     <header className="mb-6 flex flex-wrap items-end justify-between gap-4">
       <div>
         {crumbs && crumbs.length > 0 && (
-          <nav aria-label="breadcrumb" className="mb-1 flex items-center gap-1 text-xs text-ink-subtle">
+          <nav aria-label="breadcrumb" className="mb-1 flex items-center gap-1 text-xs text-ink-muted">
             {crumbs.map((c, i) => (
               <span key={i} className="flex items-center gap-1">
                 {c.to ? (

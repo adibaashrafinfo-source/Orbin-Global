@@ -29,7 +29,7 @@ export function UsersPage() {
       { accessorKey: 'email', header: t('common.email') },
       { accessorKey: 'phone', header: t('common.phone'), cell: ({ getValue }) => getValue<string | null>() ?? '—' },
       { accessorKey: 'role', header: t('common.role'), cell: ({ getValue }) => <Badge tone="navy">{t(`users.roles.${getValue<string>()}`)}</Badge> },
-      { id: 'pin', header: t('users.pin'), cell: ({ row }) => (row.original.has_override_pin ? <Badge tone="success">{t('users.pinSet')}</Badge> : <span className="text-ink-subtle">{t('users.pinNotSet')}</span>) },
+      { id: 'pin', header: t('users.pin'), cell: ({ row }) => (row.original.has_override_pin ? <Badge tone="success">{t('users.pinSet')}</Badge> : <span className="text-ink-muted">{t('users.pinNotSet')}</span>) },
       { accessorKey: 'last_login_at', header: t('users.lastLogin'), cell: ({ getValue }) => (getValue<string | null>() ? formatDateTime(getValue<string>(), i18n.language) : t('users.never')) },
       { id: 'status', header: t('common.status'), cell: ({ row }) => <Badge tone={row.original.is_active ? 'success' : 'neutral'}>{row.original.is_active ? t('common.active') : t('common.inactive')}</Badge> },
     ],

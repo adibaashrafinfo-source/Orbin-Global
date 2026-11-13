@@ -103,7 +103,7 @@ export function InvoicePreview(p: PreviewProps) {
               <div className="w-full border-t border-navy-300 pt-1 text-center text-[8px] text-ink-muted">{t('company.authorizedSignature')}</div>
             </div>
           </div>
-          <div className="mt-3 flex items-center justify-between border-t border-navy-100 pt-2 text-[8px] text-ink-subtle">
+          <div className="mt-3 flex items-center justify-between border-t border-navy-100 pt-2 text-[8px] text-ink-muted">
             <span className="italic text-navy-700">{p.tagline || t('app.tagline')}</span>
             {p.footer_note && <span className="truncate pl-2">{p.footer_note}</span>}
             <span>1 / 1</span>
