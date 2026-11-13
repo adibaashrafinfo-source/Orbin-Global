@@ -10,11 +10,13 @@ export interface KpiCardProps {
   formatter?: (n: number) => string;
   delta?: { value: string; positive: boolean } | undefined;
   icon?: ReactNode;
+  /** A small extra under the figure, such as a sparkline. */
+  footer?: ReactNode;
   className?: string;
 }
 
 /** KPI card with count-up (600 ms) and Mirror Shine on hover. */
-export function KpiCard({ label, value, numeric, formatter, delta, icon, className }: KpiCardProps) {
+export function KpiCard({ label, value, numeric, formatter, delta, icon, footer, className }: KpiCardProps) {
   const ref = useRef<HTMLSpanElement>(null);
   const reduced = useReducedMotion();
   useEffect(() => {
@@ -51,6 +53,7 @@ export function KpiCard({ label, value, numeric, formatter, delta, icon, classNa
           {delta.positive ? '▲' : '▼'} {delta.value}
         </span>
       )}
+      {footer}
     </div>
   );
 }

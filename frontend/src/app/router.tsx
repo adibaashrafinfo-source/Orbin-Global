@@ -65,6 +65,8 @@ const FundTransfersPage = lazy(() => import('@/features/ledger/TransfersPage').t
 const DayBookPage = lazy(() => import('@/features/ledger/DayBookPage').then((m) => ({ default: m.DayBookPage })));
 const DuesPage = lazy(() => import('@/features/ledger/DuesPage').then((m) => ({ default: m.DuesPage })));
 const PeriodLockPage = lazy(() => import('@/features/settings/period-lock/PeriodLockPage').then((m) => ({ default: m.PeriodLockPage })));
+const ReportsHubPage = lazy(() => import('@/features/reports/ReportsHubPage').then((m) => ({ default: m.ReportsHubPage })));
+const ReportPage = lazy(() => import('@/features/reports/ReportPage').then((m) => ({ default: m.ReportPage })));
 const IntegrityPage = lazy(() => import('@/features/admin/IntegrityPage').then((m) => ({ default: m.IntegrityPage })));
 const HealthPage = lazy(() => import('@/features/admin/HealthPage').then((m) => ({ default: m.HealthPage })));
 
@@ -73,6 +75,8 @@ const Lazy = () => (
     <Outlet />
   </Suspense>
 );
+
+const REPORT_PERMS = ['reports.view_all', 'reports.view_own', 'reports.view_stock', 'reports.view_profit', 'audit.view'];
 
 const gate = (permission: string | string[], element: React.ReactNode) => <RequirePermission permission={permission}>{element}</RequirePermission>;
 
@@ -162,6 +166,8 @@ export const router = createBrowserRouter([
               { path: '/ledger/transfers', element: gate('fund_transfers.manage', <FundTransfersPage />) },
               { path: '/ledger/day-book', element: gate('ledger.view', <DayBookPage />) },
               { path: '/ledger/dues', element: gate('ledger.view', <DuesPage />) },
+              { path: '/reports', element: gate(REPORT_PERMS, <ReportsHubPage />) },
+              { path: '/reports/:id', element: gate(REPORT_PERMS, <ReportPage />) },
               { path: '/admin/integrity', element: gate('settings.system.manage', <IntegrityPage />) },
               { path: '/admin/health', element: gate('settings.system.manage', <HealthPage />) },
               { path: '*', element: <Navigate to="/dashboard" replace /> },

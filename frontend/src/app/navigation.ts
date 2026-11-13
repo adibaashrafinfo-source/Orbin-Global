@@ -38,7 +38,7 @@ export const NAV_GROUPS: NavGroup[] = [
     key: 'money',
     items: [
       { key: 'ledger', to: '/ledger', icon: BookOpen, permissions: ['ledger.view', 'ledger.receive_payment', 'ledger.pay_supplier', 'expenses.manage', 'fund_transfers.manage', 'accounts.manage'], phase: 'P4' },
-      { key: 'reports', to: '/reports', icon: BarChart3, permissions: ['reports.view_all', 'reports.view_own', 'reports.view_stock'], phase: 'P5' },
+      { key: 'reports', to: '/reports', icon: BarChart3, permissions: ['reports.view_all', 'reports.view_own', 'reports.view_stock', 'reports.view_profit', 'audit.view'], phase: 'P5' },
     ],
   },
   {
@@ -47,7 +47,7 @@ export const NAV_GROUPS: NavGroup[] = [
   },
 ];
 
-export const CURRENT_PHASE: NavItem['phase'] = 'P4';
+export const CURRENT_PHASE: NavItem['phase'] = 'P5';
 
 const phaseNumber = (p: NavItem['phase']) => Number(p.slice(1));
 
