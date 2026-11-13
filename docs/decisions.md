@@ -269,3 +269,46 @@ A promise-to-pay is a date and a note kept on the customer (or, for a supplier, 
 
 ### D-072 Long statements are written in slices
 A statement PDF is written 200 rows at a time instead of as one big page of HTML. Measured here with 2,000 ledger rows: 3.8 seconds and 78 MB peak memory under a 128 MB limit, against 162 MB when it was one piece (which would not fit a 128 MB host). A test keeps rows from being lost or reordered where two slices join. The figures must still be checked on your real hosting account.
+
+## Phase 5 — Reports and dashboard
+
+### D-073 One report engine, 41 reports
+Every report in the spec's `reports` list (41) is one definition: its columns, a query that yields rows, which permission opens it and which columns need cost. One runner turns a definition into the screen, the CSV, the Excel file, the PDF and the print view, so the file always has the rows the screen shows. A test runs every report through all three formats and compares row counts with the screen.
+
+### D-074 Revenue, cost and profit have one definition
+Revenue of a line is its total less VAT, for the quantity still sold after returns. Cost is that quantity times the unit cost stored on the line at sale time. Profit is revenue less cost. Sales by product, brand and vehicle, profit by invoice and product, the profit and loss report and the dashboard all use these two expressions from one place (`Q::REV`, `Q::COGS`). Invoices that are void are left out; returned quantity is taken out of both revenue and cost. A test works the figure out independently from the invoice lines and requires all of those screens to equal it (the Phase 5 gate).
+
+### D-075 The dashboard is built from the same reports
+The dashboard does not have its own sums. Each tile asks the same report code for the chosen period (and the one before it, for the arrow) and each widget is left out of the response unless the person may open that report. A cashier gets sales; a storekeeper gets low stock; only roles with cost permission get profit. It refreshes every 60 seconds (polling, per CLAUDE.md §4).
+
+### D-076 Who sees which report
+Each report names the permissions that open it; the hub lists only those, and opening one by address without permission shows the usual "no permission" page (the API answers 403). Cost, profit and margin columns are removed server-side for anyone without `products.view_cost`; a report whose whole point is cost (stock valuation, profit reports) needs it to open. A person with only `reports.view_own` sees their own sales only. Exports have their own permission (`reports.export`).
+
+### D-077 Saved views
+The spec asks for presets saved per user. A new table `report_presets` (user, report, name, the filters as JSON) holds them. A preset stores filters only, never rows, and a user can only list, create or delete their own.
+
+### D-078 Differences from the spec's report measures
+- **VAT summary** shows VAT collected only. The spec also lists `vat_paid`, but purchases do not carry VAT in the data model (JSON), so there is nothing true to show. Adding input VAT needs a data model decision from the owner.
+- Reports carry no phone numbers, addresses or other personal data of customers; a customer appears by name. The login history shows user, event, time and IP address, as the spec says.
+- Some measures in the spec's list (for example `avg_ticket`, `age`) appear as columns only where they make sense for the grouping.
+
+### D-079 Files are written in English
+CSV, Excel and PDF use English column and report names even when the screen is in Bangla. This avoids the Bangla conjunct risk in PDF (NFR-020, still open from Phase 3) and keeps files usable in accounting software. The screen, the hub and the dashboard are fully translated.
+
+### D-080 What the files contain
+- Money, quantities and percentages are numbers in Excel (so they add up in a spreadsheet) and plain decimal text in CSV and PDF, formatted as ৳ 1,25,000.00 only on screen.
+- In CSV, a text cell that begins with `=`, `+`, `-` or `@` gets a leading apostrophe so a spreadsheet will not run it as a formula. Excel files store text as plain strings, so they need no guard.
+- CSV and Excel are written row by row and the PDF in slices of 150 rows, so large reports stay inside shared-hosting memory.
+- File names are `Orbin_<report>_<from>_<to>.<ext>`.
+
+### D-081 Screen reports are held in memory
+The on-screen table loads the whole report, sorts and pages it in PHP. Exports stream. This is fine for a shop's daily and monthly reports; a report over several years of line items on a small host could be slow. Not measured at scale (section 3 of the Phase 5 summary). If it proves slow, the first step is limiting the range on those reports.
+
+### D-082 "From zero" comparison
+When "compare to previous period" is on and the earlier period was zero there is no percentage to show. The tile says "From zero vs <dates>" instead of hiding the comparison.
+
+### D-083 Left out of Phase 5 (small, none blocking the gate)
+- Scheduled or emailed reports: not in the spec.
+- Charts in the PDF export: the table is exported; the on-screen chart is not.
+- Reports across branches side by side: filters pick one branch or all.
+- Browser testing was Chromium only.
