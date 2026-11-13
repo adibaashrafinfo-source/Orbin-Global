@@ -91,6 +91,15 @@ class PosSearchTest extends SalesTestCase
         $this->assertSame(['2.000', true], [$chip['available'], $chip['is_bundle']], '5 caps ÷ 2 per bundle = 2 bundles');
     }
 
+    public function test_each_chip_carries_the_tax_rate_the_server_will_apply(): void
+    {
+        [$plain, $own] = $this->stocked(2, '4');
+        DB::table('tax_rates')->where('code', 'VAT0')->update(['is_default' => true]);
+        DB::table('product_variants')->where('id', $own)->update(['tax_rate_id' => DB::table('tax_rates')->where('code', 'VAT15')->value('id')]);
+        $chips = collect($this->search()['data'])->flatMap(fn ($c) => $c['variants'])->keyBy('id');
+        $this->assertSame(['0.00', '15.00'], [$chips[$plain]['tax_rate'], $chips[$own]['tax_rate']], 'a variant override beats the shop default');
+    }
+
     public function test_no_cost_or_internal_field_reaches_the_pos_response(): void
     {
         $this->stocked(1, '4');

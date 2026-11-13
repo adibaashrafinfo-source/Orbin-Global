@@ -47,7 +47,7 @@ export const NAV_GROUPS: NavGroup[] = [
   },
 ];
 
-export const CURRENT_PHASE: NavItem['phase'] = 'P2';
+export const CURRENT_PHASE: NavItem['phase'] = 'P3';
 
 const phaseNumber = (p: NavItem['phase']) => Number(p.slice(1));
 

@@ -41,6 +41,15 @@
     content: '';
     @apply absolute inset-0 bg-gradient-to-r from-navy-100 via-navy-50 to-navy-100 animate-shimmer;
   }
+  /* Orange flash on a cart row after a scan: an overlay that only fades (opacity), never the row's own colours. */
+  .animate-row-flash {
+    @apply relative;
+  }
+  .animate-row-flash::after {
+    content: '';
+    @apply pointer-events-none absolute inset-0 bg-orange-200;
+    animation: row-flash 700ms ease-out forwards;
+  }
   .table-head {
     @apply bg-navy-900 text-surface text-xs uppercase tracking-wider font-semibold;
   }
@@ -54,6 +63,15 @@
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
     scroll-behavior: auto !important;
+  }
+}
+
+@keyframes row-flash {
+  from {
+    opacity: 0.85;
+  }
+  to {
+    opacity: 0;
   }
 }
 

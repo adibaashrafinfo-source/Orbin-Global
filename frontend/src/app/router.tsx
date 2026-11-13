@@ -44,6 +44,18 @@ const ReceiptsPage = lazy(() => import('@/features/purchasing/ReceiptsPage').the
 const ReceiptPage = lazy(() => import('@/features/purchasing/ReceiptPage').then((m) => ({ default: m.ReceiptPage })));
 const ReturnsPage = lazy(() => import('@/features/purchasing/ReturnsPage').then((m) => ({ default: m.ReturnsPage })));
 const ReturnPage = lazy(() => import('@/features/purchasing/ReturnPage').then((m) => ({ default: m.ReturnPage })));
+const PosPage = lazy(() => import('@/features/sales/pos/PosPage').then((m) => ({ default: m.PosPage })));
+const CustomersPage = lazy(() => import('@/features/sales/customers/CustomersPage').then((m) => ({ default: m.CustomersPage })));
+const CustomerPage = lazy(() => import('@/features/sales/customers/CustomerPage').then((m) => ({ default: m.CustomerPage })));
+const SalesPage = lazy(() => import('@/features/sales/sales/SalesPage').then((m) => ({ default: m.SalesPage })));
+const SaleDetailPage = lazy(() => import('@/features/sales/sales/SaleDetailPage').then((m) => ({ default: m.SaleDetailPage })));
+const SaleReturnsPage = lazy(() => import('@/features/sales/sales/SaleReturnsPage').then((m) => ({ default: m.SaleReturnsPage })));
+const SaleReturnPage = lazy(() => import('@/features/sales/sales/SaleReturnPage').then((m) => ({ default: m.SaleReturnPage })));
+const ShiftsPage = lazy(() => import('@/features/sales/shifts/ShiftsPage').then((m) => ({ default: m.ShiftsPage })));
+const ShiftPage = lazy(() => import('@/features/sales/shifts/ShiftPage').then((m) => ({ default: m.ShiftPage })));
+const QuotationsPage = lazy(() => import('@/features/sales/quotations/QuotationsPage').then((m) => ({ default: m.QuotationsPage })));
+const QuotationPage = lazy(() => import('@/features/sales/quotations/QuotationPage').then((m) => ({ default: m.QuotationPage })));
+const WarrantyPage = lazy(() => import('@/features/sales/warranty/WarrantyPage').then((m) => ({ default: m.WarrantyPage })));
 const IntegrityPage = lazy(() => import('@/features/admin/IntegrityPage').then((m) => ({ default: m.IntegrityPage })));
 const HealthPage = lazy(() => import('@/features/admin/HealthPage').then((m) => ({ default: m.HealthPage })));
 
@@ -120,6 +132,18 @@ export const router = createBrowserRouter([
               { path: '/purchases/returns', element: gate('purchases.view', <ReturnsPage />) },
               { path: '/purchases/returns/new', element: gate('purchases.manage', <ReturnPage />) },
               { path: '/purchases/returns/:id', element: gate('purchases.view', <ReturnPage />) },
+              { path: '/pos', element: gate('pos.sell', <PosPage />) },
+              { path: '/customers', element: gate('customers.view', <CustomersPage />) },
+              { path: '/customers/:id', element: gate('customers.view', <CustomerPage />) },
+              { path: '/sales', element: gate(['sales.view_all', 'sales.view_own'], <SalesPage />) },
+              { path: '/sales/returns', element: gate(['sales.view_all', 'sales.view_own'], <SaleReturnsPage />) },
+              { path: '/sales/returns/:id', element: gate(['sales.view_all', 'sales.view_own'], <SaleReturnPage />) },
+              { path: '/sales/:id', element: gate(['sales.view_all', 'sales.view_own'], <SaleDetailPage />) },
+              { path: '/quotations', element: gate('quotations.manage', <QuotationsPage />) },
+              { path: '/quotations/:id', element: gate('quotations.manage', <QuotationPage />) },
+              { path: '/shifts', element: gate(['shifts.open_close_own', 'shifts.close_any', 'shifts.view_all'], <ShiftsPage />) },
+              { path: '/shifts/:id', element: gate(['shifts.open_close_own', 'shifts.close_any', 'shifts.view_all'], <ShiftPage />) },
+              { path: '/warranty', element: gate('sales.view_all', <WarrantyPage />) },
               { path: '/admin/integrity', element: gate('settings.system.manage', <IntegrityPage />) },
               { path: '/admin/health', element: gate('settings.system.manage', <HealthPage />) },
               { path: '*', element: <Navigate to="/dashboard" replace /> },

@@ -39,7 +39,8 @@ class CustomerService
                 $this->ledger($customer->id, 'opening', $opening, 0, null, null, 'Opening balance');
             }
 
-            return $customer;
+            // Re-read so the response carries the database defaults (credit limit 0, tier and so on), not just what was sent.
+            return $customer->refresh();
         });
     }
 

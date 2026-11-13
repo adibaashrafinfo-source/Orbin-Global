@@ -1,0 +1,68 @@
+import { Car, ClipboardList, PauseCircle, Truck, User, Undo2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { Badge, Button, EmptyState } from '@/design/components';
+import { cn } from '@/lib/cn';
+import { formatMoney, fromPaisa } from '@/lib/money';
+import type { PosConfig } from '../types';
+import { AnimatedMoney } from './AnimatedMoney';
+import { CartLineRow } from './CartLineRow';
+import { useCart } from './cartStore';
+import type { PriceResult } from './pricing';
+import { overDiscountLimit } from './warnings';
+
+export interface CartActions {
+  onPay: () => void;
+  onHold: () => void;
+  onQuote: () => void;
+  onCustomer: () => void;
+  onVehicle: () => void;
+  onHeld: () => void;
+  onCartDiscount: () => void;
+  onDelivery: () => void;
+}
+
+/** The right-hand cart (PRD §8.3): customer and vehicle chips, the lines, the running summary and the three actions. */
+export function CartPanel({ config, totals, heldCount, drawerOpen, flashKey, actions, busy }: { config: PosConfig | undefined; totals: PriceResult; heldCount: number; drawerOpen: boolean; flashKey: string | null; actions: CartActions; busy: boolean }) {
+  const { t } = useTranslation();
+  const { lines, selected, customer, vehicle, cartDiscountType, cartDiscountValue, lastRemoved, undoRemove } = useCart();
+  const empty = lines.length === 0;
+  const vehicleText = [vehicle.reg_no, [vehicle.make, vehicle.model, vehicle.year].filter(Boolean).join(' ')].filter(Boolean).join(' · ');
+  const over = overDiscountLimit(totals.subtotal, totals.lineDiscountTotal, totals.cartDiscount, config);
+  return (
+    <aside aria-label={t('pos.cart')} className="flex h-full min-h-0 flex-col overflow-hidden rounded-card bg-surface shadow-lg">
+      <div className="flex flex-wrap items-center gap-2 border-b border-navy-100 p-3">
+        <button type="button" onClick={actions.onCustomer} aria-label={t('pos.changeCustomer')} className="flex min-w-0 items-center gap-1.5 rounded-pill border border-navy-200 px-3 py-1.5 text-sm font-medium hover:bg-navy-50 focus-visible:focus-ring-light"><User className="h-4 w-4 shrink-0 text-navy-600" aria-hidden="true" /><span className="truncate" data-testid="cart-customer">{customer?.name ?? t('pos.walkIn')}</span>{customer && !customer.is_walk_in && customer.price_tier !== 'retail' && <Badge tone="orange">{t(`customers.tiers.${customer.price_tier}`)}</Badge>}</button>
+        <button type="button" onClick={actions.onVehicle} aria-label={t('pos.changeVehicle')} className="flex min-w-0 items-center gap-1.5 rounded-pill border border-navy-200 px-3 py-1.5 text-sm hover:bg-navy-50 focus-visible:focus-ring-light"><Car className="h-4 w-4 shrink-0 text-navy-600" aria-hidden="true" /><span className="max-w-[10rem] truncate">{vehicleText || t('pos.addVehicle')}</span></button>
+        <button type="button" onClick={actions.onHeld} aria-label={t('pos.heldBills', { count: heldCount })} className="ms-auto flex items-center gap-1.5 rounded-pill px-2.5 py-1.5 text-sm text-navy-700 hover:bg-navy-100 focus-visible:focus-ring-light"><ClipboardList className="h-4 w-4" aria-hidden="true" />{t('pos.held')} <Badge tone={heldCount > 0 ? 'orange' : 'neutral'}>{heldCount}</Badge></button>
+      </div>
+      <div className="min-h-0 flex-1 overflow-y-auto" data-testid="cart-lines">
+        {empty ? <div className="p-4"><EmptyState title={t('pos.cartEmptyTitle')} body={t('pos.cartEmptyBody')} /></div> : (
+          <ul aria-label={t('pos.cartLines')}>{lines.map((l, i) => <CartLineRow key={l.key} line={l} result={totals.lines[i]} selected={selected === l.key} config={config} customer={customer} flash={flashKey === l.key} />)}</ul>
+        )}
+        {lastRemoved && <button type="button" onClick={undoRemove} className="mx-3 my-2 inline-flex items-center gap-1.5 rounded-pill bg-navy-100 px-3 py-1 text-xs font-semibold text-navy-900 hover:bg-navy-200 focus-visible:focus-ring-light"><Undo2 className="h-3.5 w-3.5" aria-hidden="true" />{t('pos.undoRemove', { name: lastRemoved.variant.product })}</button>}
+      </div>
+      <dl className="border-t border-navy-100 px-4 py-2 text-sm" aria-label={t('pos.summary')}>
+        <Row label={t('pos.subtotal')} value={formatMoney(fromPaisa(totals.subtotal))} />
+        {totals.lineDiscountTotal > 0n && <Row label={t('pos.lineDiscounts')} value={`− ${formatMoney(fromPaisa(totals.lineDiscountTotal))}`} />}
+        <Row label={<button type="button" onClick={actions.onCartDiscount} className="text-navy-700 underline-offset-2 hover:underline focus-visible:focus-ring-light">{t('pos.cartDiscount')} <kbd className="text-xs text-ink-subtle">F8</kbd></button>} value={cartDiscountType === 'none' ? '—' : `− ${formatMoney(fromPaisa(totals.cartDiscount))}${cartDiscountType === 'percent' ? ` (${cartDiscountValue}%)` : ''}`} />
+        {over && <div role="alert" className="py-1 text-xs font-medium text-orange-700">{t('pos.overLimit', { percent: config?.settings.cashier_max_discount_percent ?? 0 })}</div>}
+        <Row label={t('pos.vat')} value={formatMoney(fromPaisa(totals.taxTotal))} />
+        <Row label={<button type="button" onClick={actions.onDelivery} className="inline-flex items-center gap-1 text-navy-700 underline-offset-2 hover:underline focus-visible:focus-ring-light"><Truck className="h-3.5 w-3.5" aria-hidden="true" />{t('pos.delivery')} <kbd className="text-xs text-ink-subtle">F6</kbd></button>} value={totals.delivery > 0n ? formatMoney(fromPaisa(totals.delivery)) : '—'} />
+        {totals.roundOff !== 0n && <Row label={t('pos.roundOff')} value={formatMoney(fromPaisa(totals.roundOff))} />}
+      </dl>
+      <div className="mx-3 mb-2 flex items-center justify-between rounded-card bg-navy-900 px-4 py-3 text-surface" aria-live="polite">
+        <span className="text-sm font-semibold">{t('pos.grandTotal')}</span>
+        <AnimatedMoney paisa={totals.grandTotal} className="tabular text-2xl font-extrabold" />
+      </div>
+      <div className="flex gap-2 p-3 pt-1">
+        <Button variant="ghost" disabled={empty || busy} leftIcon={<PauseCircle className="h-4 w-4" aria-hidden="true" />} onClick={actions.onHold} title="F10">{t('pos.hold')}</Button>
+        <Button variant="secondary" disabled={empty || busy} onClick={actions.onQuote}>{t('pos.quotation')}</Button>
+        <Button variant={drawerOpen ? 'secondary' : 'accent'} size="xl" className={cn('flex-1', empty && 'opacity-60')} disabled={empty || busy} onClick={actions.onPay} title="F9" data-testid="pay-button">{t('pos.pay', { amount: formatMoney(fromPaisa(totals.grandTotal)) })}</Button>
+      </div>
+    </aside>
+  );
+}
+
+function Row({ label, value }: { label: React.ReactNode; value: string }) {
+  return <div className="flex items-center justify-between py-0.5"><dt className="text-ink-muted">{label}</dt><dd className="tabular font-medium">{value}</dd></div>;
+}

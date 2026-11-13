@@ -134,6 +134,7 @@ class SalesApiTest extends SalesTestCase
         $this->actingAsRole('manager');
         $all = $this->getJson('/api/v1/sales')->assertOk();
         $this->assertSame([3, '4000.00', '2500.00', '1500.00'], [$all->json('summary.count'), $all->json('summary.grand_total'), $all->json('summary.paid_total'), $all->json('summary.due_total')]);
+        $this->assertSame([1, 25, 3], [$all->json('meta.page'), $all->json('meta.per_page'), $all->json('meta.total')], 'the paging meta survives next to the summary');
         $this->assertCount(1, $this->getJson('/api/v1/sales?filter[due_only]=1')->json('data'));
         $this->assertCount(1, $this->getJson('/api/v1/sales?filter[method]=bkash')->json('data'));
         $this->assertCount(1, $this->getJson('/api/v1/sales?filter[customer_id]='.$c->id)->json('data'));
@@ -189,6 +190,8 @@ class SalesApiTest extends SalesTestCase
         $this->actingAsUser($this->cashier);
         $this->postJson('/api/v1/customers', ['name' => 'Bad Phone', 'phones' => ['12345']])->assertStatus(422)->assertJsonPath('code', 'VALIDATION')->assertJsonStructure(['fields' => ['phones.0']]);
         $id = $this->postJson('/api/v1/customers', ['name' => 'Jamal Auto', 'phones' => ['01711223344'], 'opening_balance' => '800.00', 'credit_limit' => '5000.00'])->assertCreated()->json('data.id');
+        $bare = $this->postJson('/api/v1/customers', ['name' => 'Only Name', 'phones' => ['01822334455']])->assertCreated();
+        $this->assertSame(['0.00', '0.00', 'retail'], [$bare->json('data.credit_limit'), $bare->json('data.balance'), $bare->json('data.price_tier')], 'a new customer comes back with its defaults filled in');
         $this->postJson('/api/v1/customers', ['name' => 'Jamal Again', 'phones' => ['01711223344']])->assertStatus(409)->assertJsonPath('code', 'CUSTOMER_PHONE_EXISTS')->assertJsonPath('context.existing.id', $id);
         $this->postJson('/api/v1/customers', ['name' => 'Jamal Again', 'phones' => ['01711223344'], 'acknowledge_duplicate' => true])->assertCreated();
         $this->assertSame([$id], collect($this->getJson('/api/v1/customers?search=0171-122 3344')->json('data'))->pluck('id')->sort()->values()->take(1)->all());

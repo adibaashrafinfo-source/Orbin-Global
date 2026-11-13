@@ -4,6 +4,7 @@ namespace App\Services\Sales;
 
 use App\Models\OemCrossReference;
 use App\Models\Warehouse;
+use App\Services\SettingsService;
 use App\Support\Dec;
 use Illuminate\Support\Facades\DB;
 
@@ -37,7 +38,10 @@ class VariantSearchService
         }
 
         $products = DB::table('products as p')->leftJoin('product_brands as b', 'b.id', '=', 'p.brand_id')->leftJoin('lookup_values as q', 'q.id', '=', 'p.quality_grade_id')
-            ->whereIn('p.id', $page)->get(['p.id', 'p.name_en', 'p.name_bn', 'p.code', 'p.mirror_type', 'p.primary_image_url', 'p.warranty_months', 'b.name as brand', 'q.label_en as quality'])->keyBy('id');
+            ->whereIn('p.id', $page)->get(['p.id', 'p.name_en', 'p.name_bn', 'p.code', 'p.mirror_type', 'p.primary_image_url', 'p.warranty_months', 'p.tax_rate_id', 'b.name as brand', 'q.label_en as quality'])->keyBy('id');
+        // Rate precedence (BR-003): variant override → product → the shop default.
+        $rates = DB::table('tax_rates')->pluck('rate_percent', 'id');
+        $defaultRate = (string) ($rates[DB::table('tax_rates')->where('code', app(SettingsService::class)->get('default_tax_rate_code'))->value('id')] ?? '0');
         $variants = DB::table('product_variants as v')->leftJoin('stock_levels as s', fn ($j) => $j->on('s.variant_id', '=', 'v.id')->where('s.warehouse_id', $warehouse)->whereNull('s.deleted_at'))
             ->whereIn('v.id', $variantIds)->whereIn('v.product_id', $page)
             ->get(['v.id', 'v.product_id', 'v.sku', 'v.barcode', 'v.variant_name', 'v.position', 'v.size_label', 'v.adjustment', 'v.is_bundle', 'v.retail_price', 'v.wholesale_price', 'v.dealer_price', 'v.min_price', 'v.tax_rate_id',
@@ -53,6 +57,7 @@ class VariantSearchService
                 'id' => (int) $v->id, 'sku' => $v->sku, 'barcode' => $v->barcode, 'variant_name' => $v->variant_name, 'position' => $v->position,
                 'size_label' => $v->size_label, 'adjustment' => $v->adjustment, 'is_bundle' => (bool) $v->is_bundle,
                 'retail_price' => $v->retail_price, 'wholesale_price' => $v->wholesale_price, 'dealer_price' => $v->dealer_price, 'min_price' => $v->min_price,
+                'tax_rate' => (string) ($rates[$v->tax_rate_id] ?? $rates[$products[$v->product_id]->tax_rate_id ?? 0] ?? $defaultRate),
                 'available' => Dec::fmt(max($available, 0), Dec::QTY),
                 'features' => array_values(array_filter(['heated', 'auto_fold', 'turn_signal', 'blind_spot_sensor', 'side_camera', 'memory_tilt', 'auto_dimming', 'puddle_light'], fn ($k) => (bool) $v->{$k})),
             ];

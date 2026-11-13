@@ -24,6 +24,7 @@ class QuotationService
         private readonly NumberService $numbers,
         private readonly SettingsService $settings,
         private readonly InvoicePdfService $pdf,
+        private readonly VariantSearchService $search,
     ) {}
 
     /** @param  array<string, mixed>  $in  {customer_id?, vehicle?, lines: [{variant_id, qty, unit_price, discount_type, discount_value}], delivery_charge?, valid_until?, note?} */
@@ -110,7 +111,16 @@ class QuotationService
             $lines[] = ['variant_id' => $item->variant_id, 'qty' => $item->qty, 'unit_price' => $item->unit_price, 'discount_type' => $item->discount_type, 'discount_value' => $item->discount_value];
         }
 
-        return ['cart' => ['quotation_id' => $q->id, 'customer_id' => $q->customer_id, 'vehicle' => $q->vehicle_snapshot, 'lines' => $lines, 'delivery_charge' => $q->delivery_charge], 'shortages' => $short];
+        // What the POS needs to rebuild each cart line (name, image, tax rate, stock) without another round trip.
+        $cards = $this->search->search(['_ids' => $q->items->pluck('variant_id')->all(), 'warehouse_id' => $warehouseId], 200, 0)['data'];
+        $items = [];
+        foreach ($cards as $card) {
+            foreach ($card['variants'] as $variant) {
+                $items[$variant['id']] = ['product' => ['name' => $card['name'], 'image' => $card['image'], 'warranty_months' => $card['warranty_months']], 'variant' => $variant];
+            }
+        }
+
+        return ['cart' => ['quotation_id' => $q->id, 'customer_id' => $q->customer_id, 'vehicle' => $q->vehicle_snapshot, 'lines' => $lines, 'delivery_charge' => $q->delivery_charge], 'items' => $items, 'shortages' => $short];
     }
 
     private function m(int $paisa): string

@@ -7,6 +7,7 @@ import { Badge } from '@/design/components';
 import { useLogout, useSession } from '@/features/auth/useSession';
 import { NotificationsMenu } from '@/features/notifications/NotificationsMenu';
 import { LanguageToggle } from './LanguageToggle';
+import { ShiftPill } from './ShiftPill';
 
 /** White 64px top bar: global search (/ focuses), branch selector, shift pill, bell, language, user menu. */
 export function Topbar({ branchName }: { branchName?: string | undefined }) {
@@ -37,7 +38,7 @@ export function Topbar({ branchName }: { branchName?: string | undefined }) {
       </label>
       <div className="ml-auto flex items-center gap-3">
         {branchName && <Badge tone="navy">{branchName}</Badge>}
-        <Badge tone="neutral">{t('nav.shiftClosed')}</Badge>
+        <ShiftPill />
         <NotificationsMenu />
         <LanguageToggle />
         <DropdownMenu.Root>

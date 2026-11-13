@@ -102,6 +102,7 @@ class CustomerAndQuotationTest extends SalesTestCase
         $q = $svc->create($this->cashier, ['lines' => [['variant_id' => $v, 'qty' => '5']]]);
         $out = $svc->convert($q->refresh(), $this->showroom);
         $this->assertSame([5, 1], [(int) $out['cart']['lines'][0]['qty'], count($out['shortages'])]);
+        $this->assertSame(['3.000', '0.00'], [$out['items'][$v]['variant']['available'], $out['items'][$v]['variant']['tax_rate']], 'each line comes with what the POS needs to rebuild it');
         $this->assertSame(['3.000', '5.000'], [$out['shortages'][0]['available'], $out['shortages'][0]['requested']]);
 
         $q2 = $svc->create($this->cashier, ['lines' => [['variant_id' => $v, 'qty' => '2']]]);

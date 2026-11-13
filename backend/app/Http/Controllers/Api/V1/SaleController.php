@@ -84,7 +84,8 @@ class SaleController extends Controller
         $totals = (clone $query)->reorder()->toBase()->where('status', '<>', 'void')->selectRaw('COUNT(*) as n, COALESCE(SUM(grand_total),0) as g, COALESCE(SUM(paid_total),0) as p, COALESCE(SUM(due_total),0) as d')->first();
         $result = $this->paged($query, $request, SaleResource::class);
 
-        return $result->additional(['summary' => [
+        // additional() replaces what is already there, so the paging meta must be carried over explicitly.
+        return $result->additional($result->additional + ['summary' => [
             'count' => (int) $totals->n, 'grand_total' => Dec::fmt(Dec::parse((string) $totals->g, Dec::MONEY), Dec::MONEY),
             'paid_total' => Dec::fmt(Dec::parse((string) $totals->p, Dec::MONEY), Dec::MONEY), 'due_total' => Dec::fmt(Dec::parse((string) $totals->d, Dec::MONEY), Dec::MONEY),
         ]])->response();
