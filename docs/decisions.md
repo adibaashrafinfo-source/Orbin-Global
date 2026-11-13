@@ -312,3 +312,49 @@ When "compare to previous period" is on and the earlier period was zero there is
 - Charts in the PDF export: the table is exported; the on-screen chart is not.
 - Reports across branches side by side: filters pick one branch or all.
 - Browser testing was Chromium only.
+
+## Phase 6 — Hardening and launch
+
+### D-084 Nightly backup is a command, not a script
+`php artisan db:backup` runs `mysqldump` (password passed through `MYSQL_PWD`, never on the command line), gzips the dump into `BACKUP_DIR` (default `~/backups`, outside the web root), and deletes dumps older than `BACKUP_KEEP_DAYS` (default 14). It runs at 02:30 Asia/Dhaka from the scheduler. Risk: the host must have the `mysqldump` binary; if it does not, the command fails loudly and the provider's own backups are the fallback (NFR-070 second layer). Confirm on the cPanel account.
+
+### D-085 Restore is rehearsed by script
+`deploy/restore-rehearsal.sh` dumps, restores into `<db>_restore_rehearsal`, compares row counts of nine key tables, runs `integrity:check` on the copy, and drops the copy and revokes its grant on exit. It passed locally (MariaDB 10.11). It needs root MySQL access to create the copy, so it is for a development machine, not the shared host. The cPanel restore is a manual step in `operations-runbook.md`.
+
+### D-086 Demo seed and its removal
+The spec does not define a demo business dataset. The demo seed that exists is the five demo logins from `DemoUserSeeder` (staging only, `SEED_DEMO_USERS=true`). `orbin:demo-remove` soft-deletes those five logins so their audit history stays readable; it refuses in production. No demo sales, products or customers were invented. **Owner to confirm** whether he wants a sample catalogue for training; if yes, it will be added as a separate seeder that the same command can remove.
+
+### D-087 CSV of every business table (NFR-070)
+`orbin:export-csv` writes one CSV per table of the current database, in chunks by primary key (tables without an `id` are streamed). It skips `sessions`, `cache`, `cache_locks`, `jobs`, `job_batches`, `failed_jobs` and `migrations`, which hold no business data. It is on demand, not scheduled; the weekly off-site copy is the owner's task. A first version listed tables from every database the account could see; it now reads only the current database (test added).
+
+### D-088 Subtle text uses `ink-muted`
+The token `textSubtle` (#94A3B8) is about 2.5:1 on white, below WCAG AA's 4.5:1 for text. The app now uses `ink-muted` (#475569, about 7.6:1) for all text and placeholders, and keeps the subtle icon colour out of the app. The token stays in the token file (it is the spec's value). **Spec conflict for the owner:** the JSON token `textSubtle` does not meet AA for text. Option A (recommended): darken that token in the spec to a value at or above 4.5:1. Option B: keep it for decoration only.
+
+### D-089 Badges and the collapsed sidebar
+Status badges (success, warning, danger) use dark text on their soft tint instead of coloured text, which failed contrast. In collapsed mode the sidebar tooltip wraps the link in a plain `span`; Radix was merging its props into the link and turning the link's class function into text, which removed the active style and shrank the target.
+
+### D-090 Version from the release file
+`config/orbin.php` reads the `VERSION` file at the application root (written by `deploy/build-release.sh`), falling back to `APP_VERSION` and then `0.1.0` in a development checkout. Health showed `0.1.0` for a 0.7.0 release before this.
+
+### D-091 Performance: targets and what was measured
+- Lighthouse, desktop, local: POS performance 90 (gate ≥ 85), accessibility 100 (gate ≥ 95). Other pages 88–94 and 97–100.
+- POS vehicle and product search, 10,000 variants, local MariaDB: p95 41 ms (NFR-001 target ≤ 300 ms).
+- Not measured: first load on 4G (NFR-001), the cPanel host, the statement and report exports on the host. These must be recorded after staging.
+
+### D-092 Health reports HTTPS failure on a local http test (expected)
+The health page's HTTPS check fails on `http://127.0.0.1` by design. It must be green on the real subdomain. The limits check warns on the default PHP limits of this development machine; it is a warning, not a failure.
+
+### D-093 Session cookie settings for HTTPS only
+`.env.example` sets `SESSION_SECURE_COOKIE=true` and `SESSION_DOMAIN=pos.yourdomain.com` for production. Browsers and curl do not send those cookies over plain HTTP, so a local test needs both changed in its own copy. The production file must keep them.
+
+### D-094 Known open accessibility item
+Lighthouse still reports `aria-hidden-focus` on the dashboard's payment donut (score 97). The donut is hidden from assistive technology because its legend lists the same amounts; Recharts still renders focusable sectors inside it. Not on the POS gate. Next step: a visually hidden table instead of the chart, or a library setting.
+
+### D-095 Reduced motion is not automated
+AT-020 (no Mirror Shine and no transforms under `prefers-reduced-motion`) is reviewed in the code only. It stays on the UAT checklist for the owner to confirm on the real device.
+
+### D-096 Browser suite: one unexplained failing run
+One full browser run on a freshly seeded database reported 11 failures (foundation, master data, stock and finance specs). A second full run on a freshly seeded database passed 73 of 73 (17 screenshot specs skipped). The first run's cause was not found; the likely cause is state left by the earlier run in the shared database. The suite runs with one worker and no retries, so this is a real risk to watch, not something to ignore. Next step: make each spec create its own data.
+
+### D-097 Local-only steps
+Everything above that names the cPanel host, the real HTTPS subdomain, the `.htaccess` deny rules (`/.env` and `/composer.json` return the SPA shell through PHP's built-in server, which does not read `.htaccess`), or the 4G and phone widths is **not verified**. `.htaccess` deny rules are tested only when the subdomain is live.
