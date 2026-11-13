@@ -1,7 +1,8 @@
 <?php
 
 return [
-    'version' => env('APP_VERSION', '0.1.0'),
+    // The release script writes the VERSION file at the application root; a development checkout has none.
+    'version' => env('APP_VERSION', is_file(base_path('VERSION')) ? trim((string) file_get_contents(base_path('VERSION'))) : '0.1.0'),
 
     // Nightly dumps live outside the web root (DEPLOY_CPANEL.md §10). Resolved relative to the account home.
     'backup_dir' => env('ORBIN_BACKUP_DIR', dirname(base_path()).'/backups/orbin-pos'),
