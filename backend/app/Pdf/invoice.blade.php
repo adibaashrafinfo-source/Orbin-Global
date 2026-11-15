@@ -89,6 +89,7 @@
 <table width="100%" style="border-collapse:collapse;margin-top:4mm"><tr>
   <td width="52%" valign="top">
     <div class="words"><b>In words:</b> {{ BdtToWords::convert((string) $sale->grand_total) }}</div>
+@if ($sale->note)<div class="words"><b>Note:</b> {!! T::e($sale->note) !!}</div>@endif
     @if ($payments->isNotEmpty())
     <h3 class="section">Payments</h3>
     <table class="pay"><thead><tr><th>Method</th><th>Reference</th><th>Into</th><th>Date</th><th class="right">Amount</th></tr></thead><tbody>

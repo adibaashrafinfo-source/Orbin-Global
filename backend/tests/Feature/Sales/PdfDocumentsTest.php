@@ -42,6 +42,18 @@ class PdfDocumentsTest extends SalesTestCase
         return ['pages' => (int) $p[1], 'width' => (float) $w[1]];
     }
 
+    public function test_the_invoice_prints_the_channel_the_salesperson_and_the_note(): void
+    {
+        [$v] = $this->stocked(1, '5');
+        $seller = $this->userWithRole('manager');
+        $sale = $this->checkout($this->payload([$v => '1'], ['sale_channel' => 'phone', 'salesperson_id' => $seller->id, 'note' => 'Call before delivery']));
+        $text = $this->text((string) file_get_contents(storage_path('app/private/'.$sale->pdf_path)));
+        $this->assertStringContainsString('Channel', $text);
+        $this->assertStringContainsString('Phone', $text);
+        $this->assertStringContainsString('Sales', $text);
+        $this->assertStringContainsString('Note: Call before delivery', preg_replace('/\s+/', ' ', $text));
+    }
+
     public function test_the_invoice_embeds_the_original_logo_file_unchanged(): void
     {
         [$v] = $this->stocked(1, '5');
