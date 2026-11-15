@@ -1095,6 +1095,7 @@
     }
   },
   "pos": {
+    "saleDetails": "বিক্রির বিবরণ", "channel": "বিক্রির মাধ্যম", "channels": {"counter": "কাউন্টার", "phone": "ফোন", "wholesale": "পাইকারি", "online_order": "অনলাইন অর্ডার"}, "salesperson": "বিক্রয়কর্মী", "salespersonMe": "আমি (কাউন্টারে যিনি আছেন)", "invoiceNote": "চালানের নোট", "invoiceNoteHint": "চালানে ছাপা হবে", "done": "হয়েছে",
     "payAmount": "পরিশোধ {{amount}}",
     "allTypes": "সব ধরন",
     "allBrands": "সব ব্র্যান্ড",

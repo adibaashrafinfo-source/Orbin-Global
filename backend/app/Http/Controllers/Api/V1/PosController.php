@@ -7,7 +7,9 @@ use App\Http\Resources\ShiftResource;
 use App\Models\CompanyProfile;
 use App\Models\Customer;
 use App\Models\FinancialAccount;
+use App\Models\RolePermission;
 use App\Models\TaxRate;
+use App\Models\User;
 use App\Models\Warehouse;
 use App\Services\PermissionService;
 use App\Services\Sales\ShiftService;
@@ -40,6 +42,10 @@ class PosController extends Controller
             'warehouses' => Warehouse::query()->where(['is_active' => true, 'is_sellable' => true])->orderByDesc('is_default')->orderBy('name')->get(['id', 'name', 'is_default']),
             'accounts' => FinancialAccount::query()->where('is_active', true)->orderBy('account_type')->orderBy('name')->get(['id', 'name', 'account_type', 'account_number', 'provider', 'is_default_for_method']),
             'walk_in_customer_id' => Customer::query()->where('is_walk_in', true)->value('id'),
+            // FR-706: who can be credited as the salesperson on a sale (anyone who may sell; defaults to the person at the till).
+            'salespeople' => User::query()->where('is_active', true)->whereNull('deleted_at')
+                ->whereIn('role', RolePermission::query()->where(['permission_key' => 'pos.sell', 'allowed' => true])->pluck('role')->push('super_admin'))
+                ->orderBy('full_name')->get(['id', 'full_name']),
             'shift' => $shift ? new ShiftResource($shift) : null,
             'company_ready' => $company->invoiceReady(), 'company_missing' => $company->missingInvoiceFields(),
             'can' => array_combine(['price_override', 'sell_below_floor', 'discount_over_limit', 'view_cost'], array_map(fn ($k) => $this->permissions->userHas($user, $k), ['pos.price_override', 'pos.sell_below_floor', 'pos.discount_over_limit', 'products.view_cost'])),

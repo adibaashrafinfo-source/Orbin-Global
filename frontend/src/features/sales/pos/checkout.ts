@@ -27,6 +27,7 @@ export function buildCheckoutBody(config: PosConfig, totals: PriceResult, paymen
     customer_id: s.customer?.id ?? config.walk_in_customer_id,
     vehicle: hasVehicle ? { customer_vehicle_id: v.customer_vehicle_id, reg_no: v.reg_no, make: v.make, model: v.model, year: v.year, color: v.color } : null,
     sale_channel: s.channel,
+    ...(s.salespersonId ? { salesperson_id: s.salespersonId } : {}),
     warehouse_id: config.warehouses.find((w) => w.is_default)?.id ?? config.warehouses[0]?.id ?? 0,
     cart_discount: { type: s.cartDiscountType, value: s.cartDiscountValue },
     delivery_charge: s.delivery,

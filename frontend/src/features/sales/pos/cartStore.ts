@@ -48,6 +48,8 @@ interface CartState {
   customer: CartCustomer | null;
   vehicle: CartVehicle;
   channel: string;
+  /** FR-706: who is credited with the sale; null means the person at the till. */
+  salespersonId: number | null;
   cartDiscountType: DiscountType;
   cartDiscountValue: string;
   delivery: string;
@@ -68,6 +70,7 @@ interface CartState {
   setCustomer: (c: CartCustomer) => void;
   setVehicle: (v: CartVehicle) => void;
   setChannel: (c: string) => void;
+  setSalesperson: (id: number | null) => void;
   setCartDiscount: (type: DiscountType, value: string) => void;
   setDelivery: (d: string) => void;
   setNote: (n: string) => void;
@@ -81,6 +84,7 @@ export interface LoadedCart {
   customer: CartCustomer | null;
   vehicle: CartVehicle;
   channel: string;
+  salespersonId?: number | null;
   cartDiscountType: DiscountType;
   cartDiscountValue: string;
   delivery: string;
@@ -93,6 +97,7 @@ const fresh = {
   selected: null as string | null,
   vehicle: EMPTY_VEHICLE,
   channel: 'counter',
+  salespersonId: null as number | null,
   cartDiscountType: 'none' as DiscountType,
   cartDiscountValue: '0',
   delivery: '0',
@@ -140,6 +145,7 @@ export const useCart = create<CartState>()(
           }),
         setVehicle: (vehicle) => edit({ vehicle }),
         setChannel: (channel) => edit({ channel }),
+        setSalesperson: (salespersonId) => edit({ salespersonId }),
         setCartDiscount: (type, value) => edit({ cartDiscountType: type, cartDiscountValue: value }),
         setDelivery: (delivery) => edit({ delivery }),
         setNote: (note) => edit({ note }),

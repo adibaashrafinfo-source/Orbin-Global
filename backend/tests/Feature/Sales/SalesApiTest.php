@@ -171,6 +171,34 @@ class SalesApiTest extends SalesTestCase
         $this->assertSame($this->userWithRole('accountant')->id, $p->refresh()->verified_by);
     }
 
+    public function test_the_sale_records_its_channel_salesperson_and_note(): void
+    {
+        [$v] = $this->stocked(1, '5');
+        $seller = $this->userWithRole('manager');
+        $this->actingAsUser($this->cashier);
+        $body = $this->payload([$v => '1'], ['sale_channel' => 'phone', 'salesperson_id' => $seller->id, 'note' => 'Deliver before 6pm']);
+        $this->checkoutHttp($body, 'details-1')->assertCreated()
+            ->assertJsonPath('data.sale_channel', 'phone')->assertJsonPath('data.salesperson_id', $seller->id)->assertJsonPath('data.note', 'Deliver before 6pm');
+    }
+
+    public function test_an_unknown_salesperson_is_refused_with_the_field_named(): void
+    {
+        [$v] = $this->stocked(1, '5');
+        $this->actingAsUser($this->cashier);
+        $this->checkoutHttp($this->payload([$v => '1'], ['salesperson_id' => 999999]), 'details-2')->assertStatus(422)->assertJsonPath('code', 'VALIDATION');
+        $this->assertSame(0, Sale::query()->count());
+    }
+
+    public function test_pos_config_lists_only_people_who_may_sell_plus_the_owner(): void
+    {
+        $seller = $this->userWithRole('cashier');
+        $noSales = $this->userWithRole('storekeeper');
+        $this->actingAsUser($this->cashier);
+        $names = collect($this->getJson('/api/v1/pos/config')->assertOk()->json('data.salespeople'))->pluck('id')->all();
+        $this->assertContains($seller->id, $names);
+        $this->assertNotContains($noSales->id, $names);
+    }
+
     public function test_pos_config_gives_the_terminal_what_it_needs_and_no_cost(): void
     {
         $this->actingAsUser($this->cashier);

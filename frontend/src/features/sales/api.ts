@@ -32,6 +32,7 @@ export interface CheckoutBody {
   customer_id: number;
   vehicle: Record<string, unknown> | null;
   sale_channel: string;
+  salesperson_id?: number;
   warehouse_id: number;
   cart_discount: { type: string; value: string };
   delivery_charge: string;

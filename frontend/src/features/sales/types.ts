@@ -80,6 +80,7 @@ export interface ShiftTotals {
 }
 
 export interface PosConfig {
+  salespeople: { id: number; full_name: string }[];
   settings: {
     vat_mode: 'inclusive' | 'exclusive';
     rounding_mode: 'none' | 'nearest_1';

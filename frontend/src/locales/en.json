@@ -1095,6 +1095,7 @@
     }
   },
   "pos": {
+    "saleDetails": "Sale details", "channel": "Sale channel", "channels": {"counter": "Counter", "phone": "Phone", "wholesale": "Wholesale", "online_order": "Online order"}, "salesperson": "Salesperson", "salespersonMe": "Me (the person at the till)", "invoiceNote": "Invoice note", "invoiceNoteHint": "Printed on the invoice", "done": "Done",
     "payAmount": "Pay {{amount}}",
     "allTypes": "All types",
     "allBrands": "All brands",

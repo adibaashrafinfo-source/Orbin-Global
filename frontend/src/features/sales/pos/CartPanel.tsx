@@ -19,12 +19,14 @@ export interface CartActions {
   onHeld: () => void;
   onCartDiscount: () => void;
   onDelivery: () => void;
+  onDetails: () => void;
 }
 
 /** The right-hand cart (PRD §8.3): customer and vehicle chips, the lines, the running summary and the three actions. */
 export function CartPanel({ config, totals, heldCount, drawerOpen, flashKey, actions, busy }: { config: PosConfig | undefined; totals: PriceResult; heldCount: number; drawerOpen: boolean; flashKey: string | null; actions: CartActions; busy: boolean }) {
   const { t } = useTranslation();
-  const { lines, selected, customer, vehicle, cartDiscountType, cartDiscountValue, lastRemoved, undoRemove } = useCart();
+  const { lines, selected, customer, vehicle, cartDiscountType, cartDiscountValue, lastRemoved, undoRemove, channel, salespersonId } = useCart();
+  const salesperName = salespersonId ? (config?.salespeople.find((p) => p.id === salespersonId)?.full_name ?? '') : t('pos.salespersonMe');
   const empty = lines.length === 0;
   const vehicleText = [vehicle.reg_no, [vehicle.make, vehicle.model, vehicle.year].filter(Boolean).join(' ')].filter(Boolean).join(' · ');
   const over = overDiscountLimit(totals.subtotal, totals.lineDiscountTotal, totals.cartDiscount, config);
@@ -35,6 +37,10 @@ export function CartPanel({ config, totals, heldCount, drawerOpen, flashKey, act
         <button type="button" onClick={actions.onVehicle} aria-label={t('pos.changeVehicle')} className="flex min-w-0 max-w-[35%] items-center gap-1.5 rounded-pill border border-navy-200 px-3 py-1.5 text-sm hover:bg-navy-50 focus-visible:focus-ring-light"><Car className="h-4 w-4 shrink-0 text-navy-600" aria-hidden="true" /><span className="truncate">{vehicleText || t('pos.addVehicle')}</span></button>
         <button type="button" onClick={actions.onHeld} aria-label={t('pos.heldBills', { count: heldCount })} className="ms-auto flex shrink-0 items-center gap-1.5 rounded-pill px-2.5 py-1.5 text-sm text-navy-700 hover:bg-navy-100 focus-visible:focus-ring-light"><ClipboardList className="h-4 w-4" aria-hidden="true" />{t('pos.held')} <Badge tone={heldCount > 0 ? 'orange' : 'neutral'}>{heldCount}</Badge></button>
       </div>
+      <button type="button" onClick={actions.onDetails} aria-label={t('pos.saleDetails')} className="flex items-center justify-between gap-2 border-b border-navy-100 px-3 py-2 text-start text-xs text-ink-muted hover:bg-navy-50 focus-visible:focus-ring-light">
+        <span className="truncate">{t(`pos.channels.${channel}`)} · {salesperName}</span>
+        <span className="shrink-0 font-semibold text-navy-700">{t('pos.saleDetails')}</span>
+      </button>
       <div className="min-h-0 flex-1 overflow-y-auto" data-testid="cart-lines">
         {empty ? <div className="p-4"><EmptyState title={t('pos.cartEmptyTitle')} body={t('pos.cartEmptyBody')} /></div> : (
           <ul aria-label={t('pos.cartLines')}>{lines.map((l, i) => <CartLineRow key={l.key} line={l} result={totals.lines[i]} selected={selected === l.key} config={config} customer={customer} flash={flashKey === l.key} />)}</ul>

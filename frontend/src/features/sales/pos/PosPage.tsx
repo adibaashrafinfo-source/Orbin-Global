@@ -24,12 +24,13 @@ import { ShiftGate } from './ShiftGate';
 import { SuccessScreen } from './SuccessScreen';
 import { EMPTY_FINDER, toCartCustomer, type Finder } from './helpers';
 import { VehicleFinder } from './VehicleFinder';
+import { SaleDetailsDialog } from './SaleDetailsDialog';
 import { VehicleDialog } from './VehicleDialog';
 import { useCartTotals, usePosConfig } from './usePos';
 import { useCheckout } from './useCheckout';
 import { useShortcuts } from './useShortcuts';
 
-type Dialog = 'customer' | 'vehicle' | 'held' | 'discount' | 'delivery' | 'pay' | null;
+type Dialog = 'customer' | 'vehicle' | 'held' | 'discount' | 'delivery' | 'pay' | 'details' | null;
 
 /** A short soft beep for a scan (FR-703); silent where the browser blocks audio. */
 function beep(): void {
@@ -104,7 +105,7 @@ export function PosPage() {
   const holdCart = useMutation({
     mutationFn: () => {
       const s = useCart.getState();
-      const payload: LoadedCart = { lines: s.lines, customer: s.customer, vehicle: s.vehicle, channel: s.channel, cartDiscountType: s.cartDiscountType, cartDiscountValue: s.cartDiscountValue, delivery: s.delivery, note: s.note, quotationId: s.quotationId };
+      const payload: LoadedCart = { lines: s.lines, customer: s.customer, vehicle: s.vehicle, channel: s.channel, salespersonId: s.salespersonId, cartDiscountType: s.cartDiscountType, cartDiscountValue: s.cartDiscountValue, delivery: s.delivery, note: s.note, quotationId: s.quotationId };
       return saleApi.hold({ held_name: `${customer?.name ?? t('pos.walkIn')} ${new Date().toLocaleTimeString('en-GB', { timeZone: 'Asia/Dhaka', hour: '2-digit', minute: '2-digit' })}`, customer_id: s.customer?.id ?? cfg?.walk_in_customer_id, warehouse_id: warehouseId, payload });
     },
     onSuccess: (h) => { void client.invalidateQueries({ queryKey: SALES_KEYS.held }); toast.success(t('pos.heldDone', { name: h.held_name })); newSale(); },
@@ -153,10 +154,11 @@ export function PosPage() {
         <div className="min-h-0 flex-1 overflow-y-auto pe-1"><ProductGrid finder={finder} filters={{ ...filters, text: q }} warehouseId={warehouseId} onAdd={(c, v) => add(c, v)} onOpen={setQuick} /></div>
       </section>
       <CartPanel config={cfg} totals={totals} heldCount={held.data?.length ?? 0} drawerOpen={dialog === 'pay'} flashKey={flash} busy={checkout.busy || holdCart.isPending || quote.isPending}
-        actions={{ onPay: () => setDialog('pay'), onHold: () => holdCart.mutate(), onQuote: () => quote.mutate(), onCustomer: () => setDialog('customer'), onVehicle: () => setDialog('vehicle'), onHeld: () => setDialog('held'), onCartDiscount: () => setDialog('discount'), onDelivery: () => setDialog('delivery') }} />
+        actions={{ onPay: () => setDialog('pay'), onHold: () => holdCart.mutate(), onQuote: () => quote.mutate(), onCustomer: () => setDialog('customer'), onVehicle: () => setDialog('vehicle'), onDetails: () => setDialog('details'), onHeld: () => setDialog('held'), onCartDiscount: () => setDialog('discount'), onDelivery: () => setDialog('delivery') }} />
       <QuickView card={quick} onClose={() => setQuick(null)} onAdd={(v) => { if (quick) add(quick, v); }} />
       <CustomerPicker open={dialog === 'customer'} walkIn={walkIn.data} onClose={() => setDialog(null)} onPick={(c: CartCustomer) => cart.setCustomer(c)} />
       <VehicleDialog open={dialog === 'vehicle'} customerId={customer && !customer.is_walk_in ? customer.id : null} value={cart.vehicle} onClose={() => setDialog(null)} onSave={cart.setVehicle} />
+      <SaleDetailsDialog open={dialog === 'details'} config={cfg} onClose={() => setDialog(null)} />
       <HeldBills open={dialog === 'held'} onClose={() => setDialog(null)} onResume={resume} />
       <DiscountDialog open={dialog === 'discount'} title={t('pos.cartDiscount')} type={cart.cartDiscountType} value={cart.cartDiscountValue} onClose={() => setDialog(null)} onApply={cart.setCartDiscount} />
       <AmountDialog open={dialog === 'delivery'} title={t('pos.delivery')} label={t('pos.deliveryAmount')} value={cart.delivery} onClose={() => setDialog(null)} onApply={cart.setDelivery} />
