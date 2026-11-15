@@ -358,3 +358,17 @@ One full browser run on a freshly seeded database reported 11 failures (foundati
 
 ### D-097 Local-only steps
 Everything above that names the cPanel host, the real HTTPS subdomain, the `.htaccess` deny rules (`/.env` and `/composer.json` return the SPA shell through PHP's built-in server, which does not read `.htaccess`), or the 4G and phone widths is **not verified**. `.htaccess` deny rules are tested only when the subdomain is live.
+
+## Round 7 — POS sale details, demo data, audit
+
+### D-098 Sale channel, salesperson and invoice note in the POS
+The backend already took `sale_channel`, `salesperson_id` and `note` (FR-706); the terminal did not offer them. They are now in a "Sale details" dialog in the cart. The salesperson defaults to the person at the till. The list of salespeople comes from the POS config: people whose role may sell, plus the owner.
+
+### D-099 The invoice prints the invoice note
+Item notes were printed; the invoice-level note was not. It is printed under the amount in words.
+
+### D-100 Demo data is a command, not part of install
+`orbin:demo-seed` adds sample products, stock, customers (one with a car), a cash shift and four sales through the same services the app uses. It needs a complete company profile and never changes it. It refuses in production. The earlier demo-user removal (D-086) does not remove these sales: invoices are never deleted (BR-050). To clear demo sales, rebuild the database.
+
+### D-101 Audit scope
+The audit covered role access over HTTP, the reconciliation of dashboard, sales summary, invoice list, profit and loss and the financial accounts, and the integrity check. It did not cover every screen by eye. See `docs/audit-2026-11.md`.
