@@ -64,7 +64,7 @@ export function LandedCostPanel({ lines, extras, basis, posted }: Props) {
 function PanelTable({ rows }: { rows: { sku: string; good: string; unit: string; extra: string; landed: string }[] }) {
   const { t } = useTranslation();
   return (
-    <div className="overflow-x-auto">
+    <div className="relative overflow-x-auto">
       <table className="w-full min-w-[480px] text-sm">
         <caption className="sr-only">{t('purchasing.landedCost')}</caption>
         <thead className="text-xs uppercase tracking-wide text-ink-muted"><tr><th scope="col" className="py-1 text-start">{t('products.fields.sku')}</th><th scope="col" className="py-1 text-end">{t('purchasing.goodQty')}</th><th scope="col" className="py-1 text-end">{t('purchasing.unitCost')}</th><th scope="col" className="py-1 text-end">{t('purchasing.allocatedExtra')}</th><th scope="col" className="py-1 text-end">{t('purchasing.landedUnit')}</th></tr></thead>

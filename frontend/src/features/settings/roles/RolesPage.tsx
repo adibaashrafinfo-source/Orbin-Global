@@ -66,7 +66,7 @@ export function RolesPage() {
         crumbs={[{ label: t('settings.title') }, { label: t('roles.title') }]}
         actions={<Button onClick={() => save.mutate()} loading={save.isPending} disabled={dirtyRoles.length === 0}>{t('common.save')}</Button>}
       />
-      <Card className="overflow-x-auto">
+      <Card className="relative overflow-x-auto">
         <table className="w-full border-collapse text-sm">
           <thead className="table-head sticky top-0 z-10">
             <tr>

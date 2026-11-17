@@ -147,7 +147,7 @@
     "admin": "Admin", "groups": { "sell": "Sell", "stock": "Stock", "money": "Money", "system": "System" },
     "collapse": "Collapse sidebar", "expand": "Expand sidebar", "gallery": "Component gallery",
     "globalSearch": "Search… ( / )", "notifications": "Notifications", "shiftClosed": "No open shift",
-    "shiftOpenSince": "Shift open · since {{time}}", "shiftOpen": "Shift open", "userMenu": "Account menu", "skipToContent": "Skip to content"
+    "shiftOpenSince": "Shift open · since {{time}}", "shiftOpen": "Shift open", "userMenu": "Account menu", "openMenu": "Open menu", "closeMenu": "Close menu", "skipToContent": "Skip to content"
   },
   "dashboard": {
     "title": "Dashboard",

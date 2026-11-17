@@ -69,7 +69,7 @@ export function SaleDetailPage() {
           </CardBody></Card>
           <Card>
             <CardHeader title={t('sales.lines')} />
-            <div className="overflow-x-auto"><table className="w-full text-sm"><caption className="sr-only">{t('sales.lines')}</caption>
+            <div className="relative overflow-x-auto"><table className="w-full text-sm"><caption className="sr-only">{t('sales.lines')}</caption>
               <thead><tr className="text-xs text-ink-muted"><th scope="col" className="px-4 py-2 text-start font-medium">{t('sales.item')}</th><th scope="col" className="text-end font-medium">{t('sales.qty')}</th><th scope="col" className="text-end font-medium">{t('sales.returned')}</th><th scope="col" className="text-end font-medium">{t('sales.unitPrice')}</th><th scope="col" className="text-end font-medium">{t('sales.vat')}</th><th scope="col" className="px-4 text-end font-medium">{t('sales.amount')}</th></tr></thead>
               <tbody>{lines.map((i) => {
                 const claimable = live && !!i.warranty_until && i.warranty_until >= today() && can(['sales.return.create']);

@@ -55,7 +55,7 @@ export function DuesPage() {
         <div className="w-44"><Select label={t('ledger.dues.sort')} value={f.sort} onChange={(v) => set({ sort: v })} options={['balance', 'oldest', 'name'].map((x) => ({ value: x, label: t(`ledger.dues.sorts.${x}`) }))} /></div>
       </div>
       {query.isError ? <ErrorState onRetry={() => void query.refetch()} /> : query.isLoading ? <Skeleton className="h-64" /> : rows.length === 0 ? <EmptyState body={t('ledger.dues.empty')} /> : (
-        <Card><div className="overflow-x-auto"><table className="w-full text-sm" data-testid="dues-table">
+        <Card><div className="relative overflow-x-auto"><table className="w-full text-sm" data-testid="dues-table">
           <caption className="sr-only">{t('ledger.tabs.dues')}</caption>
           <thead><tr className="text-xs text-ink-muted">
             <th scope="col" className="px-4 py-2 text-start font-medium">{t('ledger.party')}</th>

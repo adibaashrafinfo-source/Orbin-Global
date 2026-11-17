@@ -31,7 +31,7 @@ export function PageHeader({ title, description, crumbs, actions }: { title: Rea
         <h1 className="font-heading text-2xl font-bold text-navy-900">{title}</h1>
         {description && <p className="mt-1 max-w-2xl text-13 text-ink-muted">{description}</p>}
       </div>
-      {actions && <div className="flex items-center gap-2">{actions}</div>}
+      {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
     </header>
   );
 }

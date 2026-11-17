@@ -34,19 +34,19 @@ export function SettingsLayout() {
   const { can } = useSession();
   const items = ITEMS.filter((i) => can(i.permissions));
   return (
-    <div className="flex gap-6">
-      <nav aria-label={t('settings.title')} className="w-56 shrink-0">
+    <div className="flex flex-col gap-6 lg:flex-row">
+      <nav aria-label={t('settings.title')} className="w-full lg:w-56 lg:shrink-0">
         <p className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-wider text-ink-muted">{t('settings.title')}</p>
-        <ul className="flex flex-col gap-0.5">
+        <ul className="relative flex gap-1 overflow-x-auto lg:flex-col lg:gap-0.5 lg:overflow-visible">
           {items.map((item) =>
             item.available ? (
-              <li key={item.key}>
+              <li key={item.key} className="shrink-0">
                 <NavLink to={item.to} className={({ isActive }) => cn('flex h-9 items-center rounded-input px-3 text-sm font-medium transition-colors duration-fast focus-visible:focus-ring-light', isActive ? 'bg-navy-900 text-surface' : 'text-ink-muted hover:bg-navy-100 hover:text-ink')}>
                   {t(`settings.${item.key}`)}
                 </NavLink>
               </li>
             ) : (
-              <li key={item.key}>
+              <li key={item.key} className="shrink-0">
                 <span className="flex h-9 cursor-not-allowed items-center rounded-input px-3 text-sm text-ink-muted opacity-60" aria-disabled="true" title={t('common.comingSoon')}>
                   {t(`settings.${item.key}`)}
                 </span>
