@@ -147,11 +147,11 @@ export function PosPage() {
 
   const approvalError = checkout.error instanceof ApiError && ['PIN_INVALID', 'PIN_LOCKED'].includes(checkout.error.code) ? apiMessage(t, checkout.error) : null;
   return (
-    <div className="grid h-[calc(100vh-5.5rem)] min-h-[34rem] grid-cols-[62fr_38fr] gap-3" data-testid="pos-terminal">
+    <div className="grid gap-3 lg:h-[calc(100vh-5.5rem)] lg:min-h-[34rem] lg:grid-cols-[62fr_38fr]" data-testid="pos-terminal">
       <section aria-label={t('pos.catalog')} className="flex min-h-0 flex-col gap-3">
         <div ref={finderRef}><VehicleFinder value={finder} onChange={setFinder} driverSide={cfg.settings.driver_side} /></div>
         <PosToolbar search={search} onSearch={(v) => { setSearch(v); }} onScan={(c) => scan.mutate(c)} filters={{ ...filters, text: q }} onFilters={setFilters} searchRef={searchRef} />
-        <div className="min-h-0 flex-1 overflow-y-auto pe-1"><ProductGrid finder={finder} filters={{ ...filters, text: q }} warehouseId={warehouseId} onAdd={(c, v) => add(c, v)} onOpen={setQuick} /></div>
+        <div className="min-h-0 flex-1 pe-1 lg:overflow-y-auto"><ProductGrid finder={finder} filters={{ ...filters, text: q }} warehouseId={warehouseId} onAdd={(c, v) => add(c, v)} onOpen={setQuick} /></div>
       </section>
       <CartPanel config={cfg} totals={totals} heldCount={held.data?.length ?? 0} drawerOpen={dialog === 'pay'} flashKey={flash} busy={checkout.busy || holdCart.isPending || quote.isPending}
         actions={{ onPay: () => setDialog('pay'), onHold: () => holdCart.mutate(), onQuote: () => quote.mutate(), onCustomer: () => setDialog('customer'), onVehicle: () => setDialog('vehicle'), onDetails: () => setDialog('details'), onHeld: () => setDialog('held'), onCartDiscount: () => setDialog('discount'), onDelivery: () => setDialog('delivery') }} />

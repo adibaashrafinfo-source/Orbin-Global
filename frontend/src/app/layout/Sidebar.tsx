@@ -11,10 +11,13 @@ interface SidebarProps {
   collapsed: boolean;
   onToggle: () => void;
   logoUrl?: string | null;
+  /** Phones: the sidebar is a drawer that is open only when this is true. */
+  mobileOpen: boolean;
+  onNavigate: () => void;
 }
 
 /** Navy sidebar 264 / 72 px; active item = 3px orange bar + navy-700 bg + white text; tooltips when collapsed. */
-export function Sidebar({ collapsed, onToggle, logoUrl }: SidebarProps) {
+export function Sidebar({ collapsed, onToggle, logoUrl, mobileOpen, onNavigate }: SidebarProps) {
   const { t } = useTranslation();
   const { can } = useSession();
   const reduced = useReducedMotion();
@@ -24,7 +27,7 @@ export function Sidebar({ collapsed, onToggle, logoUrl }: SidebarProps) {
       initial={false}
       animate={{ width: collapsed ? 72 : 264 }}
       transition={reduced ? { duration: 0 } : { duration: 0.22, ease: [0.2, 0, 0, 1] }}
-      className="on-dark fixed inset-y-0 left-0 z-30 flex flex-col overflow-hidden bg-navy-900 text-surface"
+      className={cn('on-dark fixed inset-y-0 left-0 z-30 flex flex-col overflow-hidden bg-navy-900 text-surface transition-transform duration-base ease-standard motion-reduce:transition-none lg:translate-x-0', mobileOpen ? 'translate-x-0' : '-translate-x-full')}
     >
       <div className={cn('flex shrink-0 items-center justify-center border-b border-navy-800', collapsed ? 'h-topbar' : 'px-4 py-4')}>
         {collapsed ? <LogoEmblem src={logoUrl} size={44} /> : <LogoPlate src={logoUrl} width={180} className="rounded-input p-1.5 shadow-none" />}
@@ -56,7 +59,7 @@ export function Sidebar({ collapsed, onToggle, logoUrl }: SidebarProps) {
                       !available && 'cursor-not-allowed opacity-50',
                     );
                   const link = available ? (
-                    <NavLink to={item.to} className={({ isActive }) => classes(isActive)} aria-label={collapsed ? label : undefined}>
+                    <NavLink to={item.to} onClick={onNavigate} className={({ isActive }) => classes(isActive)} aria-label={collapsed ? label : undefined}>
                       {body}
                     </NavLink>
                   ) : (

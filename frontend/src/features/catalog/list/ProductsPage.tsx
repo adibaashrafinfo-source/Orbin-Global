@@ -62,7 +62,7 @@ export function ProductsPage() {
         <Button variant="secondary" leftIcon={<SlidersHorizontal className="h-4 w-4" aria-hidden="true" />} onClick={() => setDrawer(true)}>
           {t('products.filters')}{active > 0 && <Badge tone="orange" className="ms-1">{active}</Badge>}
         </Button>
-        <div className="ms-auto flex items-center gap-1">
+        <div className="ms-auto flex flex-wrap items-center gap-1">
           {can(['pricing.manage']) && <Button variant="secondary" size="sm" leftIcon={<Percent className="h-4 w-4" aria-hidden="true" />} onClick={() => setBulk(true)}>{t('products.bulk.open')}</Button>}
           <Button variant="secondary" size="sm" leftIcon={<Tag className="h-4 w-4" aria-hidden="true" />} onClick={() => navigate('/products/labels')}>{t('products.labels')}</Button>
           {can(['products.import']) && <Button variant="secondary" size="sm" leftIcon={<Upload className="h-4 w-4" aria-hidden="true" />} onClick={() => navigate('/products/import')}>{t('products.import')}</Button>}

@@ -49,7 +49,7 @@ export function DayBookPage() {
             <KpiCard label={t('ledger.moneyOut')} value={formatMoney(d?.totals.out ?? '0')} />
             <KpiCard label={t('ledger.closing')} value={formatMoney(d?.totals.closing ?? '0')} />
           </div>
-          <Card className="mb-5"><div className="overflow-x-auto"><table className="w-full text-sm" data-testid="daybook-accounts">
+          <Card className="mb-5"><div className="relative overflow-x-auto"><table className="w-full text-sm" data-testid="daybook-accounts">
             <caption className="sr-only">{t('ledger.daybook.perAccount')}</caption>
             <thead><tr className="text-xs text-ink-muted"><th scope="col" className="px-4 py-2 text-start font-medium">{t('ledger.account')}</th><th scope="col" className="text-end font-medium">{t('ledger.opening')}</th><th scope="col" className="text-end font-medium">{t('ledger.moneyIn')}</th><th scope="col" className="text-end font-medium">{t('ledger.moneyOut')}</th><th scope="col" className="px-4 text-end font-medium">{t('ledger.closing')}</th></tr></thead>
             <tbody>{(d?.accounts ?? []).map((a) => <tr key={a.account_id} className="border-t border-navy-100"><td className="px-4 py-2 font-medium">{a.name}</td><td className="tabular text-end">{formatMoney(a.opening)}</td><td className="tabular text-end">{formatMoney(a.in)}</td><td className="tabular text-end">{formatMoney(a.out)}</td><td className="tabular px-4 text-end font-semibold">{formatMoney(a.closing)}</td></tr>)}</tbody>

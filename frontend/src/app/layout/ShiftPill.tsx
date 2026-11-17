@@ -11,12 +11,15 @@ export function ShiftPill() {
   const { can } = useSession();
   const allowed = can(['shifts.open_close_own']);
   const shift = useQuery({ queryKey: SALES_KEYS.shift, queryFn: shiftApi.current, enabled: allowed, staleTime: 30_000, refetchInterval: 60_000 });
-  if (!allowed) return <Badge tone="neutral">{t('nav.shiftClosed')}</Badge>;
+  if (!allowed) return <Badge tone="neutral"><span className="hidden sm:inline">{t('nav.shiftClosed')}</span><span className="sm:hidden">—</span></Badge>;
   const s = shift.data;
   const since = s ? new Date(s.opened_at).toLocaleTimeString('en-GB', { timeZone: 'Asia/Dhaka', hour: '2-digit', minute: '2-digit' }) : '';
   return (
     <Link to="/shifts" aria-label={s ? t('nav.shiftOpenSince', { time: since }) : t('nav.shiftClosed')} className="rounded-pill focus-visible:focus-ring-light">
-      <Badge tone={s ? 'success' : 'neutral'}>{s ? t('nav.shiftOpenSince', { time: since }) : t('nav.shiftClosed')}</Badge>
+      <Badge tone={s ? 'success' : 'neutral'}>
+        <span className="hidden sm:inline">{s ? t('nav.shiftOpenSince', { time: since }) : t('nav.shiftClosed')}</span>
+        <span className="sm:hidden">{s ? since : '—'}</span>
+      </Badge>
     </Link>
   );
 }

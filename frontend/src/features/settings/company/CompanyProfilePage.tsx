@@ -77,7 +77,7 @@ export function CompanyProfilePage() {
               <Input label={t('company.tagline')} error={fieldError('tagline')} {...form.register('tagline')} className="2xl:col-span-2" />
               <div className="flex flex-col gap-2">
                 <span className="text-13 font-medium text-ink-muted">{t('company.logo')}</span>
-                <div className="flex items-center gap-4">
+                <div className="flex flex-wrap items-center gap-4">
                   <div className="flex h-20 w-36 shrink-0 items-center justify-center rounded-input border border-navy-200 bg-surface p-2">
                     <img src={profile.logo_url ?? '/assets/brand/orbin-logo.jpg'} alt={t('company.logo')} className="max-h-full max-w-full object-contain" />
                   </div>
@@ -90,7 +90,7 @@ export function CompanyProfilePage() {
               </div>
               <div className="flex flex-col gap-2">
                 <span className="text-13 font-medium text-ink-muted">{t('company.signature')}</span>
-                <div className="flex items-center gap-4">
+                <div className="flex flex-wrap items-center gap-4">
                   <div className="flex h-20 w-36 shrink-0 items-center justify-center rounded-input border border-dashed border-navy-200 bg-surface p-2 text-xs text-ink-muted">{profile.signature_url ? <img src={profile.signature_url} alt={t('company.signature')} className="max-h-full max-w-full object-contain" /> : '—'}</div>
                   <input ref={sigInput} type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" aria-label={t('company.uploadSignature')} onChange={(e) => e.target.files?.[0] && uploadSig.mutate(e.target.files[0])} />
                   <Button type="button" variant="secondary" size="sm" loading={uploadSig.isPending} onClick={() => sigInput.current?.click()}>

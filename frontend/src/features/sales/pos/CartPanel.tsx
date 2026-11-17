@@ -31,7 +31,7 @@ export function CartPanel({ config, totals, heldCount, drawerOpen, flashKey, act
   const vehicleText = [vehicle.reg_no, [vehicle.make, vehicle.model, vehicle.year].filter(Boolean).join(' ')].filter(Boolean).join(' · ');
   const over = overDiscountLimit(totals.subtotal, totals.lineDiscountTotal, totals.cartDiscount, config);
   return (
-    <aside aria-label={t('pos.cart')} className="flex h-full min-h-0 flex-col overflow-hidden rounded-card bg-surface shadow-lg">
+    <aside aria-label={t('pos.cart')} className="flex flex-col rounded-card bg-surface shadow-lg lg:h-full lg:min-h-0 lg:overflow-hidden">
       <div className="flex items-center gap-2 border-b border-navy-100 p-3">
         <button type="button" onClick={actions.onCustomer} aria-label={t('pos.changeCustomer')} className="flex min-w-0 max-w-[45%] items-center gap-1.5 rounded-pill border border-navy-200 px-3 py-1.5 text-sm font-medium hover:bg-navy-50 focus-visible:focus-ring-light"><User className="h-4 w-4 shrink-0 text-navy-600" aria-hidden="true" /><span className="truncate" data-testid="cart-customer">{customer?.name ?? t('pos.walkIn')}</span>{customer && !customer.is_walk_in && customer.price_tier !== 'retail' && <Badge tone="orange">{t(`customers.tiers.${customer.price_tier}`)}</Badge>}</button>
         <button type="button" onClick={actions.onVehicle} aria-label={t('pos.changeVehicle')} className="flex min-w-0 max-w-[35%] items-center gap-1.5 rounded-pill border border-navy-200 px-3 py-1.5 text-sm hover:bg-navy-50 focus-visible:focus-ring-light"><Car className="h-4 w-4 shrink-0 text-navy-600" aria-hidden="true" /><span className="truncate">{vehicleText || t('pos.addVehicle')}</span></button>
@@ -41,7 +41,7 @@ export function CartPanel({ config, totals, heldCount, drawerOpen, flashKey, act
         <span className="truncate">{t(`pos.channels.${channel}`)} · {salesperName}</span>
         <span className="shrink-0 font-semibold text-navy-700">{t('pos.saleDetails')}</span>
       </button>
-      <div className="min-h-0 flex-1 overflow-y-auto" data-testid="cart-lines">
+      <div className="min-h-0 flex-1 lg:overflow-y-auto" data-testid="cart-lines">
         {empty ? <div className="p-4"><EmptyState title={t('pos.cartEmptyTitle')} body={t('pos.cartEmptyBody')} /></div> : (
           <ul aria-label={t('pos.cartLines')}>{lines.map((l, i) => <CartLineRow key={l.key} line={l} result={totals.lines[i]} selected={selected === l.key} config={config} customer={customer} flash={flashKey === l.key} />)}</ul>
         )}

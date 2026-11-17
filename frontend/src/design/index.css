@@ -12,6 +12,11 @@
 @tailwind utilities;
 
 @layer base {
+  /* A grid without column classes is one column that can shrink, so a wide table scrolls instead of pushing the page sideways. */
+  .grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
   * {
     @apply border-line;
   }

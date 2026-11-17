@@ -51,7 +51,7 @@ export function DataTable<T>({ columns, data, loading, error, onRetry, empty, co
 
   return (
     <div className="card overflow-hidden">
-      <div className="overflow-x-auto">
+      <div className="relative overflow-x-auto">
         <table className="w-full border-collapse text-sm">
           {caption && <caption className="sr-only">{caption}</caption>}
           <thead className="table-head sticky top-0 z-10">
