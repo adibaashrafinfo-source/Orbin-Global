@@ -1,0 +1,38 @@
+name: Fix composer deps for PHP 8.2 (one-off)
+
+on:
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          tools: composer:v2
+
+      - name: Pin openspout + pint to PHP-8.2-compatible versions
+        working-directory: backend
+        run: |
+          composer require openspout/openspout:4.28.5 laravel/pint:1.30.4 --no-interaction --no-scripts
+
+      - name: Verify install works end-to-end on PHP 8.2
+        working-directory: backend
+        run: composer install --no-interaction --no-scripts
+
+      - name: Commit updated composer.json/composer.lock
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add backend/composer.json backend/composer.lock
+          git diff --cached --quiet && echo "No changes" && exit 0
+          git commit -m "fix(deps): pin openspout 4.28.5 and pint 1.30.4 for PHP 8.2 compat"
+          git push
