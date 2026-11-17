@@ -71,7 +71,7 @@ export function PartyLedgerPage() {
             </div>
           </div>
           {s.rows.length === 0 ? <EmptyState body={t('ledger.noEntries')} /> : (
-            <Card><div className="overflow-x-auto"><table className="w-full text-sm" data-testid="statement-table">
+            <Card><div className="relative overflow-x-auto"><table className="w-full text-sm" data-testid="statement-table">
               <caption className="sr-only">{t('ledger.tabs.parties')}</caption>
               <thead><tr className="text-xs text-ink-muted"><th scope="col" className="px-4 py-2 text-start font-medium">{t('ledger.date')}</th><th scope="col" className="text-start font-medium">{t('ledger.entry')}</th><th scope="col" className="text-start font-medium">{t('ledger.reference')}</th><th scope="col" className="text-start font-medium">{t('ledger.description')}</th><th scope="col" className="text-end font-medium">{t('ledger.debit')}</th><th scope="col" className="text-end font-medium">{t('ledger.credit')}</th><th scope="col" className="px-4 text-end font-medium">{t('ledger.balance')}</th></tr></thead>
               <tbody>

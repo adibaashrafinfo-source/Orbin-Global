@@ -1,5 +1,5 @@
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
-import { ChevronDown, LogOut, Search, UserRound } from 'lucide-react';
+import { ChevronDown, LogOut, Menu, Search, UserRound } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
@@ -10,7 +10,7 @@ import { LanguageToggle } from './LanguageToggle';
 import { ShiftPill } from './ShiftPill';
 
 /** White 64px top bar: global search (/ focuses), branch selector, shift pill, bell, language, user menu. */
-export function Topbar({ branchName }: { branchName?: string | undefined }) {
+export function Topbar({ branchName, onMenu, menuOpen }: { branchName?: string | undefined; onMenu: () => void; menuOpen: boolean }) {
   const { t } = useTranslation();
   const { user } = useSession();
   const logout = useLogout();
@@ -30,14 +30,17 @@ export function Topbar({ branchName }: { branchName?: string | undefined }) {
   }, []);
 
   return (
-    <header className="sticky top-0 z-20 flex h-topbar items-center gap-4 border-b border-navy-200 bg-surface px-6">
+    <header className="sticky top-0 z-20 flex h-topbar items-center gap-2 border-b border-navy-200 bg-surface px-4 sm:gap-4 lg:px-6">
+      <button type="button" onClick={onMenu} aria-label={t(menuOpen ? 'nav.closeMenu' : 'nav.openMenu')} aria-expanded={menuOpen} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-input text-navy-800 hover:bg-navy-50 focus-visible:focus-ring-light lg:hidden">
+        <Menu className="h-5 w-5" aria-hidden="true" />
+      </button>
       <label className="relative flex-1 max-w-md">
         <span className="sr-only">{t('common.search')}</span>
         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-muted" aria-hidden="true" />
         <input ref={searchRef} type="search" placeholder={t('nav.globalSearch')} className="h-10 w-full rounded-input border border-navy-200 bg-navy-50 pl-9 pr-3 text-sm focus:border-navy-600 focus:bg-surface focus:outline-none focus:shadow-[0_0_0_3px_theme(colors.navy.600/0.15)]" />
       </label>
-      <div className="ml-auto flex items-center gap-3">
-        {branchName && <Badge tone="navy">{branchName}</Badge>}
+      <div className="ml-auto flex items-center gap-1.5 sm:gap-3">
+        {branchName && <span className="hidden md:inline-flex"><Badge tone="navy">{branchName}</Badge></span>}
         <ShiftPill />
         <NotificationsMenu />
         <LanguageToggle />

@@ -34,7 +34,7 @@ export function GalleryPage() {
       <div className="flex flex-col gap-6">
         <Card>
           <CardHeader title={t('gallery.buttons')} />
-          <CardBody className="overflow-x-auto">
+          <CardBody className="relative overflow-x-auto">
             <table className="text-sm">
               <thead><tr>{['', t('gallery.default'), t('gallery.hover'), t('gallery.focus'), t('gallery.loading'), t('gallery.disabled')].map((h, i) => <th key={i} className="px-3 pb-2 text-left text-xs font-semibold uppercase text-ink-muted">{h}</th>)}</tr></thead>
               <tbody>

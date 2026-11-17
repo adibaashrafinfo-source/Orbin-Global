@@ -70,7 +70,7 @@ export function Toaster() {
                 animate="animate"
                 exit="exit"
                 layout
-                className="pointer-events-auto flex w-80 items-start gap-3 rounded-card border border-navy-100 bg-surface p-4 shadow-lg"
+                className="pointer-events-auto flex w-80 max-w-[calc(100vw-2rem)] items-start gap-3 rounded-card border border-navy-100 bg-surface p-4 shadow-lg"
               >
                 <Icon className={cn('mt-0.5 h-5 w-5 shrink-0', tones[item.tone])} aria-hidden="true" />
                 <div className="flex-1">

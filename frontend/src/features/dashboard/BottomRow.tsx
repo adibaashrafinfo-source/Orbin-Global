@@ -39,10 +39,10 @@ export function BottomRow({ w }: { w: DashboardData['widgets'] }) {
         {recent && (
           <Card data-testid="recent-sales"><CardHeader title={t('dashboard.recent.title')} actions={<Link to="/sales" className="text-sm font-semibold text-navy-800 hover:underline focus-visible:focus-ring-light">{t('dashboard.recent.all')}</Link>} /><CardBody className="px-0 py-0">
             {recent.rows.length === 0 ? <div className="p-5"><EmptyState body={t('dashboard.recent.empty')} /></div> : (
-              <table className="w-full text-sm"><caption className="sr-only">{t('dashboard.recent.title')}</caption>
+              <div className="relative overflow-x-auto"><table className="w-full text-sm"><caption className="sr-only">{t('dashboard.recent.title')}</caption>
                 <thead><tr className="text-xs text-ink-muted"><th scope="col" className="px-5 py-2 text-start font-medium">{t('sales.invoice')}</th><th scope="col" className="text-start font-medium">{t('sales.customer')}</th><th scope="col" className="text-start font-medium">{t('sales.date')}</th><th scope="col" className="text-end font-medium">{t('sales.total')}</th><th scope="col" className="px-5 text-end font-medium">{t('common.status')}</th></tr></thead>
                 <tbody>{recent.rows.map((r) => <tr key={r.id} className="border-t border-navy-100"><td className="px-5 py-2"><Link to={`/sales/${r.id}`} className="font-semibold text-navy-800 hover:underline focus-visible:focus-ring-light">{r.invoice_no}</Link></td><td className="max-w-[10rem] truncate">{r.customer}</td><td className="whitespace-nowrap">{fmtDateTime(r.at, i18n.language)}</td><td className="tabular text-end">{formatMoney(r.total)}</td><td className="px-5 text-end"><Badge tone={SALE_TONE[r.status] ?? 'neutral'}>{t(`sales.status.${r.status}`)}</Badge></td></tr>)}</tbody>
-              </table>
+              </table></div>
             )}
           </CardBody></Card>
         )}
