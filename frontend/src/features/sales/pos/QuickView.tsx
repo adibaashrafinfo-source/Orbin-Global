@@ -21,7 +21,7 @@ export function QuickView({ card, onClose, onAdd }: { card: PosCard | null; onCl
   return (
     <Modal open={card !== null} onOpenChange={(o) => { if (!o) { setPicked(null); setShown(0); onClose(); } }} className="max-w-4xl" title={card?.name ?? ''} description={card ? `${card.code}${card.brand ? ` · ${card.brand}` : ''}${card.quality ? ` · ${card.quality}` : ''}` : undefined}>
       {card && (
-        <div className="grid gap-5 md:grid-cols-[320px_1fr]">
+        <div className="grid gap-5 md:grid-cols-[320px_minmax(0,1fr)]">
           <div>
             <div className="aspect-[4/3] overflow-hidden rounded-card bg-navy-50">{main ? <img src={main.url} alt={main.alt_text ?? card.name} className="h-full w-full object-cover" /> : product.isLoading ? <Skeleton className="h-full" /> : <div className="flex h-full items-center justify-center text-xs text-ink-muted">{t('pos.noImage')}</div>}</div>
             {images.length > 1 && <ul className="mt-2 flex gap-1.5">{images.slice(0, 5).map((im, i) => <li key={im.id}><button type="button" aria-label={t('pos.showImage', { n: i + 1 })} aria-current={i === shown} onClick={() => setShown(i)} className="h-12 w-16 overflow-hidden rounded-input border border-navy-200 aria-[current=true]:border-orange-500 focus-visible:focus-ring-light"><img src={im.thumb_url ?? im.url} alt="" className="h-full w-full object-cover" /></button></li>)}</ul>}

@@ -30,16 +30,16 @@ export function ProductCard({ card, onAdd, onOpen }: { card: PosCard; onAdd: (v:
   const features = [...new Set(card.variants.flatMap((v) => v.features))].slice(0, 5);
   const price = card.price_from === card.price_to ? formatMoney(card.price_from) : `${formatMoney(card.price_from, { symbol: false })} – ${formatMoney(card.price_to)}`;
   return (
-    <motion.article whileHover={reduced ? undefined : { y: -2 }} className="mirror-shine flex flex-col overflow-hidden rounded-card border border-navy-100 bg-surface shadow-sm" aria-label={card.name}>
+    <motion.article whileHover={reduced ? undefined : { y: -2 }} className="mirror-shine flex flex-col rounded-card border border-navy-100 bg-surface shadow-sm" aria-label={card.name}>
       <button type="button" onClick={onOpen} className="group block text-start focus-visible:focus-ring-light" aria-label={t('pos.quickView', { name: card.name })}>
-        <div className="h-28 w-full overflow-hidden bg-navy-50">
+        <div className="h-28 w-full overflow-hidden rounded-t-card bg-navy-50">
           {card.image ? <img src={card.image} alt="" loading="lazy" className={cn('h-full w-full object-cover transition-transform duration-base', !reduced && 'group-hover:scale-[1.03]')} /> : <div className="flex h-full items-center justify-center text-xs text-ink-muted">{t('pos.noImage')}</div>}
         </div>
         <div className="flex flex-col gap-1.5 p-3 pb-2">
           <h3 className="line-clamp-2 text-sm font-semibold leading-snug text-navy-900">{card.name}</h3>
           <div className="flex flex-wrap items-center gap-1.5">
             {card.brand && <span className="text-xs text-ink-muted">{card.brand}</span>}
-            {card.quality && <Badge tone="navy">{card.quality}</Badge>}
+            {card.quality && <Badge tone="navy" className="max-w-full whitespace-normal text-start">{card.quality}</Badge>}
             {features.length > 0 && <span className="ms-auto flex gap-1 text-navy-600" aria-label={t('pos.features')}>{features.map((f) => <span key={f} title={t(`products.features.${f}`, { defaultValue: f })}>{FEATURE_ICON[f]}</span>)}</span>}
           </div>
         </div>
@@ -52,15 +52,15 @@ export function ProductCard({ card, onAdd, onOpen }: { card: PosCard; onAdd: (v:
               <button type="button" disabled={out} onClick={() => onAdd(v)} title={out ? t('pos.outOfStockHint') : undefined}
                 aria-label={out ? t('pos.chipOut', { size: chipLabel(v) }) : t('pos.chipAdd', { size: chipLabel(v), qty: fmtQty(v.available) })}
                 className={cn('flex flex-col items-center rounded-input border px-2 py-1 text-xs font-semibold leading-tight transition-colors duration-fast focus-visible:focus-ring-light', out ? 'cursor-not-allowed border-navy-100 bg-navy-50 text-ink-muted line-through' : 'border-navy-200 bg-surface text-navy-900 hover:border-orange-500 hover:bg-orange-50')}>
-                <span>{chipLabel(v)}</span>
-                <span className={cn('tabular font-normal', out ? 'text-danger no-underline' : Number(v.available) <= 3 ? 'text-orange-700' : 'text-ink-muted')}>{out ? t('pos.out') : fmtQty(v.available)}</span>
+                <span className="whitespace-nowrap">{chipLabel(v)}</span>
+                <span className={cn('tabular whitespace-nowrap font-normal', out ? 'text-danger no-underline' : Number(v.available) <= 3 ? 'text-orange-700' : 'text-ink-muted')}>{out ? t('pos.out') : fmtQty(v.available)}</span>
               </button>
             </li>
           );
         })}
       </ul>
       <div className="mt-auto flex flex-wrap items-center justify-between gap-x-2 gap-y-1 border-t border-navy-100 px-3 py-2">
-        <span className="tabular whitespace-nowrap text-sm font-bold text-navy-900">{price}</span>
+        <span className="tabular min-w-0 break-words text-sm font-bold text-navy-900">{price}</span>
         <StockBadge state={total <= 0 ? 'out' : state(String(total))} label={total <= 0 ? t('pos.out') : t('pos.inStock', { qty: fmtQty(String(total)) })} />
       </div>
     </motion.article>

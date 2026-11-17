@@ -96,7 +96,7 @@ export function LookupsPage() {
       <PageHeader title={t('settings.masterData')} description={t('masterData.lookupsSubtitle')} crumbs={[{ label: t('settings.title') }, { label: t('settings.masterData') }]} />
       <MasterDataTabs />
       {lookups.isLoading ? <Skeleton className="h-64 w-full" /> : lookups.error ? <ErrorState onRetry={() => void lookups.refetch()} /> : (
-        <div className="grid gap-6 lg:grid-cols-[16rem_1fr]">
+        <div className="grid gap-6 lg:grid-cols-[16rem_minmax(0,1fr)]">
           <div>
             <ul className="flex flex-col gap-0.5" aria-label={t('masterData.lookups')}>
               {types.map((x) => (

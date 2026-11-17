@@ -41,7 +41,7 @@ export function ImportPage() {
     <>
       <PageHeader title={t('import.title')} description={t('import.subtitle')} crumbs={[{ label: t('products.title'), to: '/products' }, { label: t('import.title') }]} />
       <div className="grid gap-5">
-        <Card><CardBody className="grid gap-4 md:grid-cols-[16rem_1fr]">
+        <Card><CardBody className="grid gap-4 md:grid-cols-[16rem_minmax(0,1fr)]">
           <Select label={t('import.kind')} value={kind} onChange={(v) => { setKind(v as Kind); setFile(null); reset(); }} options={allowed.map((k) => ({ value: k, label: t(`import.kinds.${k}`) }))} />
           <div className="grid gap-2">
             <p className="text-sm text-ink-muted">{t(`import.hints.${kind}`)}</p>

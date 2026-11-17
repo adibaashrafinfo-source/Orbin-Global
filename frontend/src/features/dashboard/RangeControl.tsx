@@ -10,7 +10,7 @@ export function RangeControl({ range, from, to, onChange }: { range: Range; from
   const { t } = useTranslation();
   return (
     <div className="flex flex-wrap items-end gap-3">
-      <div role="group" aria-label={t('dashboard.range.label')} className="flex rounded-input border border-navy-200 bg-surface p-0.5">
+      <div role="group" aria-label={t('dashboard.range.label')} className="flex max-w-full flex-wrap rounded-input border border-navy-200 bg-surface p-0.5">
         {RANGES.map((r) => <button key={r} type="button" aria-pressed={range === r} onClick={() => onChange(r, from, to)} data-testid={`range-${r}`} className={cn('rounded-[6px] px-3 py-1.5 text-sm font-medium focus-visible:focus-ring-light', range === r ? 'bg-navy-900 text-surface' : 'text-ink-muted hover:bg-navy-50')}>{t(`dashboard.range.${r}`)}</button>)}
       </div>
       {range === 'custom' && (

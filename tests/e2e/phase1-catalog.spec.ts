@@ -73,14 +73,14 @@ test.describe('P1 catalog gate', () => {
     await expect(page.getByText('Published').first()).toBeVisible();
 
     await page.goto('/products');
-    await page.getByLabel('Search').fill(CODE);
+    await page.locator('#main').getByLabel(/^Search/).fill(CODE);
     await expect(page.getByRole('link', { name: new RegExp(NAME) })).toBeVisible();
   });
 
   test('SKU and barcode uniqueness is enforced', async ({ page }) => {
     await login(page, 'super_admin');
     await page.goto('/products');
-    await page.getByLabel('Search').fill(CODE);
+    await page.locator('#main').getByLabel(/^Search/).fill(CODE);
     await page.getByRole('link', { name: new RegExp(NAME) }).click();
     await page.getByRole('button', { name: /Variants/ }).click();
 

@@ -84,7 +84,7 @@ export function CustomFieldsPage() {
       <PageHeader title={t('settings.masterData')} description={t('masterData.customFieldsSubtitle')} crumbs={[{ label: t('settings.title') }, { label: t('settings.masterData') }]} />
       <MasterDataTabs />
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <div role="tablist" aria-label={t('masterData.entity')} className="flex gap-1">
+        <div role="tablist" aria-label={t('masterData.entity')} className="flex flex-wrap gap-1">
           {ENTITIES.map((e) => (
             <button key={e} type="button" role="tab" aria-selected={entity === e} onClick={() => setEntity(e)} className={cn('rounded-pill px-3 py-1 text-sm font-medium transition-colors duration-fast focus-visible:focus-ring-light', entity === e ? 'bg-navy-100 text-navy-900' : 'text-ink-muted hover:bg-navy-50')}>
               {t(`masterData.entities.${e}`)}

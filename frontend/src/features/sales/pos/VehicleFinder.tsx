@@ -43,7 +43,7 @@ export function VehicleFinder({ value, onChange, driverSide }: { value: Finder; 
         </div>
         <div>
           <div className="mb-1.5 text-sm font-medium text-ink">{t('pos.position')}</div>
-          <div role="group" aria-label={t('pos.position')} className="flex gap-1">
+          <div role="group" aria-label={t('pos.position')} className="flex flex-wrap gap-1">
             {POSITIONS.map((p) => (
               <button key={p} type="button" aria-pressed={value.position === p} onClick={() => onChange({ ...value, position: value.position === p ? '' : p })}
                 className={cn('h-10 rounded-pill border px-3 text-sm font-medium whitespace-nowrap transition-colors duration-fast focus-visible:focus-ring-light', value.position === p ? 'border-navy-900 bg-navy-900 text-surface' : 'border-navy-200 bg-surface text-navy-800 hover:bg-navy-50')}>

@@ -55,7 +55,7 @@ export function CustomerPage() {
           {tab === 'overview' && (
             <div className="grid gap-4 lg:grid-cols-2">
               <Card><CardBody>
-                <dl className="grid grid-cols-[8rem_1fr] gap-y-2 text-sm">
+                <dl className="grid grid-cols-[8rem_minmax(0,1fr)] gap-y-2 text-sm">
                   <dt className="text-ink-muted">{t('customers.fields.phones')}</dt><dd>{c.phones.join(', ') || '—'}</dd>
                   <dt className="text-ink-muted">{t('common.email')}</dt><dd>{c.email ?? '—'}</dd>
                   <dt className="text-ink-muted">{t('customers.fields.address1')}</dt><dd>{[c.address_line1, c.address_line2, c.area, c.district, c.postcode].filter(Boolean).join(', ') || '—'}</dd>

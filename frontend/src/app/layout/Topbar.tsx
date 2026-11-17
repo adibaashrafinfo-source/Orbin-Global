@@ -30,14 +30,14 @@ export function Topbar({ branchName, onMenu, menuOpen }: { branchName?: string |
   }, []);
 
   return (
-    <header className="sticky top-0 z-20 flex h-topbar items-center gap-2 border-b border-navy-200 bg-surface px-4 sm:gap-4 lg:px-6">
+    <header className="sticky top-0 z-20 flex h-topbar items-center gap-2 border-b border-navy-200 bg-surface px-3 sm:gap-4 sm:px-4 lg:px-6">
       <button type="button" onClick={onMenu} aria-label={t(menuOpen ? 'nav.closeMenu' : 'nav.openMenu')} aria-expanded={menuOpen} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-input text-navy-800 hover:bg-navy-50 focus-visible:focus-ring-light lg:hidden">
         <Menu className="h-5 w-5" aria-hidden="true" />
       </button>
-      <label className="relative flex-1 max-w-md">
+      <label className="relative min-w-0 flex-1 max-w-md">
         <span className="sr-only">{t('common.search')}</span>
         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-muted" aria-hidden="true" />
-        <input ref={searchRef} type="search" placeholder={t('nav.globalSearch')} className="h-10 w-full rounded-input border border-navy-200 bg-navy-50 pl-9 pr-3 text-sm focus:border-navy-600 focus:bg-surface focus:outline-none focus:shadow-[0_0_0_3px_theme(colors.navy.600/0.15)]" />
+        <input ref={searchRef} type="search" placeholder={t('nav.globalSearch')} className="h-10 w-full min-w-0 rounded-input border border-navy-200 bg-navy-50 pl-9 pr-3 text-sm focus:border-navy-600 focus:bg-surface focus:outline-none focus:shadow-[0_0_0_3px_theme(colors.navy.600/0.15)]" />
       </label>
       <div className="ml-auto flex items-center gap-1.5 sm:gap-3">
         {branchName && <span className="hidden md:inline-flex"><Badge tone="navy">{branchName}</Badge></span>}
@@ -51,7 +51,7 @@ export function Topbar({ branchName, onMenu, menuOpen }: { branchName?: string |
                 {user?.avatar_url ? <img src={user.avatar_url} alt="" className="h-8 w-8 rounded-pill object-cover" /> : <UserRound className="h-4 w-4" aria-hidden="true" />}
               </span>
               <span className="hidden max-w-[140px] truncate font-medium sm:block">{user?.full_name}</span>
-              <ChevronDown className="h-4 w-4 text-ink-muted" aria-hidden="true" />
+              <ChevronDown className="hidden h-4 w-4 text-ink-muted sm:block" aria-hidden="true" />
             </button>
           </DropdownMenu.Trigger>
           <DropdownMenu.Portal>
