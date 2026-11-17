@@ -10,7 +10,7 @@ Open cPanel and note the answers. Give them to the coding agent (it adapts the b
 
 | # | Check | Where in cPanel | Needed | If not available |
 |---|---|---|---|---|
-| 1 | PHP version selectable | **MultiPHP Manager** | 8.2 or higher | 8.1 works with Laravel 10 (agent switches) |
+| 1 | PHP version selectable | **MultiPHP Manager** | **8.3** (required: the XLSX library needs 8.3) | 8.2 is not enough since release 0.8.2 |
 | 2 | PHP extensions on | **Select PHP Version** → Extensions | `pdo_mysql, mbstring, intl, gd, zip, fileinfo, bcmath, ctype, json, openssl, tokenizer, xml, curl` | Ask the host to enable; `intl`/`gd` are required for Bangla PDF and images |
 | 3 | PHP limits | **MultiPHP INI Editor** | `memory_limit ≥ 256M`, `max_execution_time ≥ 60`, `upload_max_filesize ≥ 16M`, `post_max_size ≥ 24M` | Raise via INI Editor; if the host forbids, PDF fallback is used |
 | 4 | Database | **MySQL® Databases** + **phpMyAdmin** | MySQL 8.0+ or MariaDB 10.5+ (version shown on phpMyAdmin home) | Ask host to upgrade; older versions are not supported |
@@ -62,7 +62,7 @@ Alternative (host cannot change document root): put the contents of `public/` in
 
 1. **Create the database:** *MySQL® Databases* → create database (e.g., `cpuser_orbinpos`) → create a user with a strong random password → **add user to database with ALL PRIVILEGES**. Write down: host (`localhost`), database name, user, password. cPanel adds your account prefix to both names.
 2. **Create the subdomain** (`pos.yourdomain.com`) and set its **document root** to `orbin-pos/public`.
-3. **PHP:** *MultiPHP Manager* → set that subdomain to PHP 8.2+. Enable extensions and limits from §1.
+3. **PHP:** *MultiPHP Manager* → set that subdomain to **PHP 8.3** (required; the XLSX library needs 8.3). Enable extensions and limits from §1.
 4. **SSL:** *SSL/TLS Status* → run AutoSSL for the subdomain; confirm the padlock.
 5. **Mailbox:** create `noreply@yourdomain.com` for password-reset emails.
 6. **Security:** turn on cPanel two-factor authentication for your own account.
@@ -120,7 +120,7 @@ In **Cron Jobs**, add a job **every minute**:
 * * * * * /usr/local/bin/php /home/<cpanel_user>/orbin-pos/artisan schedule:run >> /dev/null 2>&1
 ```
 
-Use the PHP binary path your host shows for PHP 8.2 (for example `/opt/cpanel/ea-php82/root/usr/bin/php`). The scheduler then runs: nightly database backup (02:30 Dhaka), nightly integrity check (03:00), hourly stock alerts, and the queue worker (stops when empty). **Admin → Health** shows "Last cron run"; if older than 2 minutes, the cron is wrong.
+Use the PHP binary path your host shows for PHP 8.3 (for example `/opt/cpanel/ea-php83/root/usr/bin/php`). The scheduler then runs: nightly database backup (02:30 Dhaka), nightly integrity check (03:00), hourly stock alerts, and the queue worker (stops when empty). **Admin → Health** shows "Last cron run"; if older than 2 minutes, the cron is wrong.
 
 ---
 
