@@ -1,0 +1,52 @@
+name: Deploy to cPanel (Orbin POS)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'backend/**'
+      - 'frontend/**'
+      - 'deploy/**'
+      - '.github/workflows/deploy-cpanel.yml'
+  workflow_dispatch: {}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: pdo_mysql, mbstring, intl, gd, zip, fileinfo, bcmath
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Build release package
+        run: bash deploy/build-release.sh ${{ github.run_number }}
+
+      - name: Unzip release
+        run: |
+          mkdir -p release-unzipped
+          unzip -q release/orbin-pos-release-${{ github.run_number }}.zip -d release-unzipped
+
+      - name: Deploy to cPanel via FTPS
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.ORBIN_FTP_SERVER }}
+          username: ${{ secrets.ORBIN_FTP_USERNAME }}
+          password: ${{ secrets.ORBIN_FTP_PASSWORD }}
+          protocol: ftps
+          local-dir: release-unzipped/orbin-pos/
+          server-dir: ./
+          dangerous-clean-slate: false
+          exclude: |
+            **/.env
+            **/.env.example
+            **/.git*/**
+            **/.github/**
+            **/storage/**
+            **/public/uploads/**
