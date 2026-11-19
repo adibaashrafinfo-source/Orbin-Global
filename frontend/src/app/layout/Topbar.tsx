@@ -37,7 +37,7 @@ export function Topbar({ branchName, onMenu, menuOpen }: { branchName?: string |
       <label className="relative min-w-0 flex-1 max-w-md">
         <span className="sr-only">{t('common.search')}</span>
         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-muted" aria-hidden="true" />
-        <input ref={searchRef} type="search" placeholder={t('nav.globalSearch')} className="h-10 w-full min-w-0 rounded-input border border-navy-200 bg-navy-50 pl-9 pr-3 text-sm focus:border-navy-600 focus:bg-surface focus:outline-none focus:shadow-[0_0_0_3px_theme(colors.navy.600/0.15)]" />
+        <input ref={searchRef} type="search" placeholder={t('nav.globalSearch')} className="h-10 w-full min-w-0 rounded-input border border-navy-200 bg-navy-50 pl-9 pr-3 text-base md:text-sm focus:border-navy-600 focus:bg-surface focus:outline-none focus:shadow-[0_0_0_3px_theme(colors.navy.600/0.15)]" />
       </label>
       <div className="ml-auto flex items-center gap-1.5 sm:gap-3">
         {branchName && <span className="hidden md:inline-flex"><Badge tone="navy">{branchName}</Badge></span>}

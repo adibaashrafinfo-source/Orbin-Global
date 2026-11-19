@@ -35,7 +35,7 @@ export function CartLineRow({ line, result, selected, config, customer, flash }:
       <div className="flex items-center gap-1.5">
         <div role="group" aria-label={t('pos.quantity', { name })} className="flex shrink-0 items-center rounded-input border border-navy-200">
           <button type="button" aria-label={t('pos.qtyDown')} className="flex h-8 w-7 items-center justify-center rounded-s-input hover:bg-navy-50 focus-visible:focus-ring-light" onClick={() => cart.step(line.key, -1)}><Minus className="h-3.5 w-3.5" aria-hidden="true" /></button>
-          <input aria-label={t('pos.qty')} inputMode="decimal" value={line.qty} onChange={(e) => cart.setQty(line.key, e.target.value.replace(/[^\d.]/g, ''))} className="tabular h-8 w-12 border-x border-navy-200 bg-surface text-center text-sm focus:outline-none focus-visible:focus-ring-light" />
+          <input aria-label={t('pos.qty')} inputMode="decimal" value={line.qty} onChange={(e) => cart.setQty(line.key, e.target.value.replace(/[^\d.]/g, ''))} className="tabular h-8 w-12 border-x border-navy-200 bg-surface text-center text-base md:text-sm focus:outline-none focus-visible:focus-ring-light" />
           <button type="button" aria-label={t('pos.qtyUp')} className="flex h-8 w-7 items-center justify-center rounded-e-input hover:bg-navy-50 focus-visible:focus-ring-light" onClick={() => cart.step(line.key, 1)}><Plus className="h-3.5 w-3.5" aria-hidden="true" /></button>
         </div>
         <span className="text-ink-muted" aria-hidden="true">×</span>
