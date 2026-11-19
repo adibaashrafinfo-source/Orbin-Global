@@ -32,7 +32,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.3'
+          php-version: '8.2'
           extensions: pdo_mysql, mbstring, intl, gd, zip, fileinfo, bcmath, pcntl, posix
           coverage: none
       # The PDF tests read invoices back with pdftotext, pdfinfo and pdftoppm.
@@ -67,7 +67,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.3'
+          php-version: '8.2'
           extensions: pdo_mysql, mbstring, intl, gd, zip, fileinfo, bcmath
       - uses: actions/setup-node@v4
         with:

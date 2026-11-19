@@ -64,16 +64,16 @@ class ReportExporter
         return response()->streamDownload(function () use ($def, $f, $ctx, $cols): void {
             $writer = new Writer;
             $writer->openToFile('php://output');
-            $head = (new Style)->withFontBold(true)->withFontColor('FFFFFF')->withBackgroundColor(ltrim(Colors::NAVY['900'], '#'));
+            $head = (new Style)->setFontBold()->setFontColor('FFFFFF')->setBackgroundColor(ltrim(Colors::NAVY['900'], '#'));
             $writer->addRow(new Row(array_map(fn (Col $c) => Cell::fromValue($c->label, $head), $cols)));
-            $money = (new Style)->withFormat('#,##0.00');
-            $qty = (new Style)->withFormat('#,##0.000');
+            $money = (new Style)->setFormat('#,##0.00');
+            $qty = (new Style)->setFormat('#,##0.000');
             foreach ($this->runner->stream($def, $f, $ctx) as $row) {
                 $writer->addRow(new Row(array_map(fn (Col $c) => $this->cell($c, (string) ($row[$c->key] ?? ''), $money, $qty), $cols)));
             }
             $totals = $this->runner->totals($def, $f, $ctx);
             if ($totals !== []) {
-                $bold = (new Style)->withFontBold(true);
+                $bold = (new Style)->setFontBold();
                 $writer->addRow(new Row(array_map(fn (Col $c, int $i) => $i === 0 ? Cell::fromValue('Total', $bold) : $this->cell($c, (string) ($totals[$c->key] ?? ''), $money, $qty), $cols, array_keys($cols))));
             }
             $writer->close();
